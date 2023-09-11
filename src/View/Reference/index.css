@@ -1,0 +1,158 @@
+.Reference-view-content {
+    margin: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+}
+
+.Reference-toolbar-container {
+    width: 100%;
+    height: 36px;
+    background: #fff6dc;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+}
+
+.Reference-toolbar-search {
+    width: 20%;
+    padding: 1.43px 0px 1.43px 4px;
+    margin-left: 4px;
+    outline-style: none;
+    border: 2px solid #5a4e3b;
+    border-radius: 4px 0px 0px 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+    font-weight: 500;
+    color: #5a4e3b;
+    background: #fff6dc;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.Reference-search-button {
+    margin: 4px 0px;
+    width: 28px;
+    height: calc(100% - 8px);
+    border: 2px solid #5a4e3b;
+    border-left: 0px;
+    box-sizing: border-box;
+    border-radius: 0px 4px 4px 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Reference-number-switch-left {
+    margin: 4px 0px 4px 4px;
+    width: 28px;
+    height: calc(100% - 8px);
+    border: 2px solid #5a4e3b;
+    border-right: 0px;
+    box-sizing: border-box;
+    border-radius: 4px 0px 0px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Reference-number-display {
+    margin: 4px 0px;
+    width: 15%;
+    height: calc(100% - 8px);
+    border: 2px solid #5a4e3b;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Reference-number-switch-right {
+    margin: 4px 0px;
+    width: 28px;
+    height: calc(100% - 8px);
+    border: 2px solid #5a4e3b;
+    border-left: 0px;
+    box-sizing: border-box;
+    border-radius: 0px 4px 4px 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Reference-image-confirm {
+    margin: 4px;
+    width: 28px;
+    height: calc(100% - 8px);
+    border: 2px dashed #5a4e3b;
+    box-sizing: border-box;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Reference-image-list {
+    width: 100%;
+    height: calc(100% - 80px);
+}
+
+.Reference-image-firstrow {
+    margin-top: 8px;
+    width: 100%;
+    height: calc(25% - 8px);
+    display: flex;
+}
+
+.Reference-projection-container {
+    width: calc(25% - 6px);
+    height: 100%;
+    border: 3px dashed #fff6dc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Reference-projection {
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    border-radius: 6px;
+    background: #fff6dc;
+}
+
+.Reference-segmentation-list {
+    margin-left: 8px;
+    width: calc(75% - 2px);
+    height: 100%;
+    display: flex;
+    white-space: nowrap;
+    overflow-x: scroll;
+}
+
+.R-segmentation-item {
+    flex: 0 0 auto;
+    width: calc(33.33% - 5.33px);
+    height: 100%;
+    background: #fff6dc;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.Segmentation-image-container {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+    margin-top: -22px;
+}
+
+.Segmentation-color-list {
+    width: calc(100% - 12px);
+    height: 18px;
+    position: absolute;
+    z-Inedx: 50;
+    bottom: 6px;
+    background: #5a4e3b;
+}

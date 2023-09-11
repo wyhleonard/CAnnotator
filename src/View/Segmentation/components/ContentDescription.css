@@ -1,0 +1,44 @@
+.Content-description {
+    margin: 8px 0px 0px 0px;
+    width: 100%;
+    height: calc(100% - 8px);
+}
+
+.Content-image-container {
+    width: 100%;
+    height: 50%;
+    border: 3px dashed #fff6dc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.Content-image {
+    margin: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.Content-text-container {
+    margin-top: 8px;
+    width: 100%;
+    height: calc(50% - 8px);
+    border-radius: 6px;
+    background: #fff6dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Content-text-round {
+    margin: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    overflow-y: scroll;
+}
+
+.Content-text {
+
+}
+

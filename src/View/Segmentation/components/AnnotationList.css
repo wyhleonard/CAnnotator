@@ -1,0 +1,37 @@
+.Annotation-item-container {
+    margin-top: 8px;
+    width: calc(50% - 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff6dc;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.Annotation-item-container:hover {
+    box-shadow: 3px 5px 5px rgba(0, 0, 0, 0.3);
+}
+
+.Annotation-item-image {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Annotation-item-colors {
+    height: 100%;
+}
+
+.Annotation-item-colorlist {
+    margin: 6px;
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    overflow-y: scroll;
+}
+
+.Color-item-container {
+    width: 100%;
+    border-radius: 4px;
+}

@@ -1,0 +1,36 @@
+.Segment-item-container {
+    width: 100%;
+    margin-top: 8px;
+    display: flex;
+}
+
+.Segment-item-image {
+    height: 100%;
+    border-radius: 6px;
+    background: #fff6dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.Segment-item-histogram {
+    margin-left: 8px;
+    height: 100%;
+    border-radius: 6px;
+    background: #fff6dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Image-container {
+    margin: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    object-fit: contain;
+}
+
+.Segment-item-image:hover {
+    box-shadow: 3px 5px 5px rgba(0, 0, 0, 0.3);
+}
