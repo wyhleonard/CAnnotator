@@ -1,5 +1,5 @@
-import "../sharedCss.css"
-import "./index.css"
+import "../sharedCss.css";
+import "./index.css";
 import SearchIcon from "../../Icons/search.svg";
 import LeftIcon from "../../Icons/triangle.svg";
 import ConfirmIcon from "../../Icons/confirm.svg";
@@ -49,8 +49,6 @@ export const ReferenceView = () => {
             blockRef.current?.offsetHeight || 0
         ]);
     }, [blockRef])
-
-    // console.log("wyh-test-01", blockSize)
 
     // 滚轮隐藏后，无法直接触发滑动行为，需要新写一个滚轮函数 👇
     const handleSegmentScroll = (e) => {

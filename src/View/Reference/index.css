@@ -82,7 +82,7 @@
     margin: 4px;
     width: 28px;
     height: calc(100% - 8px);
-    border: 2px dashed #5a4e3b;
+    border: 2px solid #5a4e3b;
     box-sizing: border-box;
     border-radius: 4px;
     display: flex;
@@ -127,6 +127,7 @@
     display: flex;
     white-space: nowrap;
     overflow-x: scroll;
+    scroll-behavior: smooth;
 }
 
 .R-segmentation-item {

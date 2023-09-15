@@ -12,6 +12,8 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    border: 3px solid #fff6dc;
+    box-sizing: border-box;
 }
 
 .Segment-item-histogram {
@@ -25,12 +27,14 @@
 }
 
 .Image-container {
-    margin: 8px;
-    width: calc(100% - 16px);
-    height: calc(100% - 16px);
+    margin: 5.08px;
+    width: calc(100% - 10.16px);
+    height: calc(100% - 10.16px);
     object-fit: contain;
 }
 
+/* border-color 作为高亮后的css提示 */
 .Segment-item-image:hover {
     box-shadow: 3px 5px 5px rgba(0, 0, 0, 0.3);
+    border-color: #5a4e3b;
 }

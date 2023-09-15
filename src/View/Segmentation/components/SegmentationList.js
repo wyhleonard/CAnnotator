@@ -44,7 +44,10 @@ export const SegmentationList = (
             className="Segment-item-container"
             style={{height: `${segSize}px`}}
         >
-            <div className="Segment-item-image" style={{width: `${segSize}px`}}>
+            <div 
+                className="Segment-item-image" 
+                style={{width: `${segSize}px`}}
+            >
                 <img className="Image-container" src={seg.image} alt="" />
             </div>
             <div className="Segment-item-histogram" style={{width: `calc(100% - ${segSize}px - 8px)`}}>

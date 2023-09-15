@@ -1,0 +1,30 @@
+.Swtich-button-container {
+    width: 28px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Palette-container {
+    width: calc(100% - 56px);
+    height: 100%;
+}
+
+.Palette-list {
+    margin: 8px 0px;
+    width: 100%;
+    height: calc(100% - 16px);
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow-x: scroll;
+    scroll-behavior: smooth;
+}
+
+.Matrix-item-container {
+    width: calc(50% - 8px);
+    height: 100%;
+    flex: 0 0 auto;
+    /* overflow-y: hidden; */
+}

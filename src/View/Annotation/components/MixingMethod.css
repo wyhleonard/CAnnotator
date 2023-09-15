@@ -1,0 +1,34 @@
+.Pigment-mixture-method {
+    margin-left: 8px;
+    width: calc(100% - 132.22px - 8px - 36px);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+}
+
+.Pigment-item-container {
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    cursor: pointer;
+}
+
+.Pigment-quantity-text {
+    font-weight: 500;
+    font-size: 16px;
+    color: #fff6dc;
+}
+
+.Pigment-symbol-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    cursor: pointer;
+}

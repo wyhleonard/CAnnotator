@@ -1,4 +1,5 @@
 import './App.css';
+import { AnnotationView } from './View/Annotation';
 import { ReferenceView } from './View/Reference';
 import { SegmentationView } from './View/Segmentation';
 
@@ -18,6 +19,9 @@ function App() {
                     </div>
                 </div>
                 <div className="App-content-bottom">
+                    <div className='Annotation-container'>
+                        <AnnotationView />
+                    </div>
                 </div>
             </div>
         </div>
