@@ -1,0 +1,87 @@
+Date : 2023-09-15 15:08:14
+Directory : e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src
+Total : 50 files,  2417 codes, 92 comments, 259 blanks, all 2768 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| JavaScript |         22 |      1,593 |         75 |        144 |      1,812 |
+| PostCSS    |         17 |        813 |         17 |        115 |        945 |
+| XML        |         11 |         11 |          0 |          0 |         11 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                    | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                       |         50 |      2,417 |         92 |        259 |      2,768 |
+| . (Files)                                                                                               |          7 |        122 |         16 |         23 |        161 |
+| Icons                                                                                                   |         11 |         11 |          0 |          0 |         11 |
+| View                                                                                                    |         32 |      2,284 |         76 |        236 |      2,596 |
+| View (Files)                                                                                            |          4 |        117 |         19 |         17 |        153 |
+| View\Annotation                                                                                         |         12 |      1,107 |         46 |        110 |      1,263 |
+| View\Annotation (Files)                                                                                 |          2 |        189 |          0 |         20 |        209 |
+| View\Annotation\components                                                                              |         10 |        918 |         46 |         90 |      1,054 |
+| View\Reference                                                                                          |          2 |        292 |          1 |         25 |        318 |
+| View\Segmentation                                                                                       |         14 |        768 |         10 |         84 |        862 |
+| View\Segmentation (Files)                                                                               |          2 |        147 |          1 |         13 |        161 |
+| View\Segmentation\components                                                                            |         12 |        621 |          9 |         71 |        701 |
++---------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| filename                                                                                                | language   | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\App.css                                             | PostCSS    |         49 |          9 |         10 |         68 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\App.js                                              | JavaScript |         29 |          0 |          3 |         32 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\App.test.js                                         | JavaScript |          7 |          0 |          2 |          9 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\confirm.svg                                   | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\cut.svg                                       | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\delete.svg                                    | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\extractor.svg                                 | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\left.svg                                      | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\negative.svg                                  | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\openclose.svg                                 | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\positive.svg                                  | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\right.svg                                     | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\search.svg                                    | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\Icons\triangle.svg                                  | XML        |          1 |          0 |          0 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\AnnotationPanel.css      | PostCSS    |        128 |          0 |         17 |        145 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\AnnotationPanel.js       | JavaScript |        153 |         31 |         13 |        197 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\MatrixPalette.css        | PostCSS    |         26 |          1 |          4 |         31 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\MatrixPalette.js         | JavaScript |        146 |          4 |         13 |        163 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\MatrixVisualization.css  | PostCSS    |         54 |          0 |          9 |         63 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\MatrixVisualization.js   | JavaScript |        241 |          5 |         17 |        263 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\MixingMethod.css         | PostCSS    |         31 |          0 |          3 |         34 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\MixingMethod.js          | JavaScript |        115 |          5 |         10 |        130 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\SpacePlot.css            | PostCSS    |          5 |          0 |          0 |          5 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\components\SpacePlot.js             | JavaScript |         19 |          0 |          4 |         23 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\index.css                           | PostCSS    |         98 |          0 |         13 |        111 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Annotation\index.js                            | JavaScript |         91 |          0 |          7 |         98 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Reference\index.css                            | PostCSS    |        144 |          0 |         15 |        159 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Reference\index.js                             | JavaScript |        148 |          1 |         10 |        159 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\AnnotationList.css     | PostCSS    |         35 |          0 |          6 |         41 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\AnnotationList.js      | JavaScript |         72 |          0 |          8 |         80 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\ContentDescription.css | PostCSS    |         37 |          0 |          8 |         45 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\ContentDescription.js  | JavaScript |         29 |          0 |          3 |         32 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\MetaInformation.css    | PostCSS    |         13 |          0 |          3 |         16 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\MetaInformation.js     | JavaScript |         38 |          0 |          4 |         42 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\PaintingBoard.css      | PostCSS    |          0 |          0 |          1 |          1 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\PaintingBoard.js       | JavaScript |        109 |          5 |         15 |        129 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\SegmentTools.css       | PostCSS    |         19 |          0 |          1 |         20 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\SegmentTools.js        | JavaScript |        179 |          3 |          9 |        191 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\SegmentationList.css   | PostCSS    |         35 |          1 |          5 |         41 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\components\SegmentationList.js    | JavaScript |         55 |          0 |          8 |         63 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\index.css                         | PostCSS    |         76 |          0 |         10 |         86 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\Segmentation\index.js                          | JavaScript |         71 |          1 |          3 |         75 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\sharedComponents.js                            | JavaScript |          0 |         13 |          1 |         14 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\sharedConstants.js                             | JavaScript |          2 |          0 |          0 |          2 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\sharedCss.css                                  | PostCSS    |         51 |          6 |          8 |         65 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\View\utils.js                                       | JavaScript |         64 |          0 |          8 |         72 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\index.css                                           | PostCSS    |         12 |          0 |          2 |         14 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\index.js                                            | JavaScript |         12 |          3 |          3 |         18 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\reportWebVitals.js                                  | JavaScript |         12 |          0 |          2 |         14 |
+| e:\CAnnotator-CHI24\cannotator-UI\cannotator-ui\src\setupTests.js                                       | JavaScript |          1 |          4 |          1 |          6 |
+| Total                                                                                                   |            |      2,417 |         92 |        259 |      2,768 |
++---------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+

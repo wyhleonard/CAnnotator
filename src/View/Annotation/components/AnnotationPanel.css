@@ -50,9 +50,6 @@
     padding: 4px;
     border: 3px dashed transparent;
     background: linear-gradient(#fff6dc, #fff6dc) padding-box, repeating-linear-gradient(-45deg, #5a4e3b 0, #5a4e3b 6px, #fff6dc 6px, #fff6dc 12px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .A-text-container {
@@ -93,17 +90,105 @@
 }
 
 .A-pigment-list {
-    margin: 2px 8px 4px 0px;
+    margin: 6px 8px 4px 0px;
     width: calc(100% - 141.1px - 8px);
-    height: calc(100% - 8px);
+    height: calc(100% - 12px);
     overflow-y: scroll;
 }
 
 .A-pigment-item-container {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     width: 100%;
     height: 28px;
-    /* display: flex;
-    align-items: center; */
+    display: flex;
+    align-items: center;
+}
+
+.A-slider-container {
+    margin: 4px 0px 4px 8px;
+    width: calc(75% - 24px - 8px);
+    height: calc(100% - 8px);
+    position: relative;
+}
+
+.A-slider-item {
+    width: 100%;
+    height: calc(50% - 1px);
     background: #5a4e3b;
+    border-radius: 2px;
+}
+
+.A-slider-block {
+    top: -2px;
+    width: 12px;
+    height: calc(100% + 4px);
+    background: #fff6dc;
+    border: 3px solid #5a4e3b;
+    box-sizing: border-box;
+    border-radius: 2px;
+    position: absolute;
+    z-Index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.A-slider-icon {
+    width: 3px;
+    height: 60%;
+    background: #5a4e3b;
+}
+
+.A-silder-value {
+    width: 12%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.A-pigment-delete {
+    margin-left: 4px;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #5a4e3b;
+    box-sizing: border-box;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.A-pigment-add {
+    margin-bottom: 4px;
+    width: 100%;
+    height: 24px;
+    border: 2px solid #5a4e3b;
+    box-sizing: border-box;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.A-anntated-colors {
+    margin-top: 4.2px;
+    width: 100%;
+    height: calc(100% - 28px - 4.2px);
+    overflow-y: scroll;
+}
+
+.A-index-container {
+    width: 35px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.A-method-container {
+    margin-left: 2px;
+    width: calc(100% - 35px - 8px - 2px - 56px);
+    height: 100%;
+    display: flex;
+    align-items: center;
 }

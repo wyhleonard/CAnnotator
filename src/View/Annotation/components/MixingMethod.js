@@ -7,7 +7,7 @@ const originPigment = [['#de3e35', 0.01], ['#962c35', 0.01], ['#b04d36', 0.01], 
 
 // demo
 const pigments = [[6, 0.01], [7, 0.01], [3, 0.03]];
-const mixedPigment = [['#87c6d1', 0.02], ['#dbd6a0', 0.05]];
+const mixedPigments = [['#87c6d1', 0.02], ['#dbd6a0', 0.05]];
 const basisQuantity = 0.01;
 
 const rectSize = 22;
@@ -92,10 +92,11 @@ export const MixingMethod = () => {
                     style={{
                         width: `${rectSize}px`,
                         height: `${rectSize}px`,
-                        background: `${mixedPigment[i - 1][0]}`
+                        borderRadius: `${rectSize / 2}px`,
+                        background: `${mixedPigments[i - 1][0]}`,
                     }}
                 >
-                    <span className="Pigment-quantity-text">{Math.round(mixedPigment[i - 1][1] / basisQuantity)}</span>
+                    <span className="Pigment-quantity-text">{Math.round(mixedPigments[i - 1][1] / basisQuantity)}</span>
                 </div>)
             }
         }

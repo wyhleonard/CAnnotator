@@ -89,6 +89,7 @@
     position: absolute;
     top: 30px;
     left: 45px;
+    z-Index: 100;
 }
 
 .Space-item {

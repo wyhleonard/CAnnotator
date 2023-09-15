@@ -54,3 +54,19 @@ export function adaptTooltipPosition (hoverPosition, rectSize, pigmentNum, hover
         hoverPanelTop: hoverPanelTop,
     }
 }
+
+
+export function valuePositionWithMinMaxValues (value, list) {
+    if(list.length > 0) {
+        let min = list[0][1];
+        let max = list[0][1];
+        list.forEach(d => {
+            if(d[1] < min) min = d[1];
+            if(d[1] > max) max = d[1];
+        })
+
+        return (value - min) / (max - min);
+    } else {
+        return 0;
+    }
+}

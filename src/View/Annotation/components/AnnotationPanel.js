@@ -3,26 +3,269 @@ import "../../sharedCss.css";
 import "./AnnotationPanel.css";
 import ExtractorIcon from "../../../Icons/extractor.svg";
 import ConfirmIcon from "../../../Icons/confirm.svg";
+import DeletePigmentIcon from "../../../Icons/negative.svg";
+import AddPigmentIcon from "../../../Icons/positive.svg";
+import { valuePositionWithMinMaxValues } from "../../utils";
+import "./MixingMethod.css";
 
 const originPigment = [['#de3e35', 0.01], ['#962c35', 0.01], ['#b04d36', 0.01], ['#f1e159', 0.01], ['#ffa53c', 0.01], ['#ef9043', 0.01], ['#5d7d37', 0.01], ['#227dc1', 0.01], ['#2154ac', 0.01], ['#1a3b9f', 0.01], ['#201f29', 0.01], ['#2f3438', 0.01], ['#ebe6da', 0.01]];
+const originPigmentInDiffQuantities = [
+    [],
+    [],
+    [],
+    [['#98c2ca', 0.01], ['#97c2cb', 0.02], ['#97c2cb', 0.03], ['#96c2cc', 0.04], ['#94c2cd', 0.05], ['#90c2ce', 0.06], ['#8abecf', 0.07], ['#82bace', 0.08], ['#7ab6cd', 0.09], ['#72b2cc', 0.1], ['#60aac9', 0.12], ['#4fa2c5', 0.14], ['#429bc1', 0.16]],
+    [],
+    [],
+    [['#fcea28', 0.01], ['#faea2d', 0.02], ['#f8e935', 0.03], ['#f7e83c', 0.04], ['#f4e647', 0.05], ['#f0e252', 0.06], ['#e9dc5d', 0.07], ['#dfd263', 0.08], ['#d7c765', 0.09], ['#d2c065', 0.1], ['#ceba66', 0.12], ['#cbb866', 0.14], ['#c9b666', 0.16]],
+    [['#98c2ca', 0.01], ['#97c2cb', 0.02], ['#97c2cb', 0.03], ['#96c2cc', 0.04], ['#94c2cd', 0.05], ['#90c2ce', 0.06], ['#8abecf', 0.07], ['#82bace', 0.08], ['#7ab6cd', 0.09], ['#72b2cc', 0.1], ['#60aac9', 0.12], ['#4fa2c5', 0.14], ['#429bc1', 0.16]],
+    [],
+    [],
+    [],
+    [],
+    [],
+]
+
+const demoMixedPigmentInDiffQuantities = [
+    [['#cdc56d', 0.02], ['#cbc46d', 0.03], ['#cbc46c', 0.04], ['#ccc56b', 0.05], ['#ccc66b', 0.06], ['#cac56a', 0.07], ['#c7c36a', 0.08], ['#c3bf66', 0.09], ['#bebc64', 0.1], ['#b7b964', 0.11], ['#a2b464', 0.13], ['#8caf62', 0.15], ['#7aa95c', 0.17]],
+    [['#cdc56d', 0.02], ['#cbc46d', 0.03], ['#cbc46c', 0.04], ['#ccc56b', 0.05], ['#ccc66b', 0.06], ['#cac56a', 0.07], ['#c7c36a', 0.08], ['#c3bf66', 0.09], ['#bebc64', 0.1], ['#b7b964', 0.11], ['#a2b464', 0.13], ['#8caf62', 0.15], ['#7aa95c', 0.17]],
+    [['#cdc56d', 0.02], ['#cbc46d', 0.03], ['#cbc46c', 0.04], ['#ccc56b', 0.05], ['#ccc66b', 0.06], ['#cac56a', 0.07], ['#c7c36a', 0.08], ['#c3bf66', 0.09], ['#bebc64', 0.1], ['#b7b964', 0.11], ['#a2b464', 0.13], ['#8caf62', 0.15], ['#7aa95c', 0.17]],
+]
 
 const demoSegmentation = "/demoData/segmentations/6.png";
+const demoSliderLength = 126.33;
+const demoSilderBlockWidth = 12;
 const iconSize = 16;
+const rectSize = 22;
+const symbolGap = 4;
+const basisQuantity = 0.01;
+
+const demoAnnotations = [
+    {
+        pigments: [[6, 0.01], [7, 0.01], [3, 0.03]],
+        mixedPigments: [['#87c6d1', 0.02], ['#dbd6a0', 0.05]]
+    },
+    {
+        pigments: [[1, 0.02], [3, 0.03], [8, 0.03], [11, 0.01], [9, 0.02]],
+        mixedPigments: [['#87c6d1', 0.05], ['#dbd6a0', 0.08], ['#87c6d1', 0.05], ['#dbd6a0', 0.08]]
+    },
+    {
+        pigments: [[2, 0.02], [4, 0.03], [10, 0.03], [10, 0.03]],
+        mixedPigments: [['#87c6d1', 0.05], ['#dbd6a0', 0.08], ['#dbd6a0', 0.08]]
+    },
+    {
+        pigments: [[2, 0.02], [4, 0.03], [10, 0.03], [10, 0.03]],
+        mixedPigments: [['#87c6d1', 0.05], ['#dbd6a0', 0.08], ['#dbd6a0', 0.08]]
+    },
+]
 
 export const AnnotationPanel = () => {
 
+    // 这里的颜色可能要改成16进制存储
     const [extractedColor, setExtractedColor] = useState([255, 255, 255]);
     const [matchedColor, setMatchedColor] = useState([128, 56, 28]);
     const [currentDistance, setCurrentDistance] = useState(16.89);
+    const [mixedPigments, setMixedPigments] = useState([[6, 0.02], [7, 0.06], [3, 0.03]]);
 
-    const [mixedPigments, setMixedPigments] = useState([[6, 0.01], [7, 0.01], [3, 0.03]]);
+    // 拖拽逻辑
+    // const [isMaskDrag, setIsMaskDrag] = useState(false);
+    // const [maskMoveP, setMaskMoveP] = useState([0, 0]);
+    // 
+    // const handleDragStart = (e) => {
+    //     setIsMaskDrag(true);
+    //     setMaskMoveP([
+    //         e.clientX,
+    //         e.clientY,
+    //     ]);
+    // }
+    // const handleDragMove = (e) => {
+    //     if(isMaskDrag) {
+    //         if(e.clientX !== maskMoveP[0] || e.clientY !== maskMoveP[1]) {
+    //             setMaskMoveP([
+    //                 e.clientX,
+    //                 e.clientY
+    //             ])
+    //         }
+    //     }
+    // }
+    // const handleDragEnd = (e) => {
+    //     if(isMaskDrag) {
+    //         setIsMaskDrag(false);
+    //         setMaskMoveP([0, 0]);
+    //     }
+    // }
 
+    // items in the pigment list => 要抽象成组件，不然不好写滑动交互
     const apigmentItems = mixedPigments.map((pigment, index) => {
+
+        let silderBackground = "linear-gradient(to right,";
+        const backgroundColors = originPigmentInDiffQuantities[pigment[0]];
+        backgroundColors.forEach((color, idx) => idx !== backgroundColors.length -1 ? silderBackground += (color[0] + ",") : silderBackground += color[0] + ")")
+
+        let silderBackground2 = "linear-gradient(to right,";
+        const backgroundColors2 = demoMixedPigmentInDiffQuantities[index];
+        backgroundColors2.forEach((color, idx) => idx !== backgroundColors2.length -1 ? silderBackground2 += (color[0] + ",") : silderBackground2 += color[0] + ")")
+
+        // 根据quantity计算position TODO：根据position计算quantity
+        const displayedQuantities = originPigmentInDiffQuantities[pigment[0]];
+        const silderPositon = valuePositionWithMinMaxValues(pigment[1], displayedQuantities);
+        const finalPosition = silderPositon * demoSliderLength - demoSilderBlockWidth / 2;
+
         return <div
             key={`apigment-item-${index}`}
             className="A-pigment-item-container"
         >
-            {index}
+            <div
+                className="A-color-block"
+                style={{
+                    marginLeft: "0px",
+                    background: `${originPigment[pigment[0]][0]}`
+                }}
+            />
+            <div className="A-slider-container">
+                <div className="A-slider-item" style={{background: silderBackground}}/>
+                <div className="A-slider-item" style={{marginTop: "2px", background: silderBackground2}}/>
+                <div className="A-slider-block" 
+                    style={{
+                        left: `${finalPosition}px`,
+                    }}
+                >
+                    <div className="A-slider-icon" />
+                </div>
+            </div>
+            <div className="A-silder-value">
+                <span className="STitle-text-contrast" style={{marginLeft: "4px", fontSize: "16px"}}>{`${1.2}`}</span>
+            </div>
+            <div className="A-pigment-delete">
+                <div 
+                    className="Icon-button"
+                    style={{
+                        background: `url(${DeletePigmentIcon}) no-repeat`,
+                        backgroundSize: 'contain',
+                        width: `${iconSize}px`,
+                        height: `${iconSize}px`,
+                        cursor: 'pointer',
+                    }}
+                />
+            </div>
+        </div>
+    })
+
+    // TODO: Add pigment button 添加pigment
+    const annotationItems = demoAnnotations.map((data, index) => {
+        const pigments = data.pigments;
+        const mixedPigments = data.mixedPigments;
+
+        // copy from MixingMethod.js
+        const itemList = [];
+        for(let i = 0; i < pigments.length; i++) {
+            if(i === 0) {
+                itemList.push(<div
+                    key={`pigment-item-${i}`} 
+                    className="Pigment-item-container"
+                    style={{
+                        marginTop: "4px",
+                        width: `${rectSize}px`,
+                        height: `${rectSize}px`,
+                        background: `${originPigment[pigments[i][0]][0]}`
+                    }}
+                >
+                    <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
+                </div>)
+            } else {
+                // +
+                itemList.push(<div
+                    key={`symbol(+)-${i}`} 
+                    className="Pigment-symbol-container"
+                    style={{
+                        width: `${rectSize + symbolGap}px`,
+                        height: `${rectSize}px`,
+                    }}
+                >
+                    <span className="STitle-text-contrast" 
+                        style={{
+                            marginLeft: "0px", 
+                            fontSize: "24px",
+                            fontWeight: "600"
+                        }}>
+                            {"+"}
+                    </span>
+                </div>)
+                
+                // pigment
+                itemList.push(<div
+                    key={`pigment-item-${i}`} 
+                    className="Pigment-item-container"
+                    style={{
+                        marginTop: "4px",
+                        width: `${rectSize}px`,
+                        height: `${rectSize}px`,
+                        background: `${originPigment[pigments[i][0]][0]}`
+                    }}
+                >
+                    <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
+                </div>)
+
+                // =
+                itemList.push(<div
+                    key={`symbol(=)-${i}`} 
+                    className="Pigment-symbol-container"
+                    style={{
+                        width: `${rectSize + symbolGap}px`,
+                        height: `${rectSize}px`,
+                    }}
+                >
+                    <span className="STitle-text-contrast" 
+                        style={{
+                            marginLeft: "0px", 
+                            fontSize: "24px",
+                            fontWeight: "600"
+                        }}>
+                            {"="}
+                    </span>
+                </div>)
+
+                // mixed pigment
+                itemList.push(<div
+                    key={`pigment-mixed-${i}`} 
+                    className="Pigment-item-container"
+                    style={{
+                        marginTop: "4px",
+                        width: `${rectSize}px`,
+                        height: `${rectSize}px`,
+                        borderRadius: `${rectSize / 2}px`,
+                        background: `${mixedPigments[i - 1][0]}`,
+                    }}
+                >
+                    <span className="Pigment-quantity-text">{Math.round(mixedPigments[i - 1][1] / basisQuantity)}</span>
+                </div>)
+            }
+        }
+
+        return <div
+            key={`annotation-item-${index}`} 
+            className="A-text-container" 
+            style={{
+                marginBottom: "3px",
+            }}
+        >
+            <div className="A-index-container">
+                <span className="STitle-text-contrast" style={{fontSize: "16px"}}>{`(${index + 1})`}</span>
+            </div>
+            <div className="A-method-container">
+                {/* {itemList} */}
+                {itemList[itemList.length - 1]}
+                <span 
+                    className="STitle-text-contrast" 
+                    style={{
+                        margin: "0px 6px",
+                        fontSize: "24px",
+                        fontWeight: "600"
+                    }}
+                >
+                    :
+                </span>
+                {itemList}
+            </div>
         </div>
     })
 
@@ -98,11 +341,18 @@ export const AnnotationPanel = () => {
                         </div>
                     </div>
                     <div className="A-pigment-list"> 
-                        <div style={{
-                            width: "100%",
-                            height: "100%",
-                        }}>
-                            {apigmentItems}
+                        {apigmentItems}
+                        <div className="A-pigment-add">
+                            <div 
+                                className="Icon-button"
+                                style={{
+                                    background: `url(${AddPigmentIcon}) no-repeat`,
+                                    backgroundSize: 'contain',
+                                    width: `${iconSize}px`,
+                                    height: `${iconSize}px`,
+                                    cursor: 'pointer',
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
@@ -110,7 +360,26 @@ export const AnnotationPanel = () => {
         </div>
         <div className="Annotation-panel-secondrow">
             <div className="A-list-container">
-
+                <div className="A-text-container" style={{marginTop: "0px"}}>
+                    <span className="STitle-text-contrast" style={{fontSize: "16px"}}>
+                        Current Color Annotations:
+                    </span>
+                    <div className="A-button-container">
+                        <div 
+                            className="Icon-button"
+                            style={{
+                                background: `url(${ConfirmIcon}) no-repeat`,
+                                backgroundSize: 'contain',
+                                width: `${iconSize}px`,
+                                height: `${iconSize}px`,
+                                cursor: 'pointer',
+                            }}
+                        />
+                    </div>
+                </div>
+                <div className="A-anntated-colors">
+                    {annotationItems}
+                </div>
             </div>
         </div>
     </div>
