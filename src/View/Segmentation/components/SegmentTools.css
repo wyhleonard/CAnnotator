@@ -1,0 +1,29 @@
+.Toolbar-container {
+    position: absolute;
+    z-index: 70;
+    background: #b09872;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Icon-container {
+    border-width: 3px;
+    border-color: #5a4e3b; 
+    border-radius: 8px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Icon-container.active {
+    background-color: #fff6dc;
+}
+
+.Icon-container.disable {
+    border-style: dashed !important;
+    pointer-events: none;
+}

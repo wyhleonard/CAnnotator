@@ -1,0 +1,86 @@
+.View-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    overflow: hidden;
+}
+
+.Drawer {
+    width: 336px;
+    height: 100%;
+    background-color: #b09872;
+    border-width: 0px 4px 0px 0px;
+    border-style: solid;
+    border-color: #5a4e3b;
+    border-radius: 8px 0px 0px 8px;
+    position: absolute;
+    left: 0px;
+    z-index: 100;
+    transition: left 0.6s;
+    display: flex;
+}
+
+.Drawer-hidden {
+    width: 336px;
+    height: 100%;
+    background-color: #b09872;
+    border-width: 0px 4px 0px 0px;
+    border-style: solid;
+    border-color: #5a4e3b;
+    border-radius: 8px 0px 0px 8px;
+    position: absolute;
+    left: -308px;
+    z-index: 100;
+    transition: left 0.6s;
+    display: flex;
+}
+
+.Drawer-content {
+    width: calc(100% - 28px);
+    height: 100%;
+}
+
+.Drawer-openIcon {
+    width: 28px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Meta-container {
+    margin: 8px 0px 8px 8px;
+    width: calc(100% - 8px);
+    height: calc(32% - 16px);
+}
+
+.Description-container {
+    margin: 8px 0px 0px 8px;
+    width: calc(100% - 8px);
+    height: calc(68% - 8px);
+}
+
+.Painting-board-contaienr {
+    margin: 8px 0px 8px 28px;
+    width: calc(85% - 28px);
+    height: calc(100% - 16px);
+    background: #fff6dc;
+}
+
+.SandA-container{
+    margin: 8px;
+    width: calc(15% - 16px);
+    height: calc(100% - 16px);
+}
+
+.Segmentations-container {
+    width: 100%;
+    height: 71%;
+}
+
+.Annotations-container {
+    margin-top: 8px;
+    width: 100%;
+    height: calc(29% - 8px);
+}
