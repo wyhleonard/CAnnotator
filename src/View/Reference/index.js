@@ -79,11 +79,14 @@ export const ReferenceView = ({
     const [blockSize, setBlockSize] = useState(0);
     const [dots, setDots] = useState([[0, 0]]);
     const [spot, setSpot] = useState(null);
+    const [isFilter, setIsFilter] = useState(false);
+    const [selectedImg, setSelectedImg] = useState(-1);
     const sortedImages = filteredImages.toSorted((a, b) => b.marked - a.marked);
     const chosenList = Array.from(chosenStickers);
+    console.log(selectedImg);
 
     // console.log(filteredImages.map(item =>
-    //   imageContext[blobMap[item.contentUrl]]?.stickers[3].clicks
+    //   imageContext[blobMap[item.contentUrl]]?.stickers[7].clicks
     // ));
 
     useEffect(() => {
@@ -146,6 +149,11 @@ export const ReferenceView = ({
         filteredImages.forEach(item => item.marked == 1 && (item.marked = 0));
         images.forEach(i => filteredImages[i].marked == 0 && (filteredImages[i].marked = 1));
         setFilteredImages([...filteredImages]);
+        if (images.length) {
+            setIsFilter(true);
+        } else {
+            setIsFilter(false);
+        }
     };
 
     const doCrop = async (data) => {
@@ -312,7 +320,7 @@ export const ReferenceView = ({
             }}
         >
             <img className="Segmentation-image-container" src={stickers[el].toDataURL()} alt="" onClick={() => handleScatter(el)} />
-            <div className="Segmentation-color-list">
+            <div className="Segmentation-color-list" onWheel={(e) => { e.stopPropagation() }}>
                 {
                     Object.keys(colors[el]).toSorted((a, b) => colors[el][b] - colors[el][a]).map((item) => {
                         const c = d3.color(item);
@@ -361,7 +369,7 @@ export const ReferenceView = ({
                             style={{ ...iconStyle(LeftIcon), transform: "rotateY(180deg)" }}
                         />
                     </div>
-                    <div className="Reference-image-confirm">
+                    <div className={`Reference-image-confirm ${selectedImg === -1 ? '' : 'active'}`}>
                         <div
                             className="Icon-button"
                             style={iconStyle(ConfirmIcon)}
@@ -391,15 +399,13 @@ export const ReferenceView = ({
                 <div className="Reference-image-rows" id="segmentRow" onWheel={handleSegmentScrollFirstCol}>
                     {sortedImages.length ? sortedImages.map((item, r) => (
                         <div
-                            className="Reference-image-appendrow"
+                            className={`Reference-image-appendrow ${sortedImages[r].marked == -1 || (isFilter && sortedImages[r].marked == 0) ? 'miss' : ''}`}
                             key={`Reference-image-${r}`}
                         >
                             {
                                 <>
-                                    <div className={`Reference-image-container ${sortedImages[r].marked == 1 ? 'active' :
-                                        (sortedImages[r].marked == 0 ? 'marked' : '')
-                                        } `} ref={blockRef}>
-                                        <div className="Reference-image">
+                                    <div className={`Reference-image-container ${r === selectedImg ? 'active' : ''}`} ref={blockRef}>
+                                        <div className="Reference-image" onClick={() => { setSelectedImg(selectedImg === r ? -1 : r) }}>
                                             <img
                                                 src={item.thumbnailUrl}
                                                 alt=""
@@ -419,10 +425,13 @@ export const ReferenceView = ({
                                                     }}
                                                 >
                                                     <div>
-                                                        <img
-                                                            alt=""
-                                                            src={imageContext[blobMap[item.contentUrl]]["stickers"][el]["sticker"].toDataURL()}
-                                                        />
+                                                        {
+                                                            imageContext[blobMap[item.contentUrl]]["stickers"][el]["sticker"] ?
+                                                                <img
+                                                                    alt=""
+                                                                    src={imageContext[blobMap[item.contentUrl]]["stickers"][el]["sticker"].toDataURL()}
+                                                                /> : <></>
+                                                        }
                                                     </div>
 
                                                     <div className='R-segmentation-mask'>
@@ -431,7 +440,8 @@ export const ReferenceView = ({
                                                             setActiveSticker(el);
                                                             handleMaskEdit(blobMap[item.contentUrl], el)
                                                         }}>
-                                                            <svg t="1692934799400" className="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4052" width="60" height="60"><path d="M511.582491 63.413262C265.134543 63.413262 64.62588 263.921925 64.62588 510.369873s200.508663 446.957635 446.957635 446.957635 446.957635-200.508663 446.957635-446.957635S758.031463 63.413262 511.582491 63.413262zM509.001713 751.859903c-98.517781 0-182.467775-62.623269-214.771505-150.056598l0.327458-0.134053c-2.007727-4.036943-3.38305-8.422833-3.38305-13.237489 0-16.647145 13.494339-30.142507 30.142507-30.142507 13.389962 0 24.358781 8.877181 28.2893 20.955264l0.422625-0.172939c23.269983 65.442478 85.645612 112.503307 158.972665 112.503307 93.106538 0 168.845523-75.738985 168.845523-168.845523s-75.738985-168.845523-168.845523-168.845523c-20.432355 0-39.874149 3.980661-58.013275 10.66899l21.248953 40.742936c2.486634 2.677992 4.0175 6.2831 4.0175 10.243295 0 8.417717-8.404414 14.921851-15.365966 15.07023-0.102331 0-0.206708 0-0.309038 0-0.220011 0-0.427742 0-0.647753-0.013303l-150.579507-6.463202c-5.372358-0.234337-10.229992-3.310396-12.716626-8.093329-2.486634-4.76963-2.236947-10.509355 0.647753-15.055904l80.890308-127.179564c2.8847-4.533246 8.006348-7.151887 13.365402-6.960529 5.372358 0.234337 10.227945 3.312442 12.71458 8.095375l18.580171 35.625382c26.629497-10.855232 55.683207-16.963347 86.168522-16.963347 126.338407 0 229.130537 102.791108 229.130537 229.130537S635.340119 751.859903 509.001713 751.859903z" fill="#594d3a" p-id="4053"></path></svg>
+                                                            <svg t="1694931870228" className="icon" viewBox="0 0 1088 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4015" width="50" height="50"><path d="M576 0a511.68 511.68 0 0 0-448 264.32V160a32 32 0 0 0-32-32h-64a32 32 0 0 0-32 32v320a32 32 0 0 0 32 32h320a32 32 0 0 0 32-32v-64a32 32 0 0 0-32-32H214.336A383.744 383.744 0 0 1 960 512a384 384 0 0 1-384 384c-166.976 0-307.584-107.2-360.512-256H80.768c56.896 220.736 256.704 384 495.232 384A512 512 0 0 0 576 0z" fill="#594d3a" p-id="4016"></path>
+                                                            </svg>
                                                         </button>
                                                     </div>
 

@@ -4,8 +4,8 @@
     display: flex;
 }
 
-.Segment-item-container .active {
-    border: 3px dashed #4e4230;
+.Segment-item-image.active {
+    border: 3px solid #5a4e3b;
 }
 
 .Segment-item-image {
@@ -16,6 +16,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    border: 3px solid #fff6dc;
 }
 
 .Segment-item-histogram {

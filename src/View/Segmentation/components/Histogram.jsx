@@ -18,7 +18,7 @@ import AppContext from "../../hooks/createContext";
 //     }
 // ];
 
-const HEIGHT = 55;
+const HEIGHT = 50;
 
 function Histogram(props) {
     const {
@@ -58,7 +58,7 @@ function Histogram(props) {
     const yScale = d3
         .scaleLinear()
         .domain([0, maxBarHeight + 0.5])
-        .range([0, chartHeight]); // 将范围反转，使x轴朝下
+        .range([10, chartHeight]); // 将范围反转，使x轴朝下
 
     return (
         <svg width={chartWidth} height={chartHeight}>

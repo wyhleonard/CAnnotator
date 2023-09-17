@@ -74,7 +74,7 @@ export const SegmentationView = ({
     const [colorHandle, setColorHandle] = useState(false);
     const [callCount, setCallCount] = useState(0);
     const [currentScale, setCurrentScale] = useState(1);
-
+    
     if (image && segUrl === "") {
         setSegUrl(image.src);
     }
@@ -245,7 +245,7 @@ export const SegmentationView = ({
             handleSaveInteraction(addedImageContext["stickers"], activeSticker);
             addedImageContext["stickers"][activeSticker]["sticker"] = newStickers[0];
             setColorHandle(false);
-            getColorsCounts(addedImageContext["stickers"][activeSticker], newStickers[0].toDataURL(), 20);
+            newStickers[0] && getColorsCounts(addedImageContext["stickers"][activeSticker], newStickers[0].toDataURL(), 20);
             handleMaskEdit(segUrl, activeSticker);
         } else {
             setStickers([...(stickers || []), ...(newStickers || [])]);

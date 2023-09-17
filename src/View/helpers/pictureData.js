@@ -1,3 +1,5 @@
+const reorderSeq = new Set([0, 8, 13, 18, 19, 21, 24, 37, 44]);
+
 const searchedPictureData = [
     // 0
     {
@@ -750,7 +752,7 @@ const searchedPictureData = [
     // }
 ];
 
-const localPictureData = [
+let localPictureData = [
 
 ];
 
@@ -760,5 +762,7 @@ for (let i = 1; i <= 50; ++i) {
         "contentUrl": '/demoData/references/' + i + '.jpg',
     });
 }
+
+localPictureData = [].concat(localPictureData.filter((item, i) => reorderSeq.has(i))).concat(localPictureData.filter((item, i) => !(reorderSeq.has(i))))
 
 export { localPictureData, searchedPictureData };

@@ -90,6 +90,10 @@
     justify-content: center;
 }
 
+.Reference-image-confirm.active {
+    border-style: solid;
+}
+
 .Reference-image-list {
     width: 100%;
     height: calc(100% - 80px);
@@ -127,6 +131,8 @@
 
 .Reference-image-container {
     width: calc(25% - 6px);
+    background: #fff6dc;
+    border: 3px solid #fff6dc;
     height: 100%;
     border-radius: 8px;
     box-sizing: border-box;
@@ -145,12 +151,28 @@
 .Reference-image {
     width: calc(100% - 12px);
     height: calc(100% - 12px);
-    padding: 5px;
     border-radius: 6px;
     background: #fff6dc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 0;
+    text-align: center;
+    cursor: pointer;
+}
+
+.Reference-image:after {
+    content: '';
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+  }
+
+
+
+.Reference-image img{
+    height: 100%;
+    object-fit: cover;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 12px;
 }
 
 .Reference-image-container.marked {
@@ -159,6 +181,10 @@
 
 .Reference-image-container.active {
     border: 3px solid #594d3a;
+}
+
+.Reference-image-appendrow.miss {
+    display: none;
 }
 
 .Reference-segmentation-list {
@@ -188,12 +214,35 @@
     height: 100%;
     padding: 5px;
     background: #fff6dc;
-    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 6px;
     position: relative;
     overflow: hidden;
+}
+
+.R-segmentation-image div {
+    width: 100%;
+    height: 100%;
+    font-size: 0;
+    text-align: center;
+}
+.R-segmentation-image div:after {
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+
+.R-segmentation-image img {
+    margin: auto auto;
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 12px;
 }
 
 .R-segmentation-image:hover .R-segmentation-mask {
@@ -212,6 +261,16 @@
     z-index: 1;
 }
 
+.R-segmentation-mask button {
+    height: 60px;
+    width: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    background-color: #fff6dc;
+}
+
 .Segmentation-image-container {
     width: 60%;
     height: 60%;
@@ -223,7 +282,7 @@
     width: calc(100% - 12px);
     height: 18px;
     position: absolute;
-    z-Inedx: 50;
+    z-index: 1;
     bottom: 6px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -234,6 +293,7 @@
     height: 18px;
     width: 18px;
     margin-right: 2px;
+    border-radius: 5px;
     display: inline-block;
     cursor: pointer;
 }
