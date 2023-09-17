@@ -8,7 +8,7 @@ const originPigment = [['#de3e35', 0.01], ['#962c35', 0.01], ['#b04d36', 0.01], 
 // demo
 
 // const pigments = [[6, 0.01], [7, 0.01], [3, 0.03]];
-// const mixedPigment = [['#87c6d1', 0.02], ['#dbd6a0', 0.05]];
+// const mixedPigments = [['#87c6d1', 0.02], ['#dbd6a0', 0.05]];
 const basisQuantity = 0.01;
 
 const rectSize = 22;
@@ -17,7 +17,8 @@ const iconSize = 15;
 
 export const MixingMethod = ({
     pigments,
-    mixedPigment
+    mixedPigments,
+    pigmentChanged
 }) => {
 
     const pigmentItems = useMemo(() => {
@@ -30,7 +31,8 @@ export const MixingMethod = ({
                     style={{
                         width: `${rectSize}px`,
                         height: `${rectSize}px`,
-                        background: `${originPigment[pigments[i][0]][0]}`
+                        // background: `${originPigment[pigments[i][0]][0]}`
+                        background: `${pigments[i][0]}`
                     }}
                 >
                     <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
@@ -63,7 +65,8 @@ export const MixingMethod = ({
                     style={{
                         width: `${rectSize}px`,
                         height: `${rectSize}px`,
-                        background: `${originPigment[pigments[i][0]][0]}`
+                        // background: `${originPigment[pigments[i][0]][0]}`
+                        background: `${pigments[i][0]}`
                     }}
                 >
                     <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
@@ -106,7 +109,7 @@ export const MixingMethod = ({
         }
 
         return itemList;
-    }, []); // 后面需要根据pigments和mixedPigment数组更新的
+    }, [pigmentChanged]); // 后面需要根据pigments和mixedPigment数组更新的
 
     return <div 
         className="SDefault-container"

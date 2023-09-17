@@ -218,7 +218,7 @@ hidden_size2 = 80
 hidden_size3 = 60
 output_size = 41
 model = Model(input_size, hidden_size1, hidden_size2, hidden_size3, output_size).to(device)
-with open('model/model_lr=1e-4', 'rb') as f:
+with open('model/model', 'rb') as f:
     model.load_state_dict(torch.load(f))
 # print(model)
 
@@ -271,15 +271,6 @@ paper_sd = hex_to_sd('#FFFAF0')
 
 
 def color_mixing(c1, c2, q1, q2):
-    # c1 = hex_to_sd(c1)
-    # c2 = hex_to_sd(c2)
-    # input = []
-    # for i in range(380, 790, 10):
-    #     input.append(c1[i])
-    # input.append(q1)
-    # for i in range(380, 790, 10):
-    #     input.append(c2[i])
-    # input.append(q2)
     input = np.concatenate((c1, np.array([q1]), c2, np.array([q2])))
     input = torch.tensor(input, dtype=torch.float32).to(device).unsqueeze(0)
     output = model(input).squeeze().detach().cpu().numpy()
@@ -288,15 +279,6 @@ def color_mixing(c1, c2, q1, q2):
 
 
 def cal_color_gradients(selected_color, quantity):
-    # color1 = selected_color
-    # color2 = selected_color
-    # gradients = []
-    # for i in range(len(concentrations)):
-    #     c = concentrations[i]
-    #     if c in target_concentrations:
-    #         gradients.append(color2)
-    #     output = color_mixing(color1, color2, 0.01, c)
-    #     color2 = output
     gradients = []
     selected_color = hex_to_sd(selected_color)
     if quantity <= 7:
@@ -388,9 +370,10 @@ async def gen_matrix(request: Request):
     global options
     global mat_lab_colors
 
-    mat_colors = mat_colors[:matrix_num+1]
-    options = options[:matrix_num+1]
-    mat_lab_colors = mat_lab_colors[:matrix_num+1]
+    if matrix_num >= 0:
+        mat_colors = mat_colors[:matrix_num+1]
+        options = options[:matrix_num+1]
+        mat_lab_colors = mat_lab_colors[:matrix_num+1]
 
     row, col = selected_coord
 
@@ -402,37 +385,16 @@ async def gen_matrix(request: Request):
         q2 = [1 for i in range(len(row_colors))]
 
     elif option == 'q':
-        quantity1 = math.round(mat_colors[-1]['col'][col][1] * 100)
-        quantity2 = math.round(mat_colors[-1]['row'][row][1] * 100)
-        # quantity1 = 0
-        # quantity2 = 0
-        # if options[-1] == 'i':
-        #     quantity1 = 1
-        #     quantity2 = 1
-        # elif options[-1] == 'q':
-        #     quantity1 = target_concentrations[selected_coord['col']-1]
-        #     quantity2 = target_concentrations[selected_coord['row']-1]
-        # elif options[-1] == 'm':
-        #     quantity1 = 1
-        #     quantity2 = target_concentrations[selected_coord['row']-1]
+        quantity1 = round(mat_colors[-1]['col'][col][1] * 100)
+        quantity2 = round(mat_colors[-1]['row'][row][1] * 100)
         row_colors, q1 = cal_color_gradients(mat_colors[-1]['col'][col][0], quantity1)
         col_colors, q2 = cal_color_gradients(mat_colors[-1]['row'][row][0], quantity2)
-        # q1 = target_concentrations
-        # q2 = target_concentrations
 
     elif option == 'm':
-        quantity = math.round(mat_colors[-1]['mixed'][row][col][1])
-        # quantity = 0
-        # if options[-1] == 'i':
-        #     quantity = 2
-        # elif options[-1] == 'q':
-        #     quantity = target_concentrations[selected_coord['col']-1] + target_concentrations[selected_coord['row']-1]
-        # elif options[-1] == 'm':
-        #     quantity = 1 + target_concentrations[selected_coord['row']-1]
+        quantity = round(mat_colors[-1]['mixed'][row][col][1] * 100)
         row_colors = base_colors
         col_colors, q2 = cal_color_gradients(mat_colors[-1]['mixed'][row][col][0], quantity)
         q1 = [1 for i in range(len(row_colors))]
-        # q2 = target_concentrations
 
     colors, colors_with_dist = construct_matrix(row_colors, col_colors, q1, q2, target_color)
     
@@ -476,11 +438,11 @@ async def gen_matrix(request: Request):
     #     json.dump(matrix, file)
     matrix = {'row': [], 'col': [], 'mixed': []}
     for i in range(1, 14):
-        matrix['row'].append([colors[i], 0.01])
-        matrix['col'].append([colors[i*14], target_concentrations[i-1]])
+        matrix['row'].append([colors[i], q1[i-1] / 100])
+        matrix['col'].append([colors[i*14], q2[i-1] / 100])
         mixed_row = []
         for j in range(1, 14):
-            mixed_row.append([colors[i*14+j], target_concentrations[i-1] + 0.01])
+            mixed_row.append([colors[i*14+j], (q1[j-1] + q2[i-1]) / 100])
         matrix['mixed'].append(mixed_row)
     colors = matrix
     matrix = {'lab_space': [], 'target_color': lab_colors[-1]}
@@ -491,7 +453,7 @@ async def gen_matrix(request: Request):
         matrix['lab_space'].append(matrix_row)
     lab_colors = matrix
     mat_colors.append(colors)
-    print(len(mat_colors))
+    print('matrix num:', len(mat_colors))
     mat_lab_colors.append(lab_colors)
 
     return {'id': len(mat_colors), 'colors': colors, 'colors_with_dist': colors_with_dist, 'lab_colors': lab_colors}

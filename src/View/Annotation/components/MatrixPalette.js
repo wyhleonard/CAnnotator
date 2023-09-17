@@ -52,16 +52,12 @@ const mixtureResults = [
 export const MatrixPalette = ({
     matrixData,
     setMatrixData,
-    coord,
-    setCoord,
-    matrixNum,
-    setMatrixNum,
-    genMatrix,
-    setGenMatrix,
+    pigmentChanged,
+    setPigmentChanged,
     pigments,
     setPigments,
-    mixedPigment,
-    setMixedPigment
+    mixedPigments,
+    setMixedPigments
 }) => {
 
     // const [matrixData, setMatrixData] = useState([
@@ -88,6 +84,7 @@ export const MatrixPalette = ({
     
     const [focusStep, setFocusStep] = useState(0);
     const [clickPosition, setClickPosition] = useState([[-1, -1]]);
+    const [genMatrix, setGenMatrix] = useState(['i'])
 
     // 跳转距离直接hardcord吧，这样最准确
     const stepSize = 287.15 + 8;
@@ -95,59 +92,94 @@ export const MatrixPalette = ({
     const handleActionConduction = (actionType, hoverPosition, index) => {
         const newClickPosition = JSON.parse(JSON.stringify(clickPosition));
         newClickPosition[index] = hoverPosition;
-        setCoord(hoverPosition)
-        setMatrixNum(index)
-        row = hoverPosition[0]
-        col = hoverPosition[1]
+
+        let row = hoverPosition[0]
+        let col = hoverPosition[1]
+        // redo mixing
         if(index < matrixData.length - 1) {
             setMatrixData(current => current.slice(0, index + 1))
-            const filteredArray = genMatrix.slice(0, index + 1).filter((element) => element === 'm');
+            let tmp = genMatrix.slice(0, index + 1)
+            const filteredArray = tmp.filter((element) => element === 'm');
             const mixedCnt = filteredArray.length;
-            if(mixedCnt >= mixedPigment.length) {
-                setPigments(current => [...current, [col, 0.01]])
-                setMixedPigment(current => [...current, matrixData[index]['mixed'][row][col]])
+            if(mixedCnt < mixedPigments.length - 1) {
+                setPigments(current => current.slice(0, mixedCnt + 2))
+                setMixedPigments(current => current.slice(0, mixedCnt + 1))
+                setPigmentChanged(current => !current)
             }
         }
         if(index === 0) {
-            setPigments([[col, 0.01], [row, 0.01]])
-            setMixedPigment([matrixData[index]['mixed'][row][col]])
+            setPigments([matrixData[index]['col'][row], matrixData[index]['row'][col]])
+            setMixedPigments([matrixData[index]['mixed'][row][col]])
+            setPigmentChanged(current => !current)
         }
         else {
             const filteredArray = genMatrix.filter((element) => element === 'm');
             const mixedCnt = filteredArray.length;
             // adjust mixing
-            if(mixedCnt >= mixedPigment.length) {
-                setPigments(current => [...current, [col, 0.01]])
-                setMixedPigment(current => [...current, matrixData[index]['mixed'][row][col]])
+            if(mixedCnt >= mixedPigments.length) {
+                setPigments(current => [...current, matrixData[index]['row'][col]])
+                setMixedPigments(current => [...(current.slice(0, current.length - 1)), matrixData[index]['col'][row], matrixData[index]['mixed'][row][col]])
+                setPigmentChanged(current => !current)
             }
             // adjust quantity just after initial case
-            else if(mixedPigment.length === 1) {
-                setPigments(current => [[current[0][0], matrixData[index]['col'][col][1]], [current[1][0], matrixData[index]['row'][row][1]]])
-                setMixedPigment([matrixData[index]['mixed'][row][col]])
+            else if(mixedPigments.length === 1) {
+                setPigments([matrixData[index]['col'][row], matrixData[index]['row'][col]])
+                setMixedPigments([matrixData[index]['mixed'][row][col]])
+                setPigmentChanged(current => !current)
             }
             // adjust quantity in other cases
             else {
-                setPigments(current => [...(current.slice(0, current.length - 1)), [current[current.length-1][0], matrixData[index]['col'][col][1]]])
-                setMixedPigment(current => [...(current.slice(0, current.length - 2)), matrixData[index]['row'][row], matrixData[index]['mixed'][row][col]])
+                setPigments(current => [...(current.slice(0, current.length - 1)), matrixData[index]['col'][row]])
+                setMixedPigments(current => [...(current.slice(0, current.length - 2)), matrixData[index]['row'][col], matrixData[index]['mixed'][row][col]])
+                setPigmentChanged(current => !current)
             }
-            
         }
         
-
+        
         // TODO:这里分几种情况去给出逻辑: 1) 新的matrix添加至末尾；2）修改中间的matrix（未实现）
         
         // add matrix data to the list: actionType = 0, 1, 2并不好，可以改成语义"confirm", "quantity", "mixture"
-        if(actionType === 1) {
+        if(actionType === 0) {
+            // ??
+        } else if(actionType === 1) {
             // matrixData.push(quantityResults[0]);
-            setGenMatrix(current => [...current, 'q'])
+            genMatrix.push('q')
+            setGenMatrix(genMatrix)
+            let body = { option: 'q', target_color: '#22ADC1', selected_coord: hoverPosition, matrix_num: index }
+            fetch("http://localhost:8000/gen_matrix", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            })
+            .then(response => response.json())
+            .then(data => {
+                setMatrixData(current => [...current, data.colors])
+            })
+            .catch(error => console.error("Error fetching data:", error));
         } else if (actionType === 2) {
             // matrixData.push(mixtureResults[0]);
-            setGenMatrix(current => [...current, 'm'])
+            genMatrix.push('m')
+            setGenMatrix(genMatrix)
+            let body = { option: 'm', target_color: '#22ADC1', selected_coord: hoverPosition, matrix_num: index }
+            fetch("http://localhost:8000/gen_matrix", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            })
+            .then(response => response.json())
+            .then(data => {
+                setMatrixData(current => [...current, data.colors])
+            })
+            .catch(error => console.error("Error fetching data:", error));
         }
 
         if(actionType === 1 || actionType === 2) {
             newClickPosition.push([-1, -1]);
-            setMatrixData(JSON.parse(JSON.stringify(matrixData)));
+            // setMatrixData(JSON.parse(JSON.stringify(matrixData)));
             setFocusStep(matrixData.length - 2);
         }
         setClickPosition(newClickPosition);

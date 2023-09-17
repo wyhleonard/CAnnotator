@@ -20,13 +20,11 @@ export const AnnotationView = () => {
     const [selectedSpace, setSelectSpace] = useState(0);
 
     const [matrices, setMatrices] = useState([])
-    const [coord, setCoord] = useState([0, 0])
-    const [matrixNum, setMatrixNum] = useState(0)
-    const [genMatrix, setGenMatrix] = useState([])
     const [pigments, setPigments] = useState([])
-    const [mixedPigment, setMixedPigment] = useState([])
+    const [mixedPigments, setMixedPigments] = useState([])
+    const [pigmentChanged, setPigmentChanged] = useState(true)
     // const concentrations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16]
-    // const [targetColor, setTargetColor] = useState(null)
+    const [targetColor, setTargetColor] = useState('#22ADC1')
     // const [matrices, setMatrices] = useState([])
     // const [distMatrices, setDistMatrices] = useState([])
     // const [coord, setCoord] = useState({row: 0, col: 0})
@@ -50,44 +48,44 @@ export const AnnotationView = () => {
     // const [resultSeq, setResultSeq] = useState([])
 
     // update matrix
-    useEffect(() => {
-        // console.log('selection: ', coord, genMatrix)
-        if(targetColor) {
-            // let last = genMatrix.length - 1
-            // if(genMatrix[last].option === 'q') {
-            //     setRecordSeq(current => [...current, {color: {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: 1}, operator: '>'}])
-            //     setLastConcentration(1)
-            //     // recordSeq[recordSeq.length-1] = {color: {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: 1}, operator: '>'}
-            // }
-            // else if(genMatrix[last].option === 'm') {
-            //     setRecordSeq(current => [...current, {color: [{rgb: '#FFFFFF', quantity: 1}, {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: lastConcentration+1}], operator: '+'}])
-            //     setLastConcentration(current => current + 1)
-            //     // recordSeq[recordSeq.length-1] = {color: [{rgb: matrices[last].colors[coord.col], quantity: concentrations[coord.col-1]}, {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: 1}], operator: '+'}
-            // }
-            let body = { option: genMatrix[last].option, target_color: targetColor, selected_coord: coord, matrix_num: matrixNum }
-            fetch("http://localhost:8000/gen_matrix", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(body),
-            })
-            .then(response => response.json())
-            .then(data => {
-                setMatrices(current => [...current, data.colors])
-                // setIdx(current => current + 1)
-                // setDistMatrices(current => [...current, data.colors_with_dist])
-                // setScatterSeq(current => [...current, data.lab_colors])
-                // setScatterIndex(current => current + 1)
-                })
-                .catch(error => console.error("Error fetching data:", error));
-        }
-    }, [genMatrix])
+    // useEffect(() => {
+    //     // console.log('selection: ', coord, genMatrix)
+    //     if(targetColor) {
+    //         let last = genMatrix.length - 1
+    //         // if(genMatrix[last].option === 'q') {
+    //         //     setRecordSeq(current => [...current, {color: {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: 1}, operator: '>'}])
+    //         //     setLastConcentration(1)
+    //         //     // recordSeq[recordSeq.length-1] = {color: {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: 1}, operator: '>'}
+    //         // }
+    //         // else if(genMatrix[last].option === 'm') {
+    //         //     setRecordSeq(current => [...current, {color: [{rgb: '#FFFFFF', quantity: 1}, {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: lastConcentration+1}], operator: '+'}])
+    //         //     setLastConcentration(current => current + 1)
+    //         //     // recordSeq[recordSeq.length-1] = {color: [{rgb: matrices[last].colors[coord.col], quantity: concentrations[coord.col-1]}, {rgb: matrices[last].colors[coord.row*gridSize+coord.col], quantity: 1}], operator: '+'}
+    //         // }
+    //         let body = { option: genMatrix[last], target_color: targetColor, selected_coord: coord, matrix_num: matrixNum }
+    //         fetch("http://localhost:8000/gen_matrix", {
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //             },
+    //             body: JSON.stringify(body),
+    //         })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             setMatrices(current => [...current, data.colors])
+    //             // setIdx(current => current + 1)
+    //             // setDistMatrices(current => [...current, data.colors_with_dist])
+    //             // setScatterSeq(current => [...current, data.lab_colors])
+    //             // setScatterIndex(current => current + 1)
+    //             })
+    //             .catch(error => console.error("Error fetching data:", error));
+    //     }
+    // }, [genMatrix])
 
     // initialize matrix
     useEffect(() => {
         if(targetColor) {
-            let body = { option: 'i', target_color: targetColor, selected_coord: coord, matrix_num: matrixNum }
+            let body = { option: 'i', target_color: targetColor, selected_coord: [0, 0], matrix_num: -1 }
             fetch("http://localhost:8000/gen_matrix", {
             method: "POST",
             headers: {
@@ -205,13 +203,11 @@ export const AnnotationView = () => {
         </div>
         <div className="Annotation-mixing-container">
             <div className="MatrixSpace-title-container">
-                <MixingMethod pigments={pigments} mixedPigment={mixedPigment}/>
+                <MixingMethod pigments={pigments} mixedPigments={mixedPigments} pigmentChanged={pigmentChanged}/>
             </div>
             <div className="MatrixSpace-display-container">
-                <MatrixPalette matrixData={matrices} setMatrixData={setMatrices}
-                coord={coord} setCoord={setCoord} matrixNum={matrixNum} setMatrixNum={setMatrixNum}
-                genMatrix={genMatrix} setGenMatrix={setGenMatrix}
-                pigments={pigments} setPigments={setPigments} mixedPigment={mixedPigment} setMixedPigment={setMixedPigment}/>
+                <MatrixPalette matrixData={matrices} setMatrixData={setMatrices} pigmentChanged={pigmentChanged} setPigmentChanged={setPigmentChanged}
+                pigments={pigments} setPigments={setPigments} mixedPigments={mixedPigments} setMixedPigments={setMixedPigments}/>
             </div>
         </div>
         <div className="Annotation-space-container">
