@@ -1,0 +1,63 @@
+.Matrix-firstrow-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.Matrix-index-container {
+    height: 100%;
+    border: 2px dashed #5a4e3b;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.Matrix-pigment-list1 {
+    height: 100%;
+    background: #5a4e3b;
+}
+
+.Matrix-secondrow-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.Matrix-pigment-list2 {
+    height: 100%;
+}
+
+.Matrix-mixed-pigments {
+    height: 100%;
+    position: relative;
+}
+
+.Hover-panel-container {
+    position: absolute;
+    z-Index: 50;
+}
+
+.Hover-single-option {
+    width: 100%;
+    background: #fff6dc;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 3px solid #fff6dc;
+    box-sizing: border-box;
+}
+
+.Hover-single-option:hover {
+    border: 3px solid #5a4e3b;
+}
+
+.Highlight-pigment-block {
+    position: absolute;
+    border: 3px solid #5a4e3b;
+    box-sizing: border-box;
+}

@@ -1,0 +1,111 @@
+.A-Reference-container {
+    margin: 8px;
+    width: calc(19% - 16px);
+    height: calc(100% - 16px);
+    border-radius: 8px;
+    background: #fff6dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.A-Reference-image {
+    margin: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.Annotation-panel-container {
+    margin: 8px 8px 8px 0px;
+    width: calc(31% - 8px);
+    height: calc(100% - 16px);
+    border-radius: 8px;
+    background: #fff6dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Annotation-mixing-container {
+    margin: 8px 0px;
+    width: 33.5%;
+    height: calc(100% - 16px);
+}
+
+.Annotation-space-container {
+    margin: 8px;
+    width: calc(16.5% - 16px);
+    height: calc(100% - 16px);
+}
+
+.MatrixSpace-title-container {
+    width: 100%;
+    height: 36px;
+    border-radius: 6px;
+    background: #fff6dc;
+    display: flex;
+    align-items: center;
+}
+
+.MatrixSpace-display-container {
+    margin-top: 8px;
+    width: 100%;
+    height: calc(100% - 36px - 8px);
+    border-radius: 8px;
+    background: #fff6dc;
+}
+
+.Dropdown-list-container {
+    width: calc(100% - 164.52px - 10px);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.Dropdown-button {
+    width: 24px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Focused-list-item {
+    width: calc(100% - 24px);
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.Dropdown-panel {
+    width: calc(100% - 45px - 6px);
+    height: 72px;
+    background: #fff6dc;
+    border-radius: 0px 0px 4px 4px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    position: absolute;
+    top: 30px;
+    left: 45px;
+    z-Index: 100;
+}
+
+.Space-item {
+    width: 100%;
+    height: 24px;
+    border-radius: 0px 0px 4px 4px;
+    display: flex;
+    align-items: center;
+    background: #fff6dc;
+    color: #5a4e3b;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.Space-item:hover {
+    background: #5a4e3b;
+    color: #fff6dc;
+}

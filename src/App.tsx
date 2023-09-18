@@ -1,6 +1,7 @@
 import './App.css';
 import { ReferenceView } from './View/Reference';
 import { SegmentationView } from './View/Segmentation';
+import { AnnotationView } from './View/Annotation'
 import LZString from "lz-string";
 import { InferenceSession, Tensor } from "onnxruntime-web";
 import * as ort from 'onnxruntime-web';
@@ -108,7 +109,7 @@ function App() {
     const runModel = async () => {
         // console.log("Running singleMaskModel");
         try {
-            // console.log("running model...", model, clicks, tensor, modelScale);
+            console.log("running model...", model, clicks, tensor, modelScale);
             if (
                 model === null ||
                 clicks === null ||
@@ -510,6 +511,7 @@ function App() {
                     </div>
                 </div>
                 < div className="App-content-bottom" >
+                    <AnnotationView />
                 </div>
             </div>
         </div>
