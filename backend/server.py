@@ -23,6 +23,8 @@ from colour.colorimetry import sd_to_XYZ_integration
 from colour.utilities import numpy_print_options
 from colour.notation import HEX_to_RGB, RGB_to_HEX
 
+
+
 # 创建ORB特征检测器
 orb = cv2.SIFT_create()
 # 创建FLANN匹配器
@@ -219,7 +221,7 @@ hidden_size3 = 60
 output_size = 41
 model = Model(input_size, hidden_size1, hidden_size2, hidden_size3, output_size).to(device)
 with open('model/model', 'rb') as f:
-    model.load_state_dict(torch.load(f))
+    model.load_state_dict(torch.load(f, map_location=device))
 # print(model)
 
 cmfs = (MSDS_CMFS["CIE 1931 2 Degree Standard Observer"].copy().align(SpectralShape(380, 780, 10)))
