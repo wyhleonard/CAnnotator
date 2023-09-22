@@ -89,7 +89,7 @@ export const MatrixPalette = ({
     // 跳转距离直接hardcord吧，这样最准确
     const stepSize = 287.15 + 8;
 
-    const handleActionConduction = (actionType, hoverPosition, index) => {
+    const handleActionConduction = (actionType, hoverPosition, index) => {  // index means which color matrix palette
         const newClickPosition = JSON.parse(JSON.stringify(clickPosition));
         newClickPosition[index] = hoverPosition;
 
@@ -107,6 +107,7 @@ export const MatrixPalette = ({
                 setPigmentChanged(current => !current)
             }
         }
+        // console.log("matrixData[",index,"]:", matrixData[index]) 
         if(index === 0) {
             setPigments([matrixData[index]['col'][row], matrixData[index]['row'][col]])
             setMixedPigments([matrixData[index]['mixed'][row][col]])
@@ -134,6 +135,7 @@ export const MatrixPalette = ({
                 setPigmentChanged(current => !current)
             }
         }
+        console.log("pigments changed:", pigments)
         
         
         // TODO:这里分几种情况去给出逻辑: 1) 新的matrix添加至末尾；2）修改中间的matrix（未实现）
@@ -191,6 +193,7 @@ export const MatrixPalette = ({
             const srollElement = document.getElementById("paletteList");
             srollElement.scrollLeft = focusStep * stepSize
         }
+
     }, [matrixData, stepSize, focusStep])
 
     const matrixItems = matrixData.map((data, index) => {

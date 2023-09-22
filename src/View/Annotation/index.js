@@ -14,7 +14,10 @@ const gridSize = 14;
 
 const dropdownContent = ["a * b", "L * a", "L * b"];
 
-export const AnnotationView = () => {
+
+export const AnnotationView = ({
+    imageSrc,
+}) => {
 
     const [isDropdown, setIsDropdown] = useState(false);
     const [selectedSpace, setSelectSpace] = useState(0);
@@ -84,24 +87,24 @@ export const AnnotationView = () => {
 
     // initialize matrix
     useEffect(() => {
-        if(targetColor) {
+        if (targetColor) {
             let body = { option: 'i', target_color: targetColor, selected_coord: [0, 0], matrix_num: -1 }
             fetch("http://localhost:8000/gen_matrix", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
             })
-            .then(response => response.json())
-            .then(data => {
-                setMatrices([data.colors])
-                // setIdx(0)
-                // setDistMatrices([data.colors_with_dist])
-                // setScatterSeq(current => [...current, data.lab_colors])
-                // setScatterIndex(current => current + 1)
-            })
-            .catch(error => console.error("Error fetching data:", error));
+                .then(response => response.json())
+                .then(data => {
+                    setMatrices([data.colors])
+                    // setIdx(0)
+                    // setDistMatrices([data.colors_with_dist])
+                    // setScatterSeq(current => [...current, data.lab_colors])
+                    // setScatterIndex(current => current + 1)
+                })
+                .catch(error => console.error("Error fetching data:", error));
         }
     }, [targetColor])
 
@@ -190,31 +193,42 @@ export const AnnotationView = () => {
                 setIsDropdown(false);
             }}
         >
-            <span style={{marginLeft: "4px"}}>{space}</span>
+            <span style={{ marginLeft: "4px" }}>{space}</span>
         </div>
     })
 
-    return <div className="SView-container" style={{display: "flex", alignItems: "center"}}>
+    return <div className="SView-container" style={{ display: "flex", alignItems: "center" }}>
         <div className="A-Reference-container">
-            <img className="A-Reference-image" src={demoSrc} alt=""/>
+            <img className="A-Reference-image" src={imageSrc} alt="" />
         </div>
         <div className="Annotation-panel-container">
-            <AnnotationPanel />
+            <AnnotationPanel selectedSticker="/demoData/segmentations/6.png"/>
         </div>
         <div className="Annotation-mixing-container">
             <div className="MatrixSpace-title-container">
-                <MixingMethod pigments={pigments} mixedPigments={mixedPigments} pigmentChanged={pigmentChanged}/>
+                <MixingMethod
+                    pigments={pigments}
+                    mixedPigments={mixedPigments}
+                    setMixedPigments={setMixedPigments}
+                    pigmentChanged={pigmentChanged} />
             </div>
             <div className="MatrixSpace-display-container">
-                <MatrixPalette matrixData={matrices} setMatrixData={setMatrices} pigmentChanged={pigmentChanged} setPigmentChanged={setPigmentChanged}
-                pigments={pigments} setPigments={setPigments} mixedPigments={mixedPigments} setMixedPigments={setMixedPigments}/>
+                <MatrixPalette
+                    matrixData={matrices}
+                    setMatrixData={setMatrices}
+                    pigmentChanged={pigmentChanged}
+                    setPigmentChanged={setPigmentChanged}
+                    pigments={pigments}
+                    setPigments={setPigments}
+                    mixedPigments={mixedPigments}
+                    setMixedPigments={setMixedPigments} />
             </div>
         </div>
         <div className="Annotation-space-container">
             <div className="MatrixSpace-title-container">
-                <span className="STitle-text-contrast" style={{fontSize: "16px"}}>{`Displayed Space: 【${demoSpace}】`}</span>
+                <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>{`Displayed Space: 【${demoSpace}】`}</span>
                 <div className="Dropdown-list-container">
-                    <div className="SConfirm-button-container" 
+                    <div className="SConfirm-button-container"
                         style={{
                             marginLeft: "45px",
                             width: "calc(100% - 45px)"
@@ -232,7 +246,7 @@ export const AnnotationView = () => {
                             </span>
                         </div>
                         <div className="Dropdown-button">
-                            <div 
+                            <div
                                 className="Icon-button"
                                 style={{
                                     background: `url(${LeftIcon}) no-repeat`,

@@ -10,6 +10,7 @@ const optionMargin = 6;
 const hoverPanelSize = [190, singleOptionHeight * 3 + optionMargin * 3];
 const demoDistance = 13.67;
 
+// 右下角散点图
 export const MatrixVisualization = ({
     index,
     data,
@@ -216,6 +217,7 @@ export const MatrixVisualization = ({
                                 height: `${singleOptionHeight}px`,
                             }}
                             onClick={() => {
+                                // console.log("hoverPosition", hoverPosition, "index", index);
                                 changeActionType(0, hoverPosition, index);
                                 handleBlockClick();
                             }}

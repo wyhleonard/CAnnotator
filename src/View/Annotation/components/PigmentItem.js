@@ -37,14 +37,17 @@ const PigmentItem = ({
     let silderBackground = "linear-gradient(to right,";
     const backgroundColors = originPigmentInDiffQuantities[pigment[0]];
     backgroundColors.forEach((color, idx) => idx !== backgroundColors.length - 1 ? silderBackground += (color[0] + ",") : silderBackground += color[0] + ")")
+    // console.log(pigment);
 
     let silderBackground2 = "linear-gradient(to right,";
     const backgroundColors2 = demoMixedPigmentInDiffQuantities[index];
     backgroundColors2.forEach((color, idx) => idx !== backgroundColors2.length - 1 ? silderBackground2 += (color[0] + ",") : silderBackground2 += color[0] + ")")
+    // console.log(silderBackground2);
 
     // 根据quantity计算position TODO：根据position计算quantity
     const displayedQuantities = originPigmentInDiffQuantities[pigment[0]];
     const silderPositon = valuePositionWithMinMaxValues(pigment[1], displayedQuantities);
+    // console.log(pigment[1], silderPositon);
     // const finalPosition = silderPositon * demoSliderLength - demoSilderBlockWidth / 2;
     const [finalPosition, setFinalPosition] = useState(silderPositon * demoSliderLength - demoSilderBlockWidth / 2);
 
@@ -65,7 +68,7 @@ const PigmentItem = ({
             const sliderWidth = sliderRef.current.offsetWidth;
             const offsetX = event.clientX - sliderRef.current.offsetLeft;
             const newValue = (offsetX / sliderWidth) * 100;
-            newValue < 0 ? setFinalPosition(0) : newValue > sliderWidth ? setFinalPosition(100) :  // 限制滑块在slider内
+            newValue < 0 ? setFinalPosition(0) : newValue > sliderWidth ? setFinalPosition(sliderWidth) :  // 限制滑块在slider内
             setFinalPosition(newValue);
         }
     };
@@ -97,7 +100,7 @@ const PigmentItem = ({
                 </div>
             </div>
             <div className="A-silder-value">
-                <span className="STitle-text-contrast" style={{ marginLeft: "4px", fontSize: "16px" }}>{`${(finalPosition/100).toFixed(1)}`}</span>
+                <span className="STitle-text-contrast" style={{ marginLeft: "4px", fontSize: "16px" }}>{`${(finalPosition/10).toFixed(1)}`}</span>
             </div>
             <div className="A-pigment-delete">
                 <div className="Icon-button" style={{

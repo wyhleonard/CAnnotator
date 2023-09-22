@@ -50,7 +50,7 @@ async def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/coseg/init/pic")
+@app.post("/coseg/init/pic") # 上传图片
 async def init_pic(file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
@@ -60,7 +60,7 @@ async def init_pic(file: UploadFile = File(...)):
     kp1, des1 = orb.detectAndCompute(img1, None)
 
 
-@app.post("/coseg/init/points")
+@app.post("/coseg/init/points")  
 async def init_points(points_l: list[list[float]]):
     global points
     points = points_l
@@ -71,7 +71,7 @@ async def init_points(points_l: list[list[float]]):
     cv2.destroyAllWindows()
     print(points)
 
-@app.post("/coseg/match/point")
+@app.post("/coseg/match/point")  
 async def match_point(file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)

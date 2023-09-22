@@ -58,7 +58,7 @@ const iconStyle = (iconPath) => {
 }
 
 export const ReferenceView = ({
-    colors, handleMaskEdit, handleSelectedImage
+    colors, handleMaskEdit, handleSelectedImage, selectedImg, setSelectedImg
 }) => {
     const {
         chosenColors: [chosenColors, setChosenColors],
@@ -80,10 +80,10 @@ export const ReferenceView = ({
     const [dots, setDots] = useState([[0, 0]]);
     const [spot, setSpot] = useState(null);
     const [isFilter, setIsFilter] = useState(false);
-    const [selectedImg, setSelectedImg] = useState(-1);
+    // const [selectedImg, setSelectedImg] = useState(-1);
     const sortedImages = filteredImages.toSorted((a, b) => b.marked - a.marked);
     const chosenList = Array.from(chosenStickers);
-    console.log(selectedImg);
+    console.log("selectedImg: ", selectedImg);
 
     // console.log(filteredImages.map(item =>
     //   imageContext[blobMap[item.contentUrl]]?.stickers[7].clicks
@@ -310,6 +310,7 @@ export const ReferenceView = ({
         }
         setChosenColors(new Set([...chosenColors]));
     };
+    
 
     const segItem = chosenList.map((el, i) => {
         return <div
@@ -373,6 +374,9 @@ export const ReferenceView = ({
                         <div
                             className="Icon-button"
                             style={iconStyle(ConfirmIcon)}
+                            onClick={() => {
+
+                            }}
                         />
                     </div>
                 </div>

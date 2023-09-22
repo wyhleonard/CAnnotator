@@ -86,6 +86,7 @@ function App() {
     const [modelScale, setModelScale] = useState<modelScaleProps | null>(null);
     const [colors, setColors] = useState([{}]);
     const imgSrc = "/demoData/paintings/0.png";
+    const [annotationSelectedImg, setAnnotationSelectedImg] = useState(-1);
 
     useEffect(() => {
         const initModel = async () => {
@@ -507,11 +508,20 @@ function App() {
                         />
                     </div>
                     < div className="Reference-container" >
-                        <ReferenceView colors={colors} handleMaskEdit={handleMaskEdit} handleSelectedImage={handleSelectedImage} />
+                        <ReferenceView 
+                            colors={colors} 
+                            handleMaskEdit={handleMaskEdit} 
+                            handleSelectedImage={handleSelectedImage} 
+                            selectedImg={annotationSelectedImg}
+                            setSelectedImg={setAnnotationSelectedImg}
+                        />
                     </div>
                 </div>
                 < div className="App-content-bottom" >
-                    <AnnotationView />
+                    <AnnotationView 
+                        // imageSrc={"/demoData/annotations/2.png"}
+                        imageSrc={annotationSelectedImg === -1 ? "/demoData/references/2.jpg" : "/demoData/references/" + (annotationSelectedImg+1) + ".jpg"}
+                    />
                 </div>
             </div>
         </div>
