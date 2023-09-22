@@ -18,8 +18,8 @@ const iconSize = 15;
 export const MixingMethod = ({
     pigments,
     mixedPigments,
-    setMixedPigments,
-    pigmentChanged
+    pigmentChanged,
+    setPigmentConfirmed
 }) => {
 
     const pigmentItems = useMemo(() => {
@@ -135,9 +135,7 @@ export const MixingMethod = ({
                     cursor: 'pointer',
                 }}
                 onClick={() => {  //确认配色方案 传递给父组件
-                    console.log("pigments confirm:", pigments);
-                    console.log("mixedPigments confirm:", mixedPigments);
-                    setMixedPigments(pigments);
+                    setPigmentConfirmed(current => !current); 
                 }}
             />
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import "../../sharedCss.css";
 import "./AnnotationPanel.css";
 import ExtractorIcon from "../../../Icons/extractor.svg";
@@ -33,8 +33,9 @@ const demoAnnotations = [
 ]
 
 export const AnnotationPanel = ({
-    mixedPigments = [[6, 0.05], [7, 0.06], [3, 0.03]],
-    selectedSticker = demoSegmentation
+    originalPigments = [[6, 0.05], [7, 0.06], [3, 0.03]],
+    selectedSticker = demoSegmentation,
+    pigmentConfirmed
 }) => {
 
     // 这里的颜色可能要改成16进制存储
@@ -45,17 +46,20 @@ export const AnnotationPanel = ({
 
 
     // items in the pigment list => 要抽象成组件，不然不好写滑动交互
-    const apigmentItems = mixedPigments.map((pigment, index) => (
-        <PigmentItem
-        key={index}
-        pigment={pigment}
-        index={index}
-        originPigment={originPigment}
-        demoSliderLength={demoSliderLength}
-        demoSilderBlockWidth={demoSilderBlockWidth}
-        iconSize={iconSize}
-        />
-    ));
+    const apigmentItems = useMemo(() => {
+        console.log("pigmentConfirmed:", pigmentConfirmed);
+        return originalPigments.map((pigment, index) => (
+            <PigmentItem
+                key={index}
+                pigment={pigment}
+                index={index}
+                originPigment={originPigment}
+                demoSliderLength={demoSliderLength}
+                demoSilderBlockWidth={demoSilderBlockWidth}
+                iconSize={iconSize}
+            />)
+        )
+    }, [pigmentConfirmed]);
 
     // TODO: Add pigment button 添加pigment
     const annotationItems = demoAnnotations.map((data, index) => {
@@ -64,10 +68,10 @@ export const AnnotationPanel = ({
 
         // copy from MixingMethod.js
         const itemList = [];
-        for(let i = 0; i < pigments.length; i++) {
-            if(i === 0) {
+        for (let i = 0; i < pigments.length; i++) {
+            if (i === 0) {
                 itemList.push(<div
-                    key={`pigment-item-${i}`} 
+                    key={`pigment-item-${i}`}
                     className="Pigment-item-container"
                     style={{
                         marginTop: "4px",
@@ -81,26 +85,26 @@ export const AnnotationPanel = ({
             } else {
                 // +
                 itemList.push(<div
-                    key={`symbol(+)-${i}`} 
+                    key={`symbol(+)-${i}`}
                     className="Pigment-symbol-container"
                     style={{
                         width: `${rectSize + symbolGap}px`,
                         height: `${rectSize}px`,
                     }}
                 >
-                    <span className="STitle-text-contrast" 
+                    <span className="STitle-text-contrast"
                         style={{
-                            marginLeft: "0px", 
+                            marginLeft: "0px",
                             fontSize: "24px",
                             fontWeight: "600"
                         }}>
-                            {"+"}
+                        {"+"}
                     </span>
                 </div>)
-                
+
                 // pigment
                 itemList.push(<div
-                    key={`pigment-item-${i}`} 
+                    key={`pigment-item-${i}`}
                     className="Pigment-item-container"
                     style={{
                         marginTop: "4px",
@@ -114,26 +118,26 @@ export const AnnotationPanel = ({
 
                 // =
                 itemList.push(<div
-                    key={`symbol(=)-${i}`} 
+                    key={`symbol(=)-${i}`}
                     className="Pigment-symbol-container"
                     style={{
                         width: `${rectSize + symbolGap}px`,
                         height: `${rectSize}px`,
                     }}
                 >
-                    <span className="STitle-text-contrast" 
+                    <span className="STitle-text-contrast"
                         style={{
-                            marginLeft: "0px", 
+                            marginLeft: "0px",
                             fontSize: "24px",
                             fontWeight: "600"
                         }}>
-                            {"="}
+                        {"="}
                     </span>
                 </div>)
 
                 // mixed pigment
                 itemList.push(<div
-                    key={`pigment-mixed-${i}`} 
+                    key={`pigment-mixed-${i}`}
                     className="Pigment-item-container"
                     style={{
                         marginTop: "4px",
@@ -149,20 +153,20 @@ export const AnnotationPanel = ({
         }
 
         return <div
-            key={`annotation-item-${index}`} 
-            className="A-text-container" 
+            key={`annotation-item-${index}`}
+            className="A-text-container"
             style={{
                 marginBottom: "3px",
             }}
         >
             <div className="A-index-container">
-                <span className="STitle-text-contrast" style={{fontSize: "16px"}}>{`(${index + 1})`}</span>
+                <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>{`(${index + 1})`}</span>
             </div>
             <div className="A-method-container">
                 {/* {itemList} */}
                 {itemList[itemList.length - 1]}
-                <span 
-                    className="STitle-text-contrast" 
+                <span
+                    className="STitle-text-contrast"
                     style={{
                         margin: "0px 6px",
                         fontSize: "24px",
@@ -176,14 +180,14 @@ export const AnnotationPanel = ({
         </div>
     })
 
-    return <div className="SDefault-container" style={{overflowY: "scroll"}}>
+    return <div className="SDefault-container" style={{ overflowY: "scroll" }}>
         <div className="Annotation-panel-firstrow">
             <div className="A-segment-container">
                 <img className="A-segmentation-image" src={selectedSticker} alt="" />
             </div>
             <div className="A-color-annotation">
-                <div className="A-text-container" style={{marginTop: "4px"}}>
-                    <span className="STitle-text-contrast" style={{fontSize: "16px"}}>
+                <div className="A-text-container" style={{ marginTop: "4px" }}>
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
                         Add A Color:
                     </span>
                     <div
@@ -193,7 +197,7 @@ export const AnnotationPanel = ({
                         }}
                     />
                     <div className="A-button-container">
-                        <div 
+                        <div
                             className="Icon-button"
                             style={{
                                 background: `url(${ExtractorIcon}) no-repeat`,
@@ -205,11 +209,11 @@ export const AnnotationPanel = ({
                         />
                     </div>
                 </div>
-                <div className="A-text-container" style={{marginTop: "2px"}}>
-                    <span className="STitle-text-contrast" style={{fontSize: "16px"}}>
+                <div className="A-text-container" style={{ marginTop: "2px" }}>
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
                         Matched Color:
                     </span>
-                    <span className="STitle-text-contrast" style={{fontSize: "16px", marginLeft: "8px"}}>
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px", marginLeft: "8px" }}>
                         {`(${matchedColor[0]}, ${matchedColor[1]}, ${matchedColor[2]})`}
                     </span>
                     <div
@@ -219,7 +223,7 @@ export const AnnotationPanel = ({
                         }}
                     />
                     <div className="A-button-container">
-                        <div 
+                        <div
                             className="Icon-button"
                             style={{
                                 background: `url(${ConfirmIcon}) no-repeat`,
@@ -231,26 +235,26 @@ export const AnnotationPanel = ({
                         />
                     </div>
                 </div>
-                <div className="A-text-container" style={{marginTop: "2px"}}>
-                    <span className="STitle-text-contrast" style={{fontSize: "16px"}}>
+                <div className="A-text-container" style={{ marginTop: "2px" }}>
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
                         Current Distance:
                     </span>
-                    <span className="STitle-text-contrast" style={{fontSize: "16px", marginLeft: "8px"}}>
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px", marginLeft: "8px" }}>
                         {`${currentDistance}`}
                     </span>
                 </div>
                 <div className="A-last-container">
                     <div className="A-last-text-container">
-                        <div className="A-text-container" style={{marginTop: "2px"}}>
-                            <span className="STitle-text-contrast" style={{fontSize: "16px"}}>
+                        <div className="A-text-container" style={{ marginTop: "2px" }}>
+                            <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
                                 Mixed Pigments:
                             </span>
                         </div>
                     </div>
-                    <div className="A-pigment-list"> 
+                    <div className="A-pigment-list">
                         {apigmentItems}
                         <div className="A-pigment-add">
-                            <div 
+                            <div
                                 className="Icon-button"
                                 style={{
                                     background: `url(${AddPigmentIcon}) no-repeat`,
@@ -267,12 +271,12 @@ export const AnnotationPanel = ({
         </div>
         <div className="Annotation-panel-secondrow">
             <div className="A-list-container">
-                <div className="A-text-container" style={{marginTop: "0px"}}>
-                    <span className="STitle-text-contrast" style={{fontSize: "16px"}}>
+                <div className="A-text-container" style={{ marginTop: "0px" }}>
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
                         Current Color Annotations:
                     </span>
                     <div className="A-button-container">
-                        <div 
+                        <div
                             className="Icon-button"
                             style={{
                                 background: `url(${ConfirmIcon}) no-repeat`,

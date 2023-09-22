@@ -54,6 +54,7 @@ export const MatrixPalette = ({
     setMatrixData,
     pigmentChanged,
     setPigmentChanged,
+    setOriginalPigments,
     pigments,
     setPigments,
     mixedPigments,
@@ -109,15 +110,20 @@ export const MatrixPalette = ({
         }
         // console.log("matrixData[",index,"]:", matrixData[index]) 
         if(index === 0) {
+            setOriginalPigments([[row, 0.01], [col, 0.01]])
             setPigments([matrixData[index]['col'][row], matrixData[index]['row'][col]])
             setMixedPigments([matrixData[index]['mixed'][row][col]])
             setPigmentChanged(current => !current)
+            console.log("pigments changed:", pigments)
+            console.log("mixedPigments changed:", mixedPigments)
         }
         else {
             const filteredArray = genMatrix.filter((element) => element === 'm');
             const mixedCnt = filteredArray.length;
             // adjust mixing
             if(mixedCnt >= mixedPigments.length) {
+                setOriginalPigments(current => [...current, [col, 0.01]]) // add new original pigment
+                console.log("originalPigments changed")
                 setPigments(current => [...current, matrixData[index]['row'][col]])
                 setMixedPigments(current => [...(current.slice(0, current.length - 1)), matrixData[index]['col'][row], matrixData[index]['mixed'][row][col]])
                 setPigmentChanged(current => !current)
@@ -134,8 +140,9 @@ export const MatrixPalette = ({
                 setMixedPigments(current => [...(current.slice(0, current.length - 2)), matrixData[index]['row'][col], matrixData[index]['mixed'][row][col]])
                 setPigmentChanged(current => !current)
             }
+            console.log("pigments changed:", pigments)
+            console.log("mixedPigments changed:", mixedPigments)
         }
-        console.log("pigments changed:", pigments)
         
         
         // TODO:这里分几种情况去给出逻辑: 1) 新的matrix添加至末尾；2）修改中间的matrix（未实现）

@@ -23,9 +23,11 @@ export const AnnotationView = ({
     const [selectedSpace, setSelectSpace] = useState(0);
 
     const [matrices, setMatrices] = useState([])
+    const [originalPigments, setOriginalPigments] = useState([])
     const [pigments, setPigments] = useState([])
     const [mixedPigments, setMixedPigments] = useState([])
     const [pigmentChanged, setPigmentChanged] = useState(true)
+    const [pigmentConfirmed, setPigmentConfirmed] = useState(false)
     // const concentrations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16]
     const [targetColor, setTargetColor] = useState('#22ADC1')
     // const [matrices, setMatrices] = useState([])
@@ -202,21 +204,27 @@ export const AnnotationView = ({
             <img className="A-Reference-image" src={imageSrc} alt="" />
         </div>
         <div className="Annotation-panel-container">
-            <AnnotationPanel selectedSticker="/demoData/segmentations/6.png"/>
+            <AnnotationPanel
+                originalPigments={originalPigments}
+                selectedSticker="/demoData/segmentations/6.png"
+                pigmentConfirmed={pigmentConfirmed}
+            />
         </div>
         <div className="Annotation-mixing-container">
             <div className="MatrixSpace-title-container">
                 <MixingMethod
                     pigments={pigments}
                     mixedPigments={mixedPigments}
-                    setMixedPigments={setMixedPigments}
-                    pigmentChanged={pigmentChanged} />
+                    pigmentChanged={pigmentChanged}
+                    setPigmentConfirmed={setPigmentConfirmed}
+                />
             </div>
             <div className="MatrixSpace-display-container">
                 <MatrixPalette
                     matrixData={matrices}
                     setMatrixData={setMatrices}
                     pigmentChanged={pigmentChanged}
+                    setOriginalPigments={setOriginalPigments}
                     setPigmentChanged={setPigmentChanged}
                     pigments={pigments}
                     setPigments={setPigments}

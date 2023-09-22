@@ -83,7 +83,7 @@ export const ReferenceView = ({
     // const [selectedImg, setSelectedImg] = useState(-1);
     const sortedImages = filteredImages.toSorted((a, b) => b.marked - a.marked);
     const chosenList = Array.from(chosenStickers);
-    console.log("selectedImg: ", selectedImg);
+    // console.log("selectedImg: ", selectedImg);
 
     // console.log(filteredImages.map(item =>
     //   imageContext[blobMap[item.contentUrl]]?.stickers[7].clicks
