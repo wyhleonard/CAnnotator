@@ -4,7 +4,7 @@ import { MixingMethod } from "./components/MixingMethod";
 import { SpacePlot } from "./components/SpacePlot";
 import LeftIcon from "../../Icons/triangle.svg";
 import "./index.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnnotationPanel } from "./components/AnnotationPanel";
 
 const demoSrc = "/demoData/annotations/2.png";
@@ -15,9 +15,7 @@ const gridSize = 14;
 const dropdownContent = ["a * b", "L * a", "L * b"];
 
 
-export const AnnotationView = ({
-    imageSrc,
-}) => {
+export const AnnotationView = (props) => {
 
     const [isDropdown, setIsDropdown] = useState(false);
     const [selectedSpace, setSelectSpace] = useState(0);
@@ -110,6 +108,41 @@ export const AnnotationView = ({
         }
     }, [targetColor])
 
+    const canvasRef = useRef(null);
+    const [enableSelect, setEnableSelect] = useState(false);
+    const handleCanvasClick = (e) => {
+        if (enableSelect) {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+
+            const x = e.nativeEvent.offsetX;
+            const y = e.nativeEvent.offsetY;
+
+            const pixel = ctx.getImageData(x, y, 1, 1).data;
+            const hexR = pixel[0].toString(16).padStart(2, '0');
+            const hexG = pixel[1].toString(16).padStart(2, '0');
+            const hexB = pixel[2].toString(16).padStart(2, '0');
+            const hexColor = `#${hexR}${hexG}${hexB}`;
+            setTargetColor(hexColor);
+            // props.setTargetColor(hexColor);
+            console.log(hexColor)
+            setEnableSelect(false);
+        }
+    };
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.src = props.imageSrc;
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0);
+        };
+        img.onerror = () => {
+            console.log('error in loading!')
+        };
+    });
+
     // update distance and mixing method
     // useEffect(() => {
     //     if(targetColor) {
@@ -201,13 +234,24 @@ export const AnnotationView = ({
 
     return <div className="SView-container" style={{ display: "flex", alignItems: "center" }}>
         <div className="A-Reference-container">
-            <img className="A-Reference-image" src={imageSrc} alt="" />
+            {/* <img className="A-Reference-image" src={props.imageSrc} alt="" /> */}
+            <canvas 
+                ref={canvasRef} 
+                onClick={handleCanvasClick} 
+                width={360}
+                height={360}
+                // className="A-Reference-image"
+            />
         </div>
         <div className="Annotation-panel-container">
             <AnnotationPanel
-                originalPigments={originalPigments}
+                pigments={pigments}
+                targetColor={targetColor}
+                selectedOriginalPigments={originalPigments}
                 selectedSticker="/demoData/segmentations/6.png"
                 pigmentConfirmed={pigmentConfirmed}
+                mixedPigments={mixedPigments}
+                setEnableSelect={setEnableSelect}
             />
         </div>
         <div className="Annotation-mixing-container">
@@ -276,7 +320,9 @@ export const AnnotationView = ({
                 </div>
             </div>
             <div className="MatrixSpace-display-container">
-                <SpacePlot />
+                <SpacePlot
+                    spaceIndex={selectedSpace}
+                />
             </div>
         </div>
     </div>

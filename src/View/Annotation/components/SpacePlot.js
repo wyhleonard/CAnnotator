@@ -1603,10 +1603,10 @@ export const SpacePlot = ({
             e.clientY,
         ]);
     }
-    
+
     const handleDragMove = (e) => {
-        if(isMaskDrag) {
-            if(e.clientX !== maskMoveP[0] || e.clientY !== maskMoveP[1]) {
+        if (isMaskDrag) {
+            if (e.clientX !== maskMoveP[0] || e.clientY !== maskMoveP[1]) {
                 setCurrentLT([
                     currentLT[0] + e.clientX - maskMoveP[0],
                     currentLT[1] + e.clientY - maskMoveP[1],
@@ -1620,7 +1620,7 @@ export const SpacePlot = ({
     }
 
     const handleDragEnd = (e) => {
-        if(isMaskDrag) {
+        if (isMaskDrag) {
             setIsMaskDrag(false);
             setMaskMoveP([0, 0]);
         }
@@ -1631,7 +1631,7 @@ export const SpacePlot = ({
         const v = e.deltaY;
         let newScale = 1;
         const currentScaleRecord = currentScale;
-        if(v < 0) {
+        if (v < 0) {
             newScale = Math.min(maxScale, currentScale * 1.25);
             setCurrentScale(newScale);
 
@@ -1645,18 +1645,18 @@ export const SpacePlot = ({
         const deltaY = e.clientY - svgOffset[1] - currentLT[1];
 
         setCurrentLT([
-            currentLT[0] - ((newScale - currentScaleRecord) / currentScaleRecord)  * deltaX,
+            currentLT[0] - ((newScale - currentScaleRecord) / currentScaleRecord) * deltaX,
             currentLT[1] - ((newScale - currentScaleRecord) / currentScaleRecord) * deltaY,
         ])
     }
 
     useEffect(() => {
-        if(svgSize[0] > 0) {
+        if (svgSize[0] > 0) {
             const leftTopSvg = [Math.abs(currentLT[0]), Math.abs(currentLT[1])];
-            
+
             const leftTopLab = [];
             const rightBottomLab = [];
-            if(spaceIndex === 0) {
+            if (spaceIndex === 0) {
                 leftTopLab.push(abRange[0] + ((leftTopSvg[0] + circleSize * 0.5) / (svgSize[0] * currentScale)) * (abRange[1] - abRange[0]));
                 leftTopLab.push(abRange[0] + ((leftTopSvg[1] + circleSize * 0.5) / (svgSize[1] * currentScale)) * (abRange[1] - abRange[0]));
 
@@ -1664,18 +1664,33 @@ export const SpacePlot = ({
                 rightBottomLab.push(leftTopLab[1] + ((svgSize[1] - circleSize) / (svgSize[1] * currentScale)) * (abRange[1] - abRange[0]));
             } else if (spaceIndex === 1) {
                 // TODO
+                // LeftTopLab calculation
+                leftTopLab.push(LRange[0] + ((leftTopSvg[0] + circleSize * 0.5) / (svgSize[0] * currentScale)) * (LRange[1] - LRange[0]));
+                leftTopLab.push(LRange[0] + ((leftTopSvg[1] + circleSize * 0.5) / (svgSize[1] * currentScale)) * (LRange[1] - LRange[0]));
+
+                // RightBottomLab calculation
+                rightBottomLab.push(leftTopLab[0] + ((svgSize[0] - circleSize) / (svgSize[0] * currentScale)) * (LRange[1] - LRange[0]));
+                rightBottomLab.push(leftTopLab[1] + ((svgSize[1] - circleSize) / (svgSize[1] * currentScale)) * (LRange[1] - LRange[0]));
             } else if (spaceIndex === 2) {
                 // TODO
+                // LeftTopLab calculation
+                leftTopLab.push(LRange[0] + ((leftTopSvg[0] + circleSize * 0.5) / (svgSize[0] * currentScale)) * (LRange[1] - LRange[0]));
+                leftTopLab.push(LRange[0] + ((leftTopSvg[1] + circleSize * 0.5) / (svgSize[1] * currentScale)) * (LRange[1] - LRange[0]));
+
+                // RightBottomLab calculation
+                rightBottomLab.push(leftTopLab[0] + ((svgSize[0] - circleSize) / (svgSize[0] * currentScale)) * (LRange[1] - LRange[0]));
+                rightBottomLab.push(leftTopLab[1] + ((svgSize[1] - circleSize) / (svgSize[1] * currentScale)) * (LRange[1] - LRange[0]));
+
             }
 
             const circleData = [];
             const cIndex = coordinateIndex[spaceIndex];
-            for(let i = 0; i < demoScaterPlotData.length; i++) {
-                for(let j = 0; j < demoScaterPlotData[i].length; j++) {
+            for (let i = 0; i < demoScaterPlotData.length; i++) {
+                for (let j = 0; j < demoScaterPlotData[i].length; j++) {
                     const dataSample = demoScaterPlotData[i][j];
                     const cx = dataSample.position[cIndex[0]];
                     const cy = dataSample.position[cIndex[1]];
-                    if(cx > leftTopLab[0] && cx < rightBottomLab[0] && cy > leftTopLab[1] && cy < rightBottomLab[1]) {
+                    if (cx > leftTopLab[0] && cx < rightBottomLab[0] && cy > leftTopLab[1] && cy < rightBottomLab[1]) {
                         circleData.push([
                             [dataSample.position[cIndex[0]], dataSample.position[cIndex[1]]],
                             dataSample.color,
@@ -1688,7 +1703,7 @@ export const SpacePlot = ({
             // target color
             const cx = demoTargetColor.position[cIndex[0]];
             const cy = demoTargetColor.position[cIndex[1]];
-            if(cx > leftTopLab[0] && cx < rightBottomLab[0] && cy > leftTopLab[1] && cy < rightBottomLab[1]) {
+            if (cx > leftTopLab[0] && cx < rightBottomLab[0] && cy > leftTopLab[1] && cy < rightBottomLab[1]) {
                 circleData.push([
                     [demoTargetColor.position[cIndex[0]], demoTargetColor.position[cIndex[1]]],
                     demoTargetColor.color,
@@ -1698,33 +1713,33 @@ export const SpacePlot = ({
 
             const svg = d3.select("#space-svg");
             svg
-            .selectAll("circle")
-            .remove();
+                .selectAll("circle")
+                .remove();
 
             svg
-            .selectAll("circle")
-            .data(circleData)
-            .enter()
-            .append("circle")
-            .attr("cx", d => svgSize[0] * (d[0][0] - leftTopLab[0]) / (rightBottomLab[0] - leftTopLab[0]))
-            .attr("cy", d => svgSize[1] * (d[0][1] - leftTopLab[1]) / (rightBottomLab[1] - leftTopLab[1]))
-            .attr("r", circleSize)
-            .attr("fill", d => d[1])
-            .attr("stroke", d => d[2][0] === -1 ? "#5a4e3b" : "none")
-            .attr("stroke-width", d => d[2][0] === -1 ? 3 : 0)
+                .selectAll("circle")
+                .data(circleData)
+                .enter()
+                .append("circle")
+                .attr("cx", d => svgSize[0] * (d[0][0] - leftTopLab[0]) / (rightBottomLab[0] - leftTopLab[0]))
+                .attr("cy", d => svgSize[1] * (d[0][1] - leftTopLab[1]) / (rightBottomLab[1] - leftTopLab[1]))
+                .attr("r", circleSize)
+                .attr("fill", d => d[1])
+                .attr("stroke", d => d[2][0] === -1 ? "#5a4e3b" : "none")
+                .attr("stroke-width", d => d[2][0] === -1 ? 3 : 0)
         }
     })
 
-    return <div 
-        className="SDefault-container" 
+    return <div
+        className="SDefault-container"
         style={{
-            display: "flex", 
-            alignItems: "center", 
+            display: "flex",
+            alignItems: "center",
             justifyContent: "center",
         }}
     >
-        <div 
-            className="Plot-container" 
+        <div
+            className="Plot-container"
             ref={svgRef}
         >
             <div
@@ -1742,7 +1757,7 @@ export const SpacePlot = ({
                 onWheel={(e) => handleWheelChange(e)}
             >
             </div>
-            <svg id="space-svg" className="SDefault-container"/>
+            <svg id="space-svg" className="SDefault-container" />
         </div>
     </div>
 }

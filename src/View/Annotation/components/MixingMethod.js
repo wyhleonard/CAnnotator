@@ -2,9 +2,6 @@ import { useMemo } from "react";
 import "../../sharedCss.css";
 import "./MixingMethod.css";
 import ConfirmIcon from "../../../Icons/confirm.svg";
-
-const originPigment = [['#de3e35', 0.01], ['#962c35', 0.01], ['#b04d36', 0.01], ['#f1e159', 0.01], ['#ffa53c', 0.01], ['#ef9043', 0.01], ['#5d7d37', 0.01], ['#227dc1', 0.01], ['#2154ac', 0.01], ['#1a3b9f', 0.01], ['#201f29', 0.01], ['#2f3438', 0.01], ['#ebe6da', 0.01]]
-
 // demo
 
 // const pigments = [[6, 0.01], [7, 0.01], [3, 0.03]];
@@ -23,6 +20,9 @@ export const MixingMethod = ({
 }) => {
 
     const pigmentItems = useMemo(() => {
+        console.log("pigments:", pigments);
+        console.log("mixedPigments:", mixedPigments);
+        
         const itemList = [];
         // console.log("pigments:", pigments);
         for(let i = 0; i < pigments.length; i++) {

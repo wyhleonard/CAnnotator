@@ -33,24 +33,30 @@ const demoAnnotations = [
 ]
 
 export const AnnotationPanel = ({
-    originalPigments = [[6, 0.05], [7, 0.06], [3, 0.03]],
+    targetColor,
+    pigments,
+    selectedOriginalPigments = [[6, 0.05], [7, 0.06], [3, 0.03]],
     selectedSticker = demoSegmentation,
-    pigmentConfirmed
+    pigmentConfirmed,
+    mixedPigments,
+    setEnableSelect
 }) => {
 
     // 这里的颜色可能要改成16进制存储
-    const [extractedColor, setExtractedColor] = useState([255, 255, 255]);
-    const [matchedColor, setMatchedColor] = useState([128, 56, 28]);
+    const [matchedColor, setMatchedColor] = useState("#ffffff");
     const [currentDistance, setCurrentDistance] = useState(16.89);
     // const [mixedPigments, setMixedPigments] = useState([[6, 0.02], [7, 0.06], [3, 0.03]]);
 
-
     // items in the pigment list => 要抽象成组件，不然不好写滑动交互
     const apigmentItems = useMemo(() => {
-        console.log("pigmentConfirmed:", pigmentConfirmed);
-        return originalPigments.map((pigment, index) => (
+        
+        console.log("pigmentConfirmed:", selectedOriginalPigments);
+        setMatchedColor(mixedPigments[0] === undefined ? "#ffffff" : mixedPigments[mixedPigments.length - 1][0]);
+        return selectedOriginalPigments.map((pigment, index) => (
             <PigmentItem
                 key={index}
+                pigments={pigments}
+                mixedPigments={mixedPigments}
                 pigment={pigment}
                 index={index}
                 originPigment={originPigment}
@@ -193,7 +199,7 @@ export const AnnotationPanel = ({
                     <div
                         className="A-color-block"
                         style={{
-                            background: `rgb(${extractedColor[0]}, ${extractedColor[1]}, ${extractedColor[2]})`
+                            background: `${targetColor}`
                         }}
                     />
                     <div className="A-button-container">
@@ -206,6 +212,7 @@ export const AnnotationPanel = ({
                                 height: `${iconSize}px`,
                                 cursor: 'pointer',
                             }}
+                            onClick={() => {setEnableSelect(true)}} 
                         />
                     </div>
                 </div>
@@ -214,12 +221,12 @@ export const AnnotationPanel = ({
                         Matched Color:
                     </span>
                     <span className="STitle-text-contrast" style={{ fontSize: "16px", marginLeft: "8px" }}>
-                        {`(${matchedColor[0]}, ${matchedColor[1]}, ${matchedColor[2]})`}
+                        {`(${matchedColor})`}
                     </span>
                     <div
                         className="A-color-block"
                         style={{
-                            background: `rgb(${matchedColor[0]}, ${matchedColor[1]}, ${matchedColor[2]})`
+                            background: `${matchedColor}`
                         }}
                     />
                     <div className="A-button-container">

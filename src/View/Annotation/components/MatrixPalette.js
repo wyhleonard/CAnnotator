@@ -114,8 +114,8 @@ export const MatrixPalette = ({
             setPigments([matrixData[index]['col'][row], matrixData[index]['row'][col]])
             setMixedPigments([matrixData[index]['mixed'][row][col]])
             setPigmentChanged(current => !current)
-            console.log("pigments changed:", pigments)
-            console.log("mixedPigments changed:", mixedPigments)
+            // console.log("pigments changed:", pigments)
+            // console.log("mixedPigments changed:", mixedPigments)
         }
         else {
             const filteredArray = genMatrix.filter((element) => element === 'm');
@@ -140,8 +140,8 @@ export const MatrixPalette = ({
                 setMixedPigments(current => [...(current.slice(0, current.length - 2)), matrixData[index]['row'][col], matrixData[index]['mixed'][row][col]])
                 setPigmentChanged(current => !current)
             }
-            console.log("pigments changed:", pigments)
-            console.log("mixedPigments changed:", mixedPigments)
+            // console.log("pigments changed:", pigments)
+            // console.log("mixedPigments changed:", mixedPigments)
         }
         
         
@@ -164,6 +164,7 @@ export const MatrixPalette = ({
             })
             .then(response => response.json())
             .then(data => {
+                console.log("data from server.py:", data.colors.col)
                 setMatrixData(current => [...current, data.colors])
             })
             .catch(error => console.error("Error fetching data:", error));

@@ -246,8 +246,8 @@ def sd_to_hex(sd_arr):
     return hex
 
 
-# base_colors = ['#de3e35', '#962c35', '#b04d36', '#f1e159', '#ffa53c', '#ef9043', '#5d7d37', '#227dc1', '#2154ac',
-#                '#1a3b9f', '#201f29', '#2f3438', '#ebe6da']
+base_colors_hex = ['#de3e35', '#962c35', '#b04d36', '#f1e159', '#ffa53c', '#ef9043', '#5d7d37', '#227dc1', '#2154ac',
+               '#1a3b9f', '#201f29', '#2f3438', '#ebe6da']
 base_colors = [
     np.array([0.1212013, 0.101097, 0.07303002, 0.05363664, 0.04690421, 0.04570704, 0.04452195, 0.04243668, 0.04289869, 0.04456398, 0.04568473, 0.046205, 0.04528819, 0.04537141, 0.04474038, 0.04383377, 0.0452695, 0.04765972, 0.05484549, 0.07999652, 0.1399595, 0.2611156, 0.4431363, 0.6190923, 0.7271121, 0.7818922, 0.8101522, 0.8274329, 0.8391663, 0.8471349, 0.8520025, 0.8520654, 0.8550329, 0.852966, 0.8517792, 0.8502535, 0.8409094, 0.8292962, 0.8204237, 0.794946, 0.7644186]),
     np.array([0.07959975, 0.07772375, 0.05812837, 0.04815512, 0.04476049, 0.04371236, 0.04115716, 0.03869853, 0.03853175, 0.03860794, 0.03990925, 0.03846247, 0.03787113, 0.03810629, 0.03800828, 0.03751255, 0.03797397, 0.03837147, 0.03921875, 0.04134138, 0.04503936, 0.05885165, 0.1218919, 0.2381622, 0.357492, 0.4498067, 0.5122329, 0.5511907, 0.5814605, 0.6058185, 0.6305487, 0.6511434, 0.6707595, 0.6870765, 0.7019841, 0.7071651, 0.7150883, 0.7032279, 0.6967656, 0.6665022, 0.6454147]),
@@ -367,7 +367,7 @@ async def gen_matrix(request: Request):
     target_color = data['target_color']
     selected_coord = data['selected_coord']
     matrix_num = data['matrix_num']
-    print(option, target_color, selected_coord, matrix_num)
+    # print(option, target_color, selected_coord, matrix_num)
     global mat_colors
     global options
     global mat_lab_colors
@@ -455,14 +455,42 @@ async def gen_matrix(request: Request):
         matrix['lab_space'].append(matrix_row)
     lab_colors = matrix
     mat_colors.append(colors)
-    print('matrix num:', len(mat_colors))
+    # print('matrix num:', len(mat_colors))
     mat_lab_colors.append(lab_colors)
 
     return {'id': len(mat_colors), 'colors': colors, 'colors_with_dist': colors_with_dist, 'lab_colors': lab_colors}
 
-@app.post("/subtle_adjustment")
-async def subtle_adjustment(request: Request):
-    data = await request.json()
+# @app.post("/subtle_adjustment")
+# async def subtle_adjustment(request: Request):
+#     data = await request.json()
+#     mixed_color = data['mixed_color']
+#     color1 = data['color1']
+#     color2 = data['color2']
+#     qm = float(data['qm'])
+#     q1 = float(data['q1'])
+#     q2 = float(data['q2'])
+#     pqm = float(data['pqm'])
+#     pq1 = float(data['pq1'])
+#     pq2 = float(data['pq2'])
+#     new_mixed_color = mixed_color
+#     new_color1 = color1
+#     new_color2 = color2
+#     if q1 == pq1 and q2 == pq2:
+#         mixed_color = hex_to_sd(mixed_color).values
+#         new_mixed_color = color_mixing(mixed_color, mixed_color, qm / pqm, 0)
+#     elif qm == pqm and q2 == pq2:
+#         color1 = hex_to_sd(color1).values
+#         color2 = hex_to_sd(color2).values
+#         new_mixed_color = color_mixing(color1, color2, q1 / pq1, q2)
+#         new_color1 = color_mixing(color1, color1, q1 / pq1, 0)
+#     elif qm == pqm and q1 == pq1:
+#         color1 = hex_to_sd(color1).values
+#         color2 = hex_to_sd(color2).values
+#         new_mixed_color = color_mixing(color1, color2, q1, q2 / pq2)
+#         new_color2 = color_mixing(color2, color2, q2 / pq2, 0)
+#     return {'mixed_color': new_mixed_color, 'color1': new_color1, 'color2': new_color2}
+
+def subtle_adjustment(data):
     mixed_color = data['mixed_color']
     color1 = data['color1']
     color2 = data['color2']
@@ -472,21 +500,61 @@ async def subtle_adjustment(request: Request):
     pqm = float(data['pqm'])
     pq1 = float(data['pq1'])
     pq2 = float(data['pq2'])
-    print(mixed_color, color1, color2)
-    print(qm, q1, q2)
-    print(pqm, pq1, pq2)
     new_mixed_color = mixed_color
     new_color1 = color1
     new_color2 = color2
     if q1 == pq1 and q2 == pq2:
+        mixed_color = hex_to_sd(mixed_color).values
         new_mixed_color = color_mixing(mixed_color, mixed_color, qm / pqm, 0)
     elif qm == pqm and q2 == pq2:
+        color1 = hex_to_sd(color1).values
+        color2 = hex_to_sd(color2).values
         new_mixed_color = color_mixing(color1, color2, q1 / pq1, q2)
         new_color1 = color_mixing(color1, color1, q1 / pq1, 0)
     elif qm == pqm and q1 == pq1:
+        color1 = hex_to_sd(color1).values
+        color2 = hex_to_sd(color2).values
         new_mixed_color = color_mixing(color1, color2, q1, q2 / pq2)
         new_color2 = color_mixing(color2, color2, q2 / pq2, 0)
     return {'mixed_color': new_mixed_color, 'color1': new_color1, 'color2': new_color2}
 
+def adjust_pigments(pigments, mixedPigments):
+    new_mix = []
+    for i in range(1, len(pigments)):
+        if i == 1:
+            color1, q1 = pigments[i-1]
+            color2, q2 = pigments[i]
+            mixed_color, qm = mixedPigments[i-1]
+        else:
+            color1, q1 = mixedPigments[i-2]
+            color2, q2 = pigments[i]
+            mixed_color, qm = mixedPigments[i-1]
+        new_mixed_color, new_color1, new_color2 =subtle_adjustment({"mixed_color": mixed_color, "color1":color1, "color2":color2, "qm":qm, "q1":q1, "q2":q2, "pqm":qm, "pq1":0.01, "pq2":0.01}).values()
+        new_mix.append([new_mixed_color, qm])
+    print("pigments", pigments, "mixed", mixedPigments, "new", new_mix)
+    
+    return new_mix
+
+# 根据指定的原始颜色生成预览渐变条
+@app.post("/gen_slider_bg")
+async def gen_slider_bg(request: Request): 
+    data = await request.json()
+    pigments = data['pigments']
+    mixedPigments = data['mixedPigments']
+    index = data['index']
+    print("GOT: Pigments:",pigments, " mixed", mixedPigments, " index",index)
+    new_bg = []
+    for q in range(1, 16):
+        pigments[index][1] = q / 100
+        mixedPigments = adjust_pigments(pigments, mixedPigments)
+        new_bg.append(mixedPigments[-1])
+    print("SENT: index", index, "new", new_bg)
+    return {"new_bg": new_bg}
+
 if __name__ == '__main__':
     uvicorn.run(app="server:app", reload=True, host="127.0.0.1", port=8000)
+    # print(cal_color_gradients('#de3e35', 0.01))
+    # pigments = [['#Ca5a35', 0.01], ['#697bd2',0.01], ['#ffb200',0.01]]
+    # mixedPigments = [['#8d734a', 0.01], ['#c98c20',0.02]]
+    # new_mix = adjust_slider_bg(pigments, mixedPigments, 1)
+    # print(new_mix)

@@ -155,6 +155,10 @@ export const MatrixVisualization = ({
                         marginLeft: "0px",
                         marginTop: "-2px",
                     }}
+                    onClick={() => {
+                        //TODO: 将矩阵信息传输到散点图 SpacePlot
+                        console.log("click index", index, "data", data);
+                    }}
                 >
                     {index + 1}
                 </span>
