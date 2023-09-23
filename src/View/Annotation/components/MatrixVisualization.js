@@ -14,6 +14,8 @@ const demoDistance = 13.67;
 export const MatrixVisualization = ({
     index,
     data,
+    matrixDist,
+    matrixLab,
     floatDirection,
     changeActionType,
     clickPosition,
@@ -157,7 +159,7 @@ export const MatrixVisualization = ({
                     }}
                     onClick={() => {
                         //TODO: 将矩阵信息传输到散点图 SpacePlot
-                        console.log("click index", index, "data", data);
+                        console.log("click index", index, "data", data, "dist", matrixDist[index], "lab", matrixLab[index]);
                     }}
                 >
                     {index + 1}
@@ -227,7 +229,8 @@ export const MatrixVisualization = ({
                             }}
                         >
                             <span className="STitle-text-contrast" style={{marginLeft: "0px"}}>
-                                {`Select This Pigment (${demoDistance})`}
+                                {`Select This Pigment (${matrixDist[index][(hoverPosition[0]+1)*14+(hoverPosition[1]+1)].toFixed(0)})`}
+                                {/* {`Select This Pigment (${(hoverPosition[0]+1)*14+(hoverPosition[1]+1)})`} */}
                             </span>
                         </div>
                         <div 

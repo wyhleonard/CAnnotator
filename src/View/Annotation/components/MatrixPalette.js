@@ -52,6 +52,10 @@ const mixtureResults = [
 export const MatrixPalette = ({
     matrixData,
     setMatrixData,
+    matrixDistances,
+    setMatrixDistances,
+    matrixLabs,
+    setMatrixLabs,
     pigmentChanged,
     setPigmentChanged,
     setOriginalPigments,
@@ -87,7 +91,7 @@ export const MatrixPalette = ({
     const [clickPosition, setClickPosition] = useState([[-1, -1]]);
     const [genMatrix, setGenMatrix] = useState(['i'])
 
-    // 跳转距离直接hardcord吧，这样最准确
+    // 跳转距离直接hardcode吧，这样最准确
     const stepSize = 287.15 + 8;
 
     const handleActionConduction = (actionType, hoverPosition, index) => {  // index means which color matrix palette
@@ -164,8 +168,10 @@ export const MatrixPalette = ({
             })
             .then(response => response.json())
             .then(data => {
-                console.log("data from server.py:", data.colors.col)
+                console.log("data from server.py:", data)
                 setMatrixData(current => [...current, data.colors])
+                setMatrixDistances(current => [...current, data.colors_with_dist])
+                setMatrixLabs(current => [...current, data.lab_colors])
             })
             .catch(error => console.error("Error fetching data:", error));
         } else if (actionType === 2) {
@@ -183,6 +189,8 @@ export const MatrixPalette = ({
             .then(response => response.json())
             .then(data => {
                 setMatrixData(current => [...current, data.colors])
+                setMatrixDistances(current => [...current, data.colors_with_dist])
+                setMatrixLabs(current => [...current, data.lab_colors])
             })
             .catch(error => console.error("Error fetching data:", error));
         }
@@ -206,6 +214,7 @@ export const MatrixPalette = ({
 
     const matrixItems = matrixData.map((data, index) => {
         const floatDirection = (index - focusStep) % 2 === 0 ? true : false;
+        // console.log("matrixDist",matrixDistances[index])
         return <div
             key={`matrix-item-${index}`} 
             className="Matrix-item-container"
@@ -215,7 +224,9 @@ export const MatrixPalette = ({
         >
             <MatrixVisualization 
                 index={index} 
-                data={data} 
+                data={data}
+                matrixDist={matrixDistances}
+                matrixLab={matrixLabs}
                 floatDirection={floatDirection} 
                 changeActionType={handleActionConduction}
                 clickPosition={clickPosition[index]}

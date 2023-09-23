@@ -21,6 +21,9 @@ export const AnnotationView = (props) => {
     const [selectedSpace, setSelectSpace] = useState(0);
 
     const [matrices, setMatrices] = useState([])
+    const [matrixDistances, setMatrixDistances] = useState([])
+    const [matrixLabs, setMatrixLabs] = useState([])
+
     const [originalPigments, setOriginalPigments] = useState([])
     const [pigments, setPigments] = useState([])
     const [mixedPigments, setMixedPigments] = useState([])
@@ -101,6 +104,8 @@ export const AnnotationView = (props) => {
                     setMatrices([data.colors])
                     // setIdx(0)
                     // setDistMatrices([data.colors_with_dist])
+                    setMatrixDistances([data.colors_with_dist])
+                    setMatrixLabs([data.lab_colors])
                     // setScatterSeq(current => [...current, data.lab_colors])
                     // setScatterIndex(current => current + 1)
                 })
@@ -267,6 +272,10 @@ export const AnnotationView = (props) => {
                 <MatrixPalette
                     matrixData={matrices}
                     setMatrixData={setMatrices}
+                    matrixDistances={matrixDistances}
+                    setMatrixDistances={setMatrixDistances}
+                    matrixLabs={matrixLabs}
+                    setMatrixLabs={setMatrixLabs}
                     pigmentChanged={pigmentChanged}
                     setOriginalPigments={setOriginalPigments}
                     setPigmentChanged={setPigmentChanged}
