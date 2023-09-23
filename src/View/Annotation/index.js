@@ -29,8 +29,12 @@ export const AnnotationView = (props) => {
     const [mixedPigments, setMixedPigments] = useState([])
     const [pigmentChanged, setPigmentChanged] = useState(true)
     const [pigmentConfirmed, setPigmentConfirmed] = useState(false)
+
+    const [plotIndex, setPlotIndex] = useState(0)
+
     // const concentrations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16]
     const [targetColor, setTargetColor] = useState('#22ADC1')
+
     // const [matrices, setMatrices] = useState([])
     // const [distMatrices, setDistMatrices] = useState([])
     // const [coord, setCoord] = useState({row: 0, col: 0})
@@ -229,6 +233,7 @@ export const AnnotationView = (props) => {
             key={`space-item-${index}`}
             className="Space-item"
             onClick={() => {
+                console.log("plot mode changed to ",index);
                 setSelectSpace(index);
                 setIsDropdown(false);
             }}
@@ -270,19 +275,15 @@ export const AnnotationView = (props) => {
             </div>
             <div className="MatrixSpace-display-container">
                 <MatrixPalette
-                    matrixData={matrices}
-                    setMatrixData={setMatrices}
-                    matrixDistances={matrixDistances}
-                    setMatrixDistances={setMatrixDistances}
-                    matrixLabs={matrixLabs}
-                    setMatrixLabs={setMatrixLabs}
-                    pigmentChanged={pigmentChanged}
+                    matrixData={matrices} setMatrixData={setMatrices}
+                    matrixDistances={matrixDistances} setMatrixDistances={setMatrixDistances}
+                    matrixLabs={matrixLabs} setMatrixLabs={setMatrixLabs}
+                    pigmentChanged={pigmentChanged} setPigmentChanged={setPigmentChanged}
                     setOriginalPigments={setOriginalPigments}
-                    setPigmentChanged={setPigmentChanged}
-                    pigments={pigments}
-                    setPigments={setPigments}
-                    mixedPigments={mixedPigments}
-                    setMixedPigments={setMixedPigments} />
+                    pigments={pigments} setPigments={setPigments}
+                    mixedPigments={mixedPigments} setMixedPigments={setMixedPigments} 
+                    setPlotIndex={setPlotIndex}
+                />
             </div>
         </div>
         <div className="Annotation-space-container">
@@ -331,6 +332,7 @@ export const AnnotationView = (props) => {
             <div className="MatrixSpace-display-container">
                 <SpacePlot
                     spaceIndex={selectedSpace}
+                    matrixLabData={matrixLabs[plotIndex]}
                 />
             </div>
         </div>

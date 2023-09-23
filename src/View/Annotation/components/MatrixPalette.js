@@ -62,7 +62,8 @@ export const MatrixPalette = ({
     pigments,
     setPigments,
     mixedPigments,
-    setMixedPigments
+    setMixedPigments,
+    setPlotIndex,
 }) => {
 
     // const [matrixData, setMatrixData] = useState([
@@ -230,6 +231,7 @@ export const MatrixPalette = ({
                 floatDirection={floatDirection} 
                 changeActionType={handleActionConduction}
                 clickPosition={clickPosition[index]}
+                setPlotIndex={setPlotIndex}
             />
         </div>
     })

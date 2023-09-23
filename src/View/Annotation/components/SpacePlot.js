@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "../../sharedCss.css";
 import "./SpacePlot.css";
 import * as d3 from "d3";
@@ -1569,12 +1569,20 @@ const circleSize = 8;
 
 // Good Job!
 export const SpacePlot = ({
-    spaceIndex = 0,
+    spaceIndex,
+    matrixLabData,
 }) => {
     // copy from PaintingBoard.js
     const svgRef = useRef(null);
     const [svgSize, setSvgSize] = useState([0, 0]);
     const [svgOffset, setSvgOffset] = useState([0, 0]);
+    const plotData = useMemo(() => {
+        if (matrixLabData) {
+            return matrixLabData.lab_space;
+        } else {
+            return demoScaterPlotData;
+        }
+    }, [matrixLabData])
 
     useEffect(() => {
         setSvgSize([
@@ -1651,6 +1659,8 @@ export const SpacePlot = ({
     }
 
     useEffect(() => {
+        console.log("plotData", plotData)
+        // const demoScaterPlotData = matrixLabData.lab_space;
         if (svgSize[0] > 0) {
             const leftTopSvg = [Math.abs(currentLT[0]), Math.abs(currentLT[1])];
 
@@ -1685,9 +1695,9 @@ export const SpacePlot = ({
 
             const circleData = [];
             const cIndex = coordinateIndex[spaceIndex];
-            for (let i = 0; i < demoScaterPlotData.length; i++) {
-                for (let j = 0; j < demoScaterPlotData[i].length; j++) {
-                    const dataSample = demoScaterPlotData[i][j];
+            for (let i = 0; i < plotData.length; i++) {
+                for (let j = 0; j < plotData[i].length; j++) {
+                    const dataSample = plotData[i][j];
                     const cx = dataSample.position[cIndex[0]];
                     const cy = dataSample.position[cIndex[1]];
                     if (cx > leftTopLab[0] && cx < rightBottomLab[0] && cy > leftTopLab[1] && cy < rightBottomLab[1]) {
