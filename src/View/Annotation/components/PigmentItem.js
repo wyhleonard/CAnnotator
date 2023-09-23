@@ -204,6 +204,7 @@ const originPigmentInDiffQuantities = [
 const PigmentItem = ({
     pigments,
     mixedPigments,
+    setMatchedColor,
     pigment,
     index,
     originPigment,
@@ -259,6 +260,7 @@ const PigmentItem = ({
             const newValue = (offsetX / sliderWidth) * demoSliderLength;
             newValue < 0 ? setFinalPosition(0) : newValue > sliderWidth ? setFinalPosition(sliderWidth) :  // 限制滑块在slider内
                 setFinalPosition(newValue);
+            setMatchedColor(backgroundColors2[Math.round(newValue / demoSliderLength * 12)][0]);
         }
     };
 

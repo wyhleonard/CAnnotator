@@ -256,7 +256,7 @@ export const AnnotationView = (props) => {
         <div className="Annotation-panel-container">
             <AnnotationPanel
                 pigments={pigments}
-                targetColor={targetColor}
+                targetColor={targetColor} setTargetColor={setTargetColor}
                 selectedOriginalPigments={originalPigments}
                 selectedSticker="/demoData/segmentations/6.png"
                 pigmentConfirmed={pigmentConfirmed}
