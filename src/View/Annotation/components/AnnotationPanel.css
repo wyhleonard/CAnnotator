@@ -7,8 +7,8 @@
 .A-segment-container {
     margin-top: 8px;
     margin-left: 8px;
-    height: calc(100% - 8px - 4px - 8px);
-    width: calc(32% - 8px - 8px);
+    height: calc(100% - 8px);
+    width: calc(32% - 8px);
     border-radius: 8px;
     padding: 4px;
     border: 3px dashed transparent;
@@ -27,8 +27,8 @@
 .A-color-annotation {
     margin-top: 8px;
     margin-left: 8px;
-    height: calc(100% - 8px - 4px - 8px);
-    width: calc(68% - 28px - 8px);
+    height: calc(100% - 8px);
+    width: calc(68% - 8px - 8px);
     border-radius: 8px;
     padding: 4px;
     border: 3px dashed transparent;
@@ -44,8 +44,8 @@
 .A-list-container {
     margin-top: 8px;
     margin-left: 8px;
-    height: calc(100% - 16px - 4px - 8px);
-    width: calc(100% - 24px - 8px);
+    height: calc(100% - 16px);
+    width: calc(100% - 16px);
     border-radius: 8px;
     padding: 4px;
     border: 3px dashed transparent;

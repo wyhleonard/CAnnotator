@@ -13,7 +13,6 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
 import copy
 import json
 import math
@@ -22,7 +21,6 @@ from colour import sd_to_XYZ, XYZ_to_sd, XYZ_to_sRGB, sRGB_to_XYZ, XYZ_to_Lab
 from colour.colorimetry import sd_to_XYZ_integration
 from colour.utilities import numpy_print_options
 from colour.notation import HEX_to_RGB, RGB_to_HEX
-
 
 
 # 创建ORB特征检测器
@@ -60,16 +58,16 @@ async def init_pic(file: UploadFile = File(...)):
     kp1, des1 = orb.detectAndCompute(img1, None)
 
 
-@app.post("/coseg/init/points")  
-async def init_points(points_l: list[list[float]]):
-    global points
-    points = points_l
-    global img1
-    cv2.circle(img1, (int(points[0][0]), int(points[0][1])), 5, (255, 0, 0), -1)
-    cv2.imshow('Image 1', img1)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    print(points)
+# @app.post("/coseg/init/points")
+# async def init_points(points_l: list[list[float]]):
+#     global points
+#     points = points_l
+#     global img1
+#     cv2.circle(img1, (int(points[0][0]), int(points[0][1])), 5, (255, 0, 0), -1)
+#     cv2.imshow('Image 1', img1)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
+#     print(points)
 
 @app.post("/coseg/match/point")  
 async def match_point(file: UploadFile = File(...)):
@@ -155,37 +153,37 @@ def get_dots(kp1, des1, images):
     return tsne.fit_transform(data)
 
 
-@app.post("/scatter/positions/url")
-async def get_positions_by_urls(targetUrls: list[str]):
-    images = []
-    for url in targetUrls:
-        cv2_image = url_to_cv2(url)
-        images.append(cv2_image)
+# @app.post("/scatter/positions/url")
+# async def get_positions_by_urls(targetUrls: list[str]):
+#     images = []
+#     for url in targetUrls:
+#         cv2_image = url_to_cv2(url)
+#         images.append(cv2_image)
+#
+#     global kp1, des1
+#
+#     return json.dumps(get_dots(kp1, des1, images).tolist())
 
-    global kp1, des1
 
-    return json.dumps(get_dots(kp1, des1, images).tolist())
-
-
-@app.post("/scatter/positions/blob")
-async def get_positions_by_blobs(sourceFile: UploadFile, targetFiles: list[UploadFile]):
-    contents = await sourceFile.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-    kp1, des1 = orb.detectAndCompute(img, None)
-    cv2.imshow("Image", img)
-
-    images = []
-    for i, image in enumerate(targetFiles):
-        contents = await image.read()
-        nparr = np.frombuffer(contents, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        cv2.imshow("Image" + str(i), img)
-        images.append(img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    return json.dumps(get_dots(kp1, des1, images).tolist())
+# @app.post("/scatter/positions/blob")
+# async def get_positions_by_blobs(sourceFile: UploadFile, targetFiles: list[UploadFile]):
+#     contents = await sourceFile.read()
+#     nparr = np.frombuffer(contents, np.uint8)
+#     img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+#     kp1, des1 = orb.detectAndCompute(img, None)
+#     cv2.imshow("Image", img)
+#
+#     images = []
+#     for i, image in enumerate(targetFiles):
+#         contents = await image.read()
+#         nparr = np.frombuffer(contents, np.uint8)
+#         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+#         cv2.imshow("Image" + str(i), img)
+#         images.append(img)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
+#
+#     return json.dumps(get_dots(kp1, des1, images).tolist())
 
 
 if torch.cuda.is_available():
@@ -193,7 +191,7 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-# print(device)
+print(device)
 
 class Model(nn.Module):
     def __init__(self, input_size, hidden_size1, hidden_size2, hidden_size3, output_size):
@@ -267,35 +265,40 @@ base_colors = [
 mat_size = len(base_colors)
 target_concentrations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 mat_colors = []
+mat_reflectances = []
 options = []
 mat_lab_colors = []
-paper_sd = hex_to_sd('#FFFAF0')
 
-
-def color_mixing(c1, c2, q1, q2):
-    input = np.concatenate((c1, np.array([q1]), c2, np.array([q2])))
+def color_mixing(c1, c2, m1, m2):
+    input = np.concatenate((c1, np.array([m1]), c2, np.array([m2]))) # old: 不应该是quantity
     input = torch.tensor(input, dtype=torch.float32).to(device).unsqueeze(0)
-    output = model(input).squeeze().detach().cpu().numpy()
-    output = sd_to_hex(output)
-    return output
+    output_reflectance = model(input).squeeze().detach().cpu().numpy()
+    # output = sd_to_hex(output_reflectance)
+    # return output, output_reflectance
+    return output_reflectance
 
-
-def cal_color_gradients(selected_color, quantity):
+def cal_color_gradients(selected_color, quantity): # selected_color的格式为reflectance
     gradients = []
-    selected_color = hex_to_sd(selected_color)
+    # selected_color = hex_to_sd(selected_color) # 去掉
     if quantity <= 7:
         new_concentrations = target_concentrations
     else:
-        new_concentrations = [quantity + i for i in range(-6, 7, 1)]
-    for c in new_concentrations:
-        m = c / quantity 
-        # output = color_mixing(selected_color, selected_color, m, 0)
-        input = np.concatenate((selected_color.values, np.array([m]), selected_color.values, np.array([0])))
-        input = torch.tensor(input, dtype=torch.float32).to(device).unsqueeze(0)
-        output = model(input).squeeze().detach().cpu().numpy()
-        gradients.append(output)
-    return gradients, new_concentrations
+        new_concentrations = [quantity + i for i in range(-6, 7, 1)] # good
 
+    # 太大时结果会很差，最好保持在[0.5 - 2]间 => 我知道该怎么做了！ m === 1
+    new_multiples = []
+    for c in new_concentrations:
+        m = c / quantity
+        new_multiples.append(1)
+        if round(c) == round(quantity):
+            gradients.append(selected_color)
+        else:
+            input = np.concatenate((selected_color, np.array([m * 0.5]), selected_color, np.array([m * 0.5])))
+            # input = np.concatenate((selected_color, np.array([m]), selected_color, np.array([0])))
+            input = torch.tensor(input, dtype=torch.float32).to(device).unsqueeze(0)
+            output = model(input).squeeze().detach().cpu().numpy()
+            gradients.append(output)
+    return gradients, new_concentrations, new_multiples
 
 def cal_distance(c1, c2):
     rgb1 = HEX_to_RGB(c1)
@@ -307,57 +310,168 @@ def cal_distance(c1, c2):
     dist = float(np.linalg.norm(lab1 - lab2))
     return dist
 
-
-def construct_matrix(row, col, q1, q2, target_color):
+def construct_matrix(row, col, q1, q2, target_color, m1, m2):
     colors = [['' for j in range(mat_size + 1)] for i in range(mat_size + 1)]
-    colors_with_dist = [['' for j in range(mat_size + 1)] for i in range(mat_size + 1)]
-    min_dist = 1e7
-    max_dist = -1e7
-    # for j in range(mat_size, -1, -1):
-    #     for i in range(mat_size, -1, -1):
-    #         if i == 0 and j == 0:
-    #             colors[i][j] = '#000000'
-    #         elif i == 0 and j != 0:
-    #             colors[i][j] = row[j - 1]
-    #         elif i != 0 and j == 0:
-    #             colors[i][j] = col[i - 1]
-    #         else:
-    #             if i < j:
-    #                 colors[i][j] = color_mixing(row[j - 1], col[i - 1], q1[j - 1], q2[i - 1])
-    #             elif i == j:
-    #                 colors[i][j] = '#FFFFFF'
-    #             else:
-    #                 dist = cal_distance(target_color, colors[j][i])
-    #                 colors[i][j] = dist
-    #                 if dist > max_dist:
-    #                     max_dist = dist
-    #                 if dist < min_dist:
-    #                     min_dist = dist
-    # colors_with_dist = copy.deepcopy(colors)
-    # colors_with_dist = [item for sublist in colors_with_dist for item in sublist]
-    # for i in range(mat_size + 1):
-    #     for j in range(mat_size + 1):
-    #         if i != 0 and j != 0 and i > j:
-    #             rgb = np.array([(colors[i][j] - min_dist) / (max_dist - min_dist) for k in range(3)])
-    #             colors[i][j] = RGB_to_HEX(rgb)
-    # colors = [item for sublist in colors for item in sublist]
+    colors_with_dist_c = [[0 for j in range(mat_size + 1)] for i in range(mat_size + 1)]
+
+    reflectances = [[[] for j in range(mat_size + 1)] for i in range(mat_size + 1)]
+    # 还需要两个distance
+    colors_with_next_dist = [[[] for j in range(mat_size + 1)] for i in range(mat_size + 1)]
+
     for i in range(0, mat_size + 1):
         for j in range(0, mat_size + 1):
             if i == 0 and j == 0:
                 colors[i][j] = '#FFFFFF'
+                reflectances[i][j] = []
             elif i == 0 and j != 0:
                 colors[i][j] = sd_to_hex(row[j - 1])
+                reflectances[i][j] = row[j - 1]
             elif i != 0 and j == 0:
                 colors[i][j] = sd_to_hex(col[i - 1])
+                reflectances[i][j] = col[i - 1]
             else:
-                colors[i][j] = color_mixing(col[i - 1], row[j - 1], q2[i - 1], q1[j - 1])
+                color, reflectance = color_mixing(col[i - 1], row[j - 1], m2[i - 1], m1[j - 1]) # col and row are reflectance
+                colors[i][j] = color
+                reflectances[i][j] = reflectance
                 dist = cal_distance(target_color, colors[i][j])
-                colors_with_dist[i][j] = dist
+                colors_with_dist_c[i][j] = dist
 
+                # see more quantities
+                # print("row", row[j - 1], q1[j - 1])
+                # row_colors, q1 = cal_color_gradients(row[j - 1], q1[j - 1])
+                # col_colors, q2 = cal_color_gradients(col[i - 1], q2[i - 1])
+                # _, colors_with_dist = construct_matrix(row_colors, col_colors, q1, q2, target_color)
+                # print("colors_with_dist_q", colors_with_dist)
+
+    # 为啥要再赋值一遍 => 这里为啥要重新变成一维数组
     colors = [item for sublist in colors for item in sublist]
-    colors_with_dist = [item for sublist in colors_with_dist for item in sublist]
+    colors_with_dist = [item for sublist in colors_with_dist_c for item in sublist]
+    reflectances = [item for sublist in reflectances for item in sublist]
     
-    return colors, colors_with_dist
+    return colors, colors_with_dist, reflectances
+
+def cal_color_gradients_optimize(palette, mixedOnes, option):
+        quantity_sum = 0
+        for k in range(len(mixedOnes)):
+            quantity_sum += mixedOnes[k][1]
+
+        if option == 'q':
+            if quantity_sum <= 7:
+                new_concentrations = target_concentrations
+            else:
+                new_concentrations = [quantity_sum + i for i in range(-6, 7, 1)]
+        else:
+            if quantity_sum <= 7:
+                new_concentrations = target_concentrations
+            elif quantity_sum <= 13:
+                new_concentrations = [quantity_sum + i for i in range(-6, 7, 1)]
+            else:
+                new_concentrations = [quantity_sum + i for i in range(-12, 14, 2)]
+
+        # print("test-new_concentrations", (np.array(mixedOnes)).shape, quantity_sum, new_concentrations)
+
+        new_pigments = []
+        new_pigments_info = []
+        for c in new_concentrations:
+            m = c / quantity_sum
+
+            new_pigments.append([])
+            new_pigments_info.append([])
+            for k in range(len(mixedOnes)):
+                pigments = mixedOnes[k]
+
+                t_q = pigments[1] * m
+                t_r = palette[pigments[0]]
+
+                # print("test-cm", c, m, pigments[1], sd_to_hex(t_r))
+                # print("test-t_q", k, t_q)
+
+                if abs(t_q - 1) < 1e-3:
+                    new_pigments[-1].append(t_r)
+                    new_pigments_info[-1].append(pigments)
+                else:
+                    new_pigments[-1].append(color_mixing(t_r, t_r, t_q * 0.5, t_q * 0.5))
+                    new_pigments_info[-1].append((pigments[0], t_q))
+
+        # print("test-new_pigments_info", (np.array(new_pigments)).shape, (np.array(new_pigments_info)).shape)
+
+        return new_pigments, new_pigments_info
+
+def link_mixed(pigments):
+    t_r = []
+    for k in range(len(pigments)):
+        if k == 0:
+            t_r = pigments[k]
+        else:
+            t_r = color_mixing(t_r, pigments[k], 1, 1)
+    return t_r
+
+def get_min_Dis(matrix):
+    min_v = 100000
+    for i in range(1, mat_size + 1):
+        for j in range(1, mat_size + 1):
+            if matrix[i][j] < min_v:
+                min_v = matrix[i][j]
+    return min_v
+
+def cal_next_distance(col_pigments_info, row_pigments_info, target_color):
+    colors_with_dist_n = [[[0, 0] for _ in range(mat_size + 1)] for _ in range(mat_size + 1)]
+
+    # 最后录视频的时候再打开
+    # for i in range(1, mat_size + 1):
+    #     for j in range(1, mat_size + 1):
+    #         # quantity
+    #         col_pigments, _ = cal_color_gradients_optimize(base_colors, col_pigments_info[i - 1], 'q')
+    #         row_pigments, _ = cal_color_gradients_optimize(base_colors, row_pigments_info[j - 1], 'q')
+    #         _, _, colors_with_dist_q = construct_matrix_optimize(col_pigments, row_pigments, target_color)
+    #
+    #         # mixture
+    #         mixed_pigments = [p for p in col_pigments_info[i - 1]]
+    #         t_row_pigments = row_pigments_info[j - 1]
+    #         for p in t_row_pigments:
+    #             mixed_pigments.append(p)
+    #         col_pigments, _ = cal_color_gradients_optimize(base_colors, mixed_pigments, 'm')
+    #         row_pigments = [[c] for c in base_colors]
+    #         _, _, colors_with_dist_m = construct_matrix_optimize(col_pigments, row_pigments, target_color)
+    #
+    #         colors_with_dist_n[i][j] = [
+    #             get_min_Dis(colors_with_dist_q),
+    #             get_min_Dis(colors_with_dist_m),
+    #         ]
+
+    return colors_with_dist_n
+
+def construct_matrix_optimize(col_pigments, row_pigments, target_color):
+    colors = [['' for _ in range(mat_size + 1)] for _ in range(mat_size + 1)]
+    reflectances = [[[] for _ in range(mat_size + 1)] for _ in range(mat_size + 1)]
+    colors_with_dist_c = [[0 for _ in range(mat_size + 1)] for _ in range(mat_size + 1)]
+
+    for i in range(mat_size + 1):
+        for j in range(mat_size + 1):
+            if i == 0 and j == 0:
+                continue
+            elif i == 0 and j != 0:
+                # add row
+                t_row_pigments = row_pigments[j - 1]
+                reflectances[i][j] = link_mixed(t_row_pigments)
+            elif i != 0 and j == 0:
+                # add col
+                t_col_pigments = col_pigments[i - 1]
+                reflectances[i][j] = link_mixed(t_col_pigments)
+            else:
+                # add col + row
+                mixed_pigments = [p for p in col_pigments[i - 1]]
+                t_row_pigments = row_pigments[j - 1]
+                for k in range(len(t_row_pigments)):
+                    mixed_pigments.append(t_row_pigments[k])
+                reflectances[i][j] = link_mixed(mixed_pigments)
+                # print("test-mixed_pigments", (i, j), len(mixed_pigments), sd_to_hex(reflectances[i][j]))
+
+            colors[i][j] = sd_to_hex(reflectances[i][j])
+            dist = cal_distance(target_color, colors[i][j])
+            colors_with_dist_c[i][j] = dist
+
+    return colors, reflectances, colors_with_dist_c
 
 
 @app.post("/gen_matrix")
@@ -368,54 +482,173 @@ async def gen_matrix(request: Request):
     selected_coord = data['selected_coord']
     matrix_num = data['matrix_num']
     # print(option, target_color, selected_coord, matrix_num)
-    global mat_colors
+    # global mat_colors
+    global mat_reflectances
     global options
-    global mat_lab_colors
+    # global mat_lab_colors
 
     if matrix_num >= 0:
-        mat_colors = mat_colors[:matrix_num+1]
+        # mat_colors = mat_colors[:matrix_num+1]
+        mat_reflectances = mat_reflectances[:matrix_num+1]
         options = options[:matrix_num+1]
-        mat_lab_colors = mat_lab_colors[:matrix_num+1]
+        # mat_lab_colors = mat_lab_colors[:matrix_num+1]
 
-    row, col = selected_coord
+    col, row = selected_coord
+    print(col, row)
 
     if option == 'i':
         mat_colors = []
-        row_colors = base_colors
-        col_colors = base_colors
-        q1 = [1 for i in range(len(row_colors))]
-        q2 = [1 for i in range(len(row_colors))]
+        mat_reflectances = []
+        row_pigments = [[c] for c in base_colors]
+        col_pigments = [[c] for c in base_colors]
+        row_pigments_info = [[(i, 1)] for i in range(len(base_colors))]
+        col_pigments_info = [[(i, 1)] for i in range(len(base_colors))]
+
+        # 这里是对的
+        # for k in range(len(col_pigments)):
+        #     print("test-col", sd_to_hex(col_pigments[k][0]), sd_to_hex(row_pigments[k][0]))
+
 
     elif option == 'q':
-        quantity1 = round(mat_colors[-1]['col'][col][1] * 100)
-        quantity2 = round(mat_colors[-1]['row'][row][1] * 100)
-        row_colors, q1 = cal_color_gradients(mat_colors[-1]['col'][col][0], quantity1)
-        col_colors, q2 = cal_color_gradients(mat_colors[-1]['row'][row][0], quantity2)
+        # optimize
+        # quantity1 = round(mat_colors[-1]['row'][row][1] * 100)
+        # quantity2 = round(mat_colors[-1]['col'][col][1] * 100)
+        # row_colors, q1, m1 = cal_color_gradients(mat_reflectances[-1]['row'][row][0], quantity1)
+        # col_colors, q2, m2 = cal_color_gradients(mat_reflectances[-1]['col'][col][0], quantity2)
 
-    elif option == 'm':
-        quantity = round(mat_colors[-1]['mixed'][row][col][1] * 100)
-        row_colors = base_colors
-        col_colors, q2 = cal_color_gradients(mat_colors[-1]['mixed'][row][col][0], quantity)
-        q1 = [1 for i in range(len(row_colors))]
+        # optimize 2
+        col_pigments, col_pigments_info = cal_color_gradients_optimize(base_colors, mat_reflectances[-1]['col'][col], option)
+        row_pigments, row_pigments_info = cal_color_gradients_optimize(base_colors, mat_reflectances[-1]['row'][row], option)
 
-    colors, colors_with_dist = construct_matrix(row_colors, col_colors, q1, q2, target_color)
-    
+    # elif option == 'm':
+    else:
+        # optimize 2
+        mixed_pigments = [p for p in mat_reflectances[-1]['col'][col]]
+        t_row_pigments = mat_reflectances[-1]['row'][row]
+        for p in t_row_pigments:
+            mixed_pigments.append(p)
+
+        col_pigments, col_pigments_info = cal_color_gradients_optimize(base_colors, mixed_pigments, 'm')
+
+        row_pigments = [[c] for c in base_colors]
+        row_pigments_info = [[(i, 1)] for i in range(len(base_colors))]
+
+
+        # quantity = round(mat_colors[-1]['mixed'][col][row][1] * 100)
+        # row_colors = base_colors
+        # m1 = [1 for i in range(len(row_colors))]
+        # q1 = [1 for i in range(len(row_colors))]
+
+        # optimize 1
+        # # 为了对齐，选择直接调混合前的Reflectance
+        # t_col_color, t_col_q = mat_reflectances[-1]['col'][col][0], round(mat_reflectances[-1]['col'][col][1] * 100)
+        # t_row_color, t_row_q = mat_reflectances[-1]['row'][row][0], round(mat_reflectances[-1]['row'][row][1] * 100)
+        #
+        # gradients = []
+        # if quantity <= 7:
+        #     new_concentrations = target_concentrations
+        # elif quantity <= 13:
+        #     new_concentrations = [quantity + i for i in range(-6, 7, 1)]
+        # else:
+        #     new_concentrations = [quantity + i for i in range(-12, 14, 2)]
+        #
+        # print("new_concentrations", new_concentrations)
+        # new_multiples = []
+        # for c in new_concentrations:
+        #     m = c / quantity
+        #     new_multiples.append(1)
+        #     if round(c) == round(quantity):
+        #         gradients.append(mat_reflectances[-1]['mixed'][col][row][0])
+        #     else:
+        #         m_c = t_col_q * m
+        #         input_c = np.concatenate((t_col_color, np.array([m_c * 0.5]), t_col_color, np.array([m_c * 0.5])))
+        #         input_c = torch.tensor(input_c, dtype=torch.float32).to(device).unsqueeze(0)
+        #         output_c = model(input_c).squeeze().detach().cpu().numpy()
+        #
+        #         m_r = t_row_q * m
+        #         input_r = np.concatenate((t_row_color, np.array([m_r * 0.5]), t_row_color, np.array([m_r * 0.5])))
+        #         input_r = torch.tensor(input_r, dtype=torch.float32).to(device).unsqueeze(0)
+        #         output_r = model(input_r).squeeze().detach().cpu().numpy()
+        #
+        #         color, reflectance = color_mixing(output_c, output_r, 1, 1)
+        #         gradients.append(reflectance)
+        #
+        # col_colors = gradients
+        # q2 = new_concentrations
+        # m2 = new_multiples
+
+        # origin
+        # col_colors, q2, m2 = cal_color_gradients(mat_reflectances[-1]['mixed'][col][row][0], quantity)
+
+    # colors, colors_with_dist, reflectances = construct_matrix(row_colors, col_colors, q1, q2, target_color, m1, m2)
+    # print("col_pigments", (np.array(col_pigments)).shape, (np.array(col_pigments_info)).shape) # (13, 41)
+    # print("row_pigments", (np.array(row_pigments)).shape, (np.array(row_pigments_info)).shape)
+
+    colors, reflectances, colors_with_dist = construct_matrix_optimize(col_pigments, row_pigments, target_color)
+
+    colors_with_dist_n  = cal_next_distance(col_pigments_info, row_pigments_info, target_color)
+
+    # store option
     options.append(option)
-    lab_colors = []
-    for i in range(mat_size + 1):
-        for j in range(mat_size + 1):
+
+    # store lab
+    lab_space = []
+    for i in range(1, mat_size + 1):
+        lab_space.append([])
+        for j in range(1, mat_size + 1):
             if i != 0 and j != 0:
-                hex = colors[i*(mat_size+1)+j]
-                hex_num = int(hex.lstrip('#'), 16)
+                # hex = colors[i*(mat_size+1)+j]
+                hex = colors[i][j]
+                # hex_num = int(hex.lstrip('#'), 16)
                 rgb = HEX_to_RGB(hex)
                 xyz = sRGB_to_XYZ(rgb)
                 lab = XYZ_to_Lab(xyz)
-                lab_colors.append({'position': lab.tolist(), 'color': hex, 'type': 'space'})
-    # print(len(colors), len(colors_with_dist), len(lab_colors))
+                lab_space[-1].append({'position': lab.tolist(), 'color': hex, 'type': 'space'})
+
+    # translate target_color
     rgb = HEX_to_RGB(target_color)
     xyz = sRGB_to_XYZ(rgb)
     target_lab = XYZ_to_Lab(xyz)
-    lab_colors.append({'position': target_lab.tolist(), 'color': target_color, 'type': 'target'})
+    lab_colors = {
+        'lab_space': lab_space,
+        'target_color': {
+            'position': target_lab.tolist(),
+            'color': target_color,
+            'type': 'target',
+        }
+    }
+
+    # store palette
+    mat_reflectances.append({'row': row_pigments_info, 'col': col_pigments_info})
+
+    # translate colors to return template
+    color_matrix = {'row': [], 'col': [], 'mixed': []}
+    for i in range(1, mat_size + 1):
+        row_quantity = 0
+        for k in range(len(row_pigments_info[i - 1])):
+            row_quantity += row_pigments_info[i - 1][k][1]
+
+        col_quantity = 0
+        for k in range(len(col_pigments_info[i - 1])):
+            col_quantity += col_pigments_info[i - 1][k][1]
+
+        # print("row_colors", i - 1, colors[0][i], sd_to_hex(base_colors[i - 1])) # 为啥不一样
+        color_matrix['row'].append([colors[0][i], row_quantity])
+        color_matrix['col'].append([colors[i][0], col_quantity])
+
+    for i in range(1, mat_size + 1):
+        color_matrix['mixed'].append([])
+        for j in range(1, mat_size + 1):
+            color_matrix['mixed'][-1].append([colors[i][j], color_matrix['row'][j - 1][1] + color_matrix['col'][i - 1][1]])
+
+
+    # for i in range(1, 14):
+    #     matrix['row'].append([colors[i], q1[i-1] / 100])
+    #     matrix['col'].append([colors[i*14], q2[i-1] / 100])
+    #     mixed_row = []
+    #     for j in range(1, 14):
+    #         mixed_row.append([colors[i*14+j], (q1[j-1] + q2[i-1]) / 100])
+    #     matrix['mixed'].append(mixed_row)
 
     # print(colors)
     # print(lab_colors)
@@ -438,57 +671,60 @@ async def gen_matrix(request: Request):
     #             matrix_row.append(lab_colors[i*13+j])
     #         matrix['lab_space'].append(matrix_row)
     #     json.dump(matrix, file)
-    matrix = {'row': [], 'col': [], 'mixed': []}
-    for i in range(1, 14):
-        matrix['row'].append([colors[i], q1[i-1] / 100])
-        matrix['col'].append([colors[i*14], q2[i-1] / 100])
-        mixed_row = []
-        for j in range(1, 14):
-            mixed_row.append([colors[i*14+j], (q1[j-1] + q2[i-1]) / 100])
-        matrix['mixed'].append(mixed_row)
-    colors = matrix
-    matrix = {'lab_space': [], 'target_color': lab_colors[-1]}
-    for i in range(13):
-        matrix_row = []
-        for j in range(13):
-            matrix_row.append(lab_colors[i*13+j])
-        matrix['lab_space'].append(matrix_row)
-    lab_colors = matrix
-    mat_colors.append(colors)
-    # print('matrix num:', len(mat_colors))
-    mat_lab_colors.append(lab_colors)
 
-    return {'id': len(mat_colors), 'colors': colors, 'colors_with_dist': colors_with_dist, 'lab_colors': lab_colors}
+    # matrix = {'row': [], 'col': [], 'mixed': []}
+    # matrix_r = {'row': [], 'col': [], 'mixed': []}
+    # for i in range(1, 14):
+    #     matrix['row'].append([colors[i], q1[i-1] / 100])
+    #     matrix['col'].append([colors[i*14], q2[i-1] / 100])
+    #     mixed_row = []
+    #     for j in range(1, 14):
+    #         mixed_row.append([colors[i*14+j], (q1[j-1] + q2[i-1]) / 100])
+    #     matrix['mixed'].append(mixed_row)
+    #
+    #     reflectance - origin
+    #     matrix_r['row'].append([reflectances[i], q1[i-1] / 100])
+    #     matrix_r['col'].append([reflectances[i*14], q2[i-1] / 100])
+    #     mixed_row_r = []
+    #     for j in range(1, 14):
+    #         mixed_row_r.append([reflectances[i*14+j], (q1[j-1] + q2[i-1]) / 100])
+    #     matrix_r['mixed'].append(mixed_row_r)
+    #     #
+    #     # # optimize
+    #     # matrix_r['row'].append([reflectances[i], q1[i-1]])
+    #     # matrix_r['col'].append([reflectances[i*14], q2[i-1]])
+    #     # # mixed 时候添加一个颜料，quantity时只改变quantity
+    #     # mixed_row_r = []
+    #     # for j in range(1, 14):
+    #     #     mixed_row_r.append([(i - 1, q2[i - 1]), (j - 1, q1[i - 1])]) # col and row
+    #     # matrix_r['mixed'].append(mixed_row_r)
 
-# @app.post("/subtle_adjustment")
-# async def subtle_adjustment(request: Request):
-#     data = await request.json()
-#     mixed_color = data['mixed_color']
-#     color1 = data['color1']
-#     color2 = data['color2']
-#     qm = float(data['qm'])
-#     q1 = float(data['q1'])
-#     q2 = float(data['q2'])
-#     pqm = float(data['pqm'])
-#     pq1 = float(data['pq1'])
-#     pq2 = float(data['pq2'])
-#     new_mixed_color = mixed_color
-#     new_color1 = color1
-#     new_color2 = color2
-#     if q1 == pq1 and q2 == pq2:
-#         mixed_color = hex_to_sd(mixed_color).values
-#         new_mixed_color = color_mixing(mixed_color, mixed_color, qm / pqm, 0)
-#     elif qm == pqm and q2 == pq2:
-#         color1 = hex_to_sd(color1).values
-#         color2 = hex_to_sd(color2).values
-#         new_mixed_color = color_mixing(color1, color2, q1 / pq1, q2)
-#         new_color1 = color_mixing(color1, color1, q1 / pq1, 0)
-#     elif qm == pqm and q1 == pq1:
-#         color1 = hex_to_sd(color1).values
-#         color2 = hex_to_sd(color2).values
-#         new_mixed_color = color_mixing(color1, color2, q1, q2 / pq2)
-#         new_color2 = color_mixing(color2, color2, q2 / pq2, 0)
-#     return {'mixed_color': new_mixed_color, 'color1': new_color1, 'color2': new_color2}
+
+    # colors = matrix
+    # reflectances = matrix_r
+
+    # matrix = {'lab_space': [], 'target_color': lab_colors[-1]}
+    # for i in range(13):
+    #     matrix_row = []
+    #     for j in range(13):
+    #         matrix_row.append(lab_colors[i*13+j])
+    #     matrix['lab_space'].append(matrix_row)
+    # lab_colors = matrix
+    # print("colors", colors)
+    # mat_colors.append(colors)
+    # mat_reflectances.append(reflectances)
+    # mat_lab_colors.append(lab_colors)
+
+    return {
+        'id': len(mat_reflectances),
+        'colors': color_matrix,
+        'colors_with_dist': {
+            "focus": colors_with_dist,
+            "next": colors_with_dist_n
+        },
+        'lab_colors': lab_colors,
+        'palette': {'row': row_pigments_info, 'col': col_pigments_info}
+    }
 
 def subtle_adjustment(data):
     mixed_color = data['mixed_color']
@@ -518,6 +754,7 @@ def subtle_adjustment(data):
         new_color2 = color_mixing(color2, color2, q2 / pq2, 0)
     return {'mixed_color': new_mixed_color, 'color1': new_color1, 'color2': new_color2}
 
+
 def adjust_pigments(pigments, mixedPigments):
     new_mix = []
     for i in range(1, len(pigments)):
@@ -531,7 +768,7 @@ def adjust_pigments(pigments, mixedPigments):
             mixed_color, qm = mixedPigments[i-1]
         new_mixed_color, new_color1, new_color2 =subtle_adjustment({"mixed_color": mixed_color, "color1":color1, "color2":color2, "qm":qm, "q1":q1, "q2":q2, "pqm":qm, "pq1":0.01, "pq2":0.01}).values()
         new_mix.append([new_mixed_color, qm])
-    print("pigments", pigments, "mixed", mixedPigments, "new", new_mix)
+    # print("pigments", pigments, "mixed", mixedPigments, "new", new_mix)
     
     return new_mix
 
@@ -552,6 +789,11 @@ async def gen_slider_bg(request: Request):
     return {"new_bg": new_bg}
 
 if __name__ == '__main__':
+    # color = base_colors[0]
+    # color2 = hex_to_sd(sd_to_hex(color))
+    # print(color.shape, color)
+    # print(color2.shape, color2.values)
+
     uvicorn.run(app="server:app", reload=True, host="127.0.0.1", port=8000)
     # print(cal_color_gradients('#de3e35', 0.01))
     # pigments = [['#Ca5a35', 0.01], ['#697bd2',0.01], ['#ffb200',0.01]]

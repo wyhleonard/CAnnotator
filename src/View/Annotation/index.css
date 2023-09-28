@@ -4,9 +4,15 @@
     height: calc(100% - 16px);
     border-radius: 8px;
     background: #fff6dc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+}
+
+.A-Reference-image-container {
+    margin: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
 }
 
 .A-Reference-image {

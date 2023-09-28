@@ -2,12 +2,8 @@ import { useMemo } from "react";
 import "../../sharedCss.css";
 import "./MixingMethod.css";
 import ConfirmIcon from "../../../Icons/confirm.svg";
-// demo
 
-// const pigments = [[6, 0.01], [7, 0.01], [3, 0.03]];
-// const mixedPigments = [['#87c6d1', 0.02], ['#dbd6a0', 0.05]];
 const basisQuantity = 0.01;
-
 const rectSize = 22;
 const symbolGap = 4;
 const iconSize = 15;
@@ -16,30 +12,96 @@ export const MixingMethod = ({
     pigments,
     mixedPigments,
     pigmentChanged,
-    setPigmentConfirmed
+    setPigmentConfirmed,
+    mixedStepState,
+    genMatrix,
 }) => {
 
     const pigmentItems = useMemo(() => {
-        console.log("pigments:", pigments);
-        console.log("mixedPigments:", mixedPigments);
-        
-        const itemList = [];
-        // console.log("pigments:", pigments);
-        for(let i = 0; i < pigments.length; i++) {
-            if(i === 0) {
+        if(mixedStepState.length > 0) {
+            console.log("test-print-mixedStepState", mixedStepState);
+            const itemList = [];
+            for(let i = 0; i < mixedStepState.length; i++) {
+                if(i !== 0) {
+                    const lastValue = mixedStepState[i - 1][2][1];
+                    if(lastValue > mixedStepState[i][0][1]) {
+                        // >
+                        itemList.push(<div
+                            key={`symbol(>)-${i}`} 
+                            className="Pigment-symbol-container"
+                            style={{
+                                marginTop: "-4px",
+                                width: `${rectSize + symbolGap}px`,
+                                height: `${rectSize}px`,
+                            }}
+                        >
+                            <span className="STitle-text-contrast" 
+                                style={{
+                                    marginLeft: "0px", 
+                                    fontSize: "24px",
+                                    fontWeight: "600"
+                                }}>
+                                    {">"}
+                            </span>
+                        </div>)
+                    } else if (lastValue < mixedStepState[i][0][1]) {
+                        // <
+                        itemList.push(<div
+                            key={`symbol(<)-${i}`} 
+                            className="Pigment-symbol-container"
+                            style={{
+                                marginTop: "-4px",
+                                width: `${rectSize + symbolGap}px`,
+                                height: `${rectSize}px`,
+                            }}
+                        >
+                            <span className="STitle-text-contrast" 
+                                style={{
+                                    marginLeft: "0px", 
+                                    fontSize: "24px",
+                                    fontWeight: "600"
+                                }}>
+                                    {"<"}
+                            </span>
+                        </div>)
+                    } else {
+                        // =
+                        itemList.push(<div
+                            key={`symbol(<>)-${i}`} 
+                            className="Pigment-symbol-container"
+                            style={{
+                                marginTop: "-4px",
+                                width: `${rectSize + symbolGap}px`,
+                                height: `${rectSize}px`,
+                            }}
+                        >
+                            <span className="STitle-text-contrast" 
+                                style={{
+                                    marginLeft: "0px", 
+                                    fontSize: "24px",
+                                    fontWeight: "600"
+                                }}>
+                                    {"="}
+                            </span>
+                        </div>)
+                    }
+                }
+
+                console.log("test-print-pigmentItems", mixedStepState[i][0])
+                // pigment-01
                 itemList.push(<div
-                    key={`pigment-item-${i}`} 
+                    key={`pigment-01-${i}`} 
                     className="Pigment-item-container"
                     style={{
                         width: `${rectSize}px`,
                         height: `${rectSize}px`,
-                        // background: `${originPigment[pigments[i][0]][0]}`
-                        background: `${pigments[i][0]}`
+                        borderRadius: `${i === 0 ? 4 : rectSize / 2}px`,
+                        background: `${mixedStepState[i][0][0]}`
                     }}
                 >
-                    <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
+                    <span className="Pigment-quantity-text">{Math.round(mixedStepState[i][0][1])}</span>
                 </div>)
-            } else {
+
                 // +
                 itemList.push(<div
                     key={`symbol(+)-${i}`} 
@@ -59,21 +121,20 @@ export const MixingMethod = ({
                             {"+"}
                     </span>
                 </div>)
-                
-                // pigment
+
+                // pigment-02
                 itemList.push(<div
-                    key={`pigment-item-${i}`} 
+                    key={`pigment-02-${i}`} 
                     className="Pigment-item-container"
                     style={{
                         width: `${rectSize}px`,
                         height: `${rectSize}px`,
-                        // background: `${originPigment[pigments[i][0]][0]}`
-                        background: `${pigments[i][0]}`
+                        background: `${mixedStepState[i][1][0]}`
                     }}
                 >
-                    <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
+                    <span className="Pigment-quantity-text">{Math.round(mixedStepState[i][1][1])}</span>
                 </div>)
-
+                
                 // =
                 itemList.push(<div
                     key={`symbol(=)-${i}`} 
@@ -94,7 +155,7 @@ export const MixingMethod = ({
                     </span>
                 </div>)
 
-                // mixed pigment
+                // pigment-mixed
                 itemList.push(<div
                     key={`pigment-mixed-${i}`} 
                     className="Pigment-item-container"
@@ -102,16 +163,15 @@ export const MixingMethod = ({
                         width: `${rectSize}px`,
                         height: `${rectSize}px`,
                         borderRadius: `${rectSize / 2}px`,
-                        background: `${mixedPigments[i - 1][0]}`,
+                        background: `${mixedStepState[i][2][0]}`,
                     }}
                 >
-                    <span className="Pigment-quantity-text">{Math.round(mixedPigments[i - 1][1] / basisQuantity)}</span>
+                    <span className="Pigment-quantity-text">{Math.round(mixedStepState[i][2][1])}</span>
                 </div>)
             }
+            return itemList
         }
-
-        return itemList;
-    }, [pigmentChanged]); // 后面需要根据pigments和mixedPigment数组更新的
+    }, [mixedStepState])
 
     return <div 
         className="SDefault-container"
@@ -120,7 +180,7 @@ export const MixingMethod = ({
             alignItems: "center"
         }}
     >
-        <span className="STitle-text-contrast" style={{fontSize: "16px"}}>Mixture Method:</span>
+        <span className="STitle-text-contrast" style={{fontSize: "16px"}}>Mixing Method:</span>
         <div className="Pigment-mixture-method">
             {pigmentItems}
         </div>

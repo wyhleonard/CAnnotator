@@ -8,7 +8,6 @@ const pigmentNum = 13;
 const singleOptionHeight = 30;
 const optionMargin = 6;
 const hoverPanelSize = [190, singleOptionHeight * 3 + optionMargin * 3];
-const demoDistance = 13.67;
 
 // 右下角散点图
 export const MatrixVisualization = ({
@@ -20,6 +19,7 @@ export const MatrixVisualization = ({
     changeActionType,
     clickPosition,
     setPlotIndex,
+    hoveredScatter,
 }) => {
     const svgRef = useRef(null);
     const [svgSize, setSvgSize] = useState([0, 0]);
@@ -137,6 +137,7 @@ export const MatrixVisualization = ({
         }
     })
 
+    // console.log("test-floatDirection", index, floatDirection)
     const { hoverPanelLeft, hoverPanelTop } = adaptTooltipPosition(hoverPosition, rectSize, pigmentNum, hoverPanelSize, floatDirection);
 
     const handleBlockClick = () => {
@@ -209,6 +210,19 @@ export const MatrixVisualization = ({
                     />
                 }
                 {
+                    hoveredScatter[0] !== -1 && 
+                    <div
+                        className="Highlight-pigment-block"
+                        style={{
+                            left: `${hoveredScatter[1] * rectSize[0]}px`,
+                            top: `${hoveredScatter[0] * rectSize[1]}px`,
+                            width: `${rectSize[0]}px`,
+                            height: `${rectSize[1]}px`,
+                            borderStyle: "dashed",
+                        }}
+                    />
+                }
+                {
                     hoverPosition[0] !== -1 &&
                     <div
                         className="Hover-panel-container"
@@ -226,14 +240,12 @@ export const MatrixVisualization = ({
                                 height: `${singleOptionHeight}px`,
                             }}
                             onClick={() => {
-                                // console.log("hoverPosition", hoverPosition, "index", index);
                                 changeActionType(0, hoverPosition, index);
                                 handleBlockClick();
                             }}
                         >
                             <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
-                                {`Select This Pigment (${matrixDist[index][(hoverPosition[0] + 1) * 14 + (hoverPosition[1] + 1)].toFixed(0)})`}
-                                {/* {`Select This Pigment (${(hoverPosition[0]+1)*14+(hoverPosition[1]+1)})`} */}
+                                {`Select This Pigment (${matrixDist[index]["focus"][hoverPosition[0] + 1][hoverPosition[1] + 1].toFixed(2)})`}
                             </span>
                         </div>
                         <div
@@ -248,8 +260,7 @@ export const MatrixVisualization = ({
                             }}
                         >
                             <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
-                                {/* {`See More Quantities (${demoDistance - 5})`} */}
-                                {'See More Quantities '}
+                                {`See More Quantities (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][0].toFixed(2)})`}
                             </span>
                         </div>
                         <div
@@ -264,8 +275,7 @@ export const MatrixVisualization = ({
                             }}
                         >
                             <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
-                                {/* {`See More Mixtures (${demoDistance + 5})`} */}
-                                {'See More Mixtures '}
+                                {`See More Mixtures (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][1].toFixed(2)})`}
                             </span>
                         </div>
                     </div>

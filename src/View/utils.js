@@ -70,3 +70,10 @@ export function valuePositionWithMinMaxValues (value, list) {
         return 0;
     }
 }
+
+// export function getPigmentQuantity(quantity) {
+//     const roundValue = Math.round(quantity);
+//     if(Math.abs(roundValue - quantity) < 0.25) {
+//         return 
+//     }
+// }

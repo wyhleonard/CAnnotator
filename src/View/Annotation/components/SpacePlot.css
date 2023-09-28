@@ -1,11 +1,15 @@
 .Plot-container {
     margin: 8px 8px;
     width: calc(100% - 16px);
-    height: calc(100% - 36px);
+    height: calc(100% - 16px);
     position: relative;
     overflow: hidden;
     border-radius: 8px;
     padding: 8px;
     border: 3px dashed transparent;
     background: linear-gradient(#fff6dc, #fff6dc) padding-box, repeating-linear-gradient(-45deg, #5a4e3b 0, #5a4e3b 6px, #fff6dc 6px, #fff6dc 12px);
+}
+
+.scatter:hover {
+    border: 3px dashed #5a4e3b
 }

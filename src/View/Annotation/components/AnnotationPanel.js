@@ -34,7 +34,6 @@ const demoAnnotations = [
 
 export const AnnotationPanel = ({
     targetColor,
-    setTargetColor,
     pigments,
     selectedOriginalPigments = [[6, 0.05], [7, 0.06], [3, 0.03]],
     selectedSticker = demoSegmentation,

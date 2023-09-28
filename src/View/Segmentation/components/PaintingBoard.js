@@ -52,7 +52,6 @@ export const PaintingBoard = ({
             newScale = Math.min(maxScale, newScale);
             const left = (canvasSize[0] - tagSize[0]) / 2;
             const top = (canvasSize[1] - tagSize[1]) / 2;
-            console.log(newScale);
             setCurrentScale(newScale);
             setCurrentWH(orgSize);
             setCurrentLT([left, top]);
@@ -130,8 +129,6 @@ export const PaintingBoard = ({
                 zIndex: "50",
                 left: `${currentLT[0]}px`,
                 top: `${currentLT[1]}px`,
-                // background: `url(${imgSrc}) no-repeat`,
-                // backgroundSize: '100% 100%',
             }}
             onMouseDown={(e) => handleDragStart(e)}
             onMouseMove={(e) => handleDragMove(e)}
