@@ -1,0 +1,50 @@
+.A-pigment-item-container {
+    margin-bottom: 4px;
+    width: 100%;
+    height: 28px;
+    display: flex;
+    align-items: center;
+}
+
+.A-slider-container {
+    margin: 4px 0px 4px 8px;
+    width: calc(70% - 24px - 8px);
+    height: calc(100% - 8px);
+    position: relative;
+}
+
+.A-slider-item {
+    width: 100%;
+    height: calc(50% - 1px);
+    background: #5a4e3b;
+    border-radius: 2px;
+}
+
+.A-slider-block {
+    top: -2px;
+    width: 12px;
+    height: calc(100% + 4px);
+    background: #fff6dc;
+    border: 3px solid #5a4e3b;
+    box-sizing: border-box;
+    border-radius: 2px;
+    position: absolute;
+    z-Index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.A-slider-icon {
+    width: 3px;
+    height: 60%;
+    background: #5a4e3b;
+}
+
+.A-silder-value {
+    width: 17%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}

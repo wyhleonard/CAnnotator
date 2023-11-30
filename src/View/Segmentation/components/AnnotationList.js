@@ -6,35 +6,30 @@ const demoAnnos = [
     {
         image: "/demoData/segmentations/1.png",
         annotations: [
-            [154, 15, 8],
-            [246, 130, 28],
-            [60, 128, 97],
-            [30, 64, 97],
+            [133, 8, 4],
+            [144, 77, 34],
+            [37, 9, 0],
         ]
     },
     {
-        image: "/demoData/segmentations/2.png",
+        image: "/demoData/segmentations/10.png",
         annotations: [
-            [60, 128, 97],
-            [30, 64, 97],
+            [207, 162, 105],
+            [134, 98, 66],
         ],
     },
     {
-        image: "/demoData/segmentations/3.png",
-        annotations: [],
-    },
-    {
-        image: "/demoData/segmentations/4.png",
-        annotations: [],
-    },
-    {
-        image: "/demoData/segmentations/5.png",
-        annotations: [],
+        image: "/demoData/segmentations/11.png",
+        annotations: [
+            [211, 168, 134],
+            [211, 188, 156],
+            [46, 37, 22]
+        ],
     },
 ]
 
 const annoSize = 60;
-const colorItemSize = 15;
+const colorItemSize = 14.8;
 
 export const AnnotationList = (
 

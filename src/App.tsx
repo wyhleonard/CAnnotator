@@ -519,7 +519,7 @@ function App() {
                 </div>
                 < div className="App-content-bottom" >
                     <AnnotationView 
-                        imageSrc={annotationSelectedImg === -1 ? "/demoData/references/2.jpg" : "/demoData/references/" + (annotationSelectedImg + 1) + ".jpg"}
+                        imageSrc={annotationSelectedImg === -1 ? "/demoData/references/6.jpg" : "/demoData/references/" + (6) + ".jpg"}
                     />
                 </div>
             </div>

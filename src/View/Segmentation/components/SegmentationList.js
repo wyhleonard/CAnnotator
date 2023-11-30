@@ -68,7 +68,7 @@ export const SegmentationList = ({
                     handleStickerClick(i);
                 }} />
             </div>
-            <div className={`Segment-item-histogram`} style={{ width: `calc(100% - ${segSize}px - 8px)` }}>
+            <div className={`Segment-item-histogram`} style={{ width: `calc(100% - ${segSize}px - 8px)`}}>
                 <Histogram colors={colors[i]} />
             </div>
         </div>

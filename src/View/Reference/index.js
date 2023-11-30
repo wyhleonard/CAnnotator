@@ -10,40 +10,9 @@ import { localPictureData } from "../helpers/pictureData";
 import { initPositions } from "../helpers/hardcode";
 import AppContext from "../hooks/createContext";
 import Scatter from "./Scatter";
-
-const demoSegs = [
-    {
-        image: "/demoData/segmentations/1.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/2.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/3.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/4.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/5.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/6.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/7.png",
-        colorHistogram: []
-    }
-]
+import ReSegmentSVG from "../../Icons/resegment.svg";
 
 const iconRatio = 0.7;
-
 const subscriptionKey = '3086c6e7bd714a75a85f68725e4ff267';
 const path = 'https://api.bing.microsoft.com/v7.0/images/search';
 
@@ -80,14 +49,9 @@ export const ReferenceView = ({
     const [dots, setDots] = useState([[0, 0]]);
     const [spot, setSpot] = useState(null);
     const [isFilter, setIsFilter] = useState(false);
-    // const [selectedImg, setSelectedImg] = useState(-1);
+
     const sortedImages = filteredImages.toSorted((a, b) => b.marked - a.marked);
     const chosenList = Array.from(chosenStickers);
-    // console.log("selectedImg: ", selectedImg);
-
-    // console.log(filteredImages.map(item =>
-    //   imageContext[blobMap[item.contentUrl]]?.stickers[7].clicks
-    // ));
 
     useEffect(() => {
         setBlockSize([
@@ -98,7 +62,7 @@ export const ReferenceView = ({
 
     const onSearch = () => {
         const value = inputRef.current.value;
-        if (value == "") {
+        if (value === "") {
             return;
         }
         // const headers = {
@@ -144,10 +108,8 @@ export const ReferenceView = ({
     };
 
     const handleFilter = (images) => {
-        // setFilteredImages(images.slice(0, 4));
-        // console.log(images);
-        filteredImages.forEach(item => item.marked == 1 && (item.marked = 0));
-        images.forEach(i => filteredImages[i].marked == 0 && (filteredImages[i].marked = 1));
+        filteredImages.forEach(item => item.marked === 1 && (item.marked = 0));
+        images.forEach(i => filteredImages[i].marked === 0 && (filteredImages[i].marked = 1));
         setFilteredImages([...filteredImages]);
         if (images.length) {
             setIsFilter(true);
@@ -182,9 +144,6 @@ export const ReferenceView = ({
         const tw = scale * sw > w ? w : scale * sw, th = scale * sh > h ? h : scale * sh;
         const px = data.click.ex - sw > 0 ? data.click.ex - sw : 0;
         const py = data.click.ey - sh > 0 ? data.click.ey - sh : 0;
-
-        // console.log(sw, sh, px, py, data);
-        // console.log(srcImg.width, srcImg.height);
 
         // 设置Canvas的宽度和高度为给定的长宽  
         canvas.width = tw;
@@ -362,7 +321,7 @@ export const ReferenceView = ({
                         />
                     </div>
                     <div className="Reference-number-display">
-                        <span className="STitle-text-contrast" style={{ marginLeft: "0px", fontSize: "16px" }}>1 - 50</span>
+                        <span className="STitle-text-contrast" style={{ marginLeft: "0px", fontSize: "16px" }}>1 - 60</span>
                     </div>
                     <div className="Reference-number-switch-right">
                         <div
@@ -403,8 +362,11 @@ export const ReferenceView = ({
                 <div className="Reference-image-rows" id="segmentRow" onWheel={handleSegmentScrollFirstCol}>
                     {sortedImages.length ? sortedImages.map((item, r) => (
                         <div
-                            className={`Reference-image-appendrow ${sortedImages[r].marked == -1 || (isFilter && sortedImages[r].marked == 0) ? 'miss' : ''}`}
+                            className={`Reference-image-appendrow ${sortedImages[r].marked === -1 || (isFilter && sortedImages[r].marked === 0) ? 'miss' : ''}`}
                             key={`Reference-image-${r}`}
+                            style={{
+                                marginTop: `${r === 0 ? "0px": "8px"}`
+                            }}
                         >
                             {
                                 <>
@@ -412,6 +374,12 @@ export const ReferenceView = ({
                                         <div className="Reference-image" onClick={() => { setSelectedImg(selectedImg === r ? -1 : r) }}>
                                             <img
                                                 src={item.thumbnailUrl}
+                                                style={{
+                                                    width: "100%",
+                                                    height: "100%",
+                                                    objectFit: "cover",
+                                                    borderRadius: "6px"
+                                                }}
                                                 alt=""
                                             />
                                         </div>
@@ -444,8 +412,15 @@ export const ReferenceView = ({
                                                             setActiveSticker(el);
                                                             handleMaskEdit(blobMap[item.contentUrl], el)
                                                         }}>
-                                                            <svg t="1694931870228" className="icon" viewBox="0 0 1088 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4015" width="50" height="50"><path d="M576 0a511.68 511.68 0 0 0-448 264.32V160a32 32 0 0 0-32-32h-64a32 32 0 0 0-32 32v320a32 32 0 0 0 32 32h320a32 32 0 0 0 32-32v-64a32 32 0 0 0-32-32H214.336A383.744 383.744 0 0 1 960 512a384 384 0 0 1-384 384c-166.976 0-307.584-107.2-360.512-256H80.768c56.896 220.736 256.704 384 495.232 384A512 512 0 0 0 576 0z" fill="#594d3a" p-id="4016"></path>
-                                                            </svg>
+                                                            <div
+                                                                style={{
+                                                                    background: `url(${ReSegmentSVG}) no-repeat`,
+                                                                    backgroundSize: 'contain',
+                                                                    width: `${48}px`,
+                                                                    height: `${48}px`,
+                                                                    cursor: 'pointer',
+                                                                }}
+                                                            />
                                                         </button>
                                                     </div>
 

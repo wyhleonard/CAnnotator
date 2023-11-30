@@ -9,12 +9,8 @@ const symbolGap = 4;
 const iconSize = 15;
 
 export const MixingMethod = ({
-    pigments,
-    mixedPigments,
-    pigmentChanged,
     setPigmentConfirmed,
     mixedStepState,
-    genMatrix,
 }) => {
 
     const pigmentItems = useMemo(() => {
@@ -30,7 +26,7 @@ export const MixingMethod = ({
                             key={`symbol(>)-${i}`} 
                             className="Pigment-symbol-container"
                             style={{
-                                marginTop: "-4px",
+                                marginTop: "-2px",
                                 width: `${rectSize + symbolGap}px`,
                                 height: `${rectSize}px`,
                             }}
@@ -50,7 +46,7 @@ export const MixingMethod = ({
                             key={`symbol(<)-${i}`} 
                             className="Pigment-symbol-container"
                             style={{
-                                marginTop: "-4px",
+                                marginTop: "-2px",
                                 width: `${rectSize + symbolGap}px`,
                                 height: `${rectSize}px`,
                             }}
@@ -87,7 +83,7 @@ export const MixingMethod = ({
                     }
                 }
 
-                console.log("test-print-pigmentItems", mixedStepState[i][0])
+                // console.log("test-print-pigmentItems", mixedStepState[i][0])
                 // pigment-01
                 itemList.push(<div
                     key={`pigment-01-${i}`} 

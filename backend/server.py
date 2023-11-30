@@ -5,7 +5,8 @@ import cv2
 import uvicorn
 import numpy as np
 from PIL import Image
-from sklearn.manifold import TSNE
+# from sklearn.manifold import TSNE
+# from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -103,54 +104,53 @@ def url_to_cv2(url):
     cv2_img = cv2.imdecode(img, cv2.IMREAD_COLOR)
     return cv2_img
 
-
-def get_dots(kp1, des1, images):
-    img_len = len(images)
-    global orb, bf
-
-    data = np.empty((0, 9))
-    for i in range(img_len):
-        img2 = images[i]
-        kp2, des2 = orb.detectAndCompute(img2, None)
-
-        # 使用knnMatch进行特征匹配
-        matches = bf.knnMatch(des1, des2, k=2)
-        matches = sorted(matches, key=lambda x: x[0].distance)[0:100]  # 这个取值是变化的 -> 做个过滤，不是最匹配的
-        print("len of matches:", len(matches))
-
-        # 定下基调，比如就匹配离click最近的特征点
-        points1 = []
-        points2 = []
-        matches_new = []
-        for m, n in matches:
-            if m.distance < 0.85 * n.distance:
-                pt = kp1[m.queryIdx].pt
-                points1.append(pt)
-                points2.append(kp2[m.trainIdx].pt)
-                matches_new.append(m)
-                matches_new.append(n)
-
-        print("len of points1: ", len(points1), len(points2))  # 8, 8
-
-        points1 = np.float32(points1).reshape(-1, 1, 2)
-        points2 = np.float32(points2).reshape(-1, 1, 2)
-
-        # 查看结果
-        # img1_img2_matched = cv2.drawMatches(img1, kp1, img2, kp2, matches_new, None, flags=2)
-        # cv2.imshow('img1_img2_matched', img1_img2_matched)
-
-        if len(points1) >= 4:
-            # 计算变换矩阵
-            M, mask = cv2.findHomography(points1, points2, cv2.RANSAC)  # 这里有RANSAC优化
-            # print(M, mask)
-            data = np.vstack((data, M.reshape(1, -1)))
-
-            # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-    # print(data)
-    # 创建t-SNE模型并进行降维
-    tsne = TSNE(n_components=2, perplexity=5, early_exaggeration=24, learning_rate='auto', random_state=666)
-    return tsne.fit_transform(data)
+# def get_dots(kp1, des1, images):
+#     img_len = len(images)
+#     global orb, bf
+#
+#     data = np.empty((0, 9))
+#     for i in range(img_len):
+#         img2 = images[i]
+#         kp2, des2 = orb.detectAndCompute(img2, None)
+#
+#         # 使用knnMatch进行特征匹配
+#         matches = bf.knnMatch(des1, des2, k=2)
+#         matches = sorted(matches, key=lambda x: x[0].distance)[0:100]  # 这个取值是变化的 -> 做个过滤，不是最匹配的
+#         print("len of matches:", len(matches))
+#
+#         # 定下基调，比如就匹配离click最近的特征点
+#         points1 = []
+#         points2 = []
+#         matches_new = []
+#         for m, n in matches:
+#             if m.distance < 0.85 * n.distance:
+#                 pt = kp1[m.queryIdx].pt
+#                 points1.append(pt)
+#                 points2.append(kp2[m.trainIdx].pt)
+#                 matches_new.append(m)
+#                 matches_new.append(n)
+#
+#         print("len of points1: ", len(points1), len(points2))  # 8, 8
+#
+#         points1 = np.float32(points1).reshape(-1, 1, 2)
+#         points2 = np.float32(points2).reshape(-1, 1, 2)
+#
+#         # 查看结果
+#         # img1_img2_matched = cv2.drawMatches(img1, kp1, img2, kp2, matches_new, None, flags=2)
+#         # cv2.imshow('img1_img2_matched', img1_img2_matched)
+#
+#         if len(points1) >= 4:
+#             # 计算变换矩阵
+#             M, mask = cv2.findHomography(points1, points2, cv2.RANSAC)  # 这里有RANSAC优化
+#             # print(M, mask)
+#             data = np.vstack((data, M.reshape(1, -1)))
+#
+#             # cv2.waitKey(0)
+#         # cv2.destroyAllWindows()
+#     # print(data)
+#     # 创建t-SNE模型并进行降维
+#     tsne = TSNE(n_components=2, perplexity=5, early_exaggeration=24, learning_rate='auto', random_state=666)
+#     return tsne.fit_transform(data)
 
 
 # @app.post("/scatter/positions/url")
@@ -755,38 +755,99 @@ def subtle_adjustment(data):
     return {'mixed_color': new_mixed_color, 'color1': new_color1, 'color2': new_color2}
 
 
-def adjust_pigments(pigments, mixedPigments):
-    new_mix = []
-    for i in range(1, len(pigments)):
-        if i == 1:
-            color1, q1 = pigments[i-1]
-            color2, q2 = pigments[i]
-            mixed_color, qm = mixedPigments[i-1]
+# def adjust_pigments(pigments, mixedPigments):
+#     new_mix = []
+#     for i in range(1, len(pigments)):
+#         if i == 1:
+#             color1, q1 = pigments[i-1]
+#             color2, q2 = pigments[i]
+#             mixed_color, qm = mixedPigments[i-1]
+#         else:
+#             color1, q1 = mixedPigments[i-2]
+#             color2, q2 = pigments[i]
+#             mixed_color, qm = mixedPigments[i-1]
+#         new_mixed_color, new_color1, new_color2 =subtle_adjustment({"mixed_color": mixed_color, "color1":color1, "color2":color2, "qm":qm, "q1":q1, "q2":q2, "pqm":qm, "pq1":0.01, "pq2":0.01}).values()
+#         new_mix.append([new_mixed_color, qm])
+#     # print("pigments", pigments, "mixed", mixedPigments, "new", new_mix)
+#
+#     return new_mix
+
+def adjust_pigments(pigment_list, index, quantity):
+    t_r = []
+    for k in range(len(pigment_list)):
+        pigment_index = pigment_list[k][0]
+        pigment_reflectance = base_colors[pigment_index]
+
+        if k == index:
+            pigment_quantity = quantity
         else:
-            color1, q1 = mixedPigments[i-2]
-            color2, q2 = pigments[i]
-            mixed_color, qm = mixedPigments[i-1]
-        new_mixed_color, new_color1, new_color2 =subtle_adjustment({"mixed_color": mixed_color, "color1":color1, "color2":color2, "qm":qm, "q1":q1, "q2":q2, "pqm":qm, "pq1":0.01, "pq2":0.01}).values()
-        new_mix.append([new_mixed_color, qm])
-    # print("pigments", pigments, "mixed", mixedPigments, "new", new_mix)
-    
-    return new_mix
+            pigment_quantity = pigment_list[k][1]
+
+        t_r.append(color_mixing(pigment_reflectance, pigment_reflectance, pigment_quantity * 0.5, pigment_quantity * 0.5))
+
+    mixed = []
+    for k in range(len(t_r)):
+        if k == 0:
+            mixed = t_r[k]
+        else:
+            mixed = color_mixing(mixed, t_r[k], 1, 1)
+
+    return sd_to_hex(mixed)
 
 # 根据指定的原始颜色生成预览渐变条
 @app.post("/gen_slider_bg")
 async def gen_slider_bg(request: Request): 
     data = await request.json()
-    pigments = data['pigments']
-    mixedPigments = data['mixedPigments']
+    pigment_list = data['pigmentList']
     index = data['index']
-    print("GOT: Pigments:",pigments, " mixed", mixedPigments, " index",index)
+
+    print("GOT: pigmentList:", pigment_list, " index:", index)
     new_bg = []
-    for q in range(1, 16):
-        pigments[index][1] = q / 100
-        mixedPigments = adjust_pigments(pigments, mixedPigments)
-        new_bg.append(mixedPigments[-1])
-    print("SENT: index", index, "new", new_bg)
-    return {"new_bg": new_bg}
+    for q in range(0, 14):
+        new_bg.append(adjust_pigments(pigment_list, index, q))
+
+    return {
+        'new_bg': new_bg
+    }
+
+@app.post("/gen_slider_result")
+async def gen_slider_result(request: Request):
+    data = await request.json()
+    pigment_list = data['pigmentList']
+    index = data['index']
+    new_quantity = data['newQuantity']
+    target_color = data['targetColor']
+    print("GOT: pigmentList:", pigment_list, " index:", index, ' newQuantity:', new_quantity, ' targetColor:', target_color)
+
+    t_r = []
+    new_pigment_list = []
+    for k in range(len(pigment_list)):
+        pigment_index = pigment_list[k][0]
+        pigment_reflectance = base_colors[pigment_index]
+
+        if k == index:
+            pigment_quantity = float(new_quantity)
+            new_pigment_list.append([pigment_list[k][0], float(new_quantity)])
+        else:
+            pigment_quantity = float(pigment_list[k][1])
+            new_pigment_list.append(pigment_list[k])
+
+        print("test-tr", k, pigment_reflectance, pigment_quantity)
+        t_r.append(color_mixing(pigment_reflectance, pigment_reflectance, pigment_quantity * 0.5, pigment_quantity * 0.5))
+
+    mixed = []
+    for k in range(len(t_r)):
+        if k == 0:
+            mixed = t_r[k]
+        else:
+            mixed = color_mixing(mixed, t_r[k], 1, 1)
+
+    return {
+        "color": sd_to_hex(mixed),
+        "dist": cal_distance(target_color, sd_to_hex(mixed)),
+        "newList": new_pigment_list
+    }
+
 
 if __name__ == '__main__':
     # color = base_colors[0]

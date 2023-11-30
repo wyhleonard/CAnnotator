@@ -1,163 +1,200 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import "../../sharedCss.css";
 import "./AnnotationPanel.css";
 import ExtractorIcon from "../../../Icons/extractor.svg";
 import ConfirmIcon from "../../../Icons/confirm.svg";
 import AddPigmentIcon from "../../../Icons/positive.svg";
-import PigmentItem from "./PigmentItem";
+import PigmentSlider from "./PigmentSlider";
 import "./MixingMethod.css";
+import DeletePigmentIcon from "../../../Icons/negative.svg";
 
 const originPigment = [['#de3e35', 0.01], ['#962c35', 0.01], ['#b04d36', 0.01], ['#f1e159', 0.01], ['#ffa53c', 0.01], ['#ef9043', 0.01], ['#5d7d37', 0.01], ['#227dc1', 0.01], ['#2154ac', 0.01], ['#1a3b9f', 0.01], ['#201f29', 0.01], ['#2f3438', 0.01], ['#ebe6da', 0.01]];
 
-const demoSegmentation = "/demoData/segmentations/6.png";
-const demoSliderLength = 126.33;
+const demoSegmentation = "/demoData/segmentations/9.png";
+const demoSliderLength = 121.27; // 126.33
 const demoSilderBlockWidth = 12;
 const iconSize = 16;
 const rectSize = 22;
-const symbolGap = 4;
-const basisQuantity = 0.01;
 
 const demoAnnotations = [
     {
-        pigments: [[6, 0.01], [7, 0.01], [3, 0.03]],
-        mixedPigments: [['#87c6d1', 0.02], ['#dbd6a0', 0.05]]
+        "mixed": "#eae5d7",
+        "pigments": [[12, 2.00]]
     },
     {
-        pigments: [[1, 0.02], [3, 0.03], [8, 0.03], [11, 0.01], [9, 0.02]],
-        mixedPigments: [['#87c6d1', 0.05], ['#dbd6a0', 0.08], ['#87c6d1', 0.05], ['#dbd6a0', 0.08]]
-    },
-    {
-        pigments: [[2, 0.02], [4, 0.03], [10, 0.03], [10, 0.03]],
-        mixedPigments: [['#87c6d1', 0.05], ['#dbd6a0', 0.08], ['#dbd6a0', 0.08]]
-    },
+        "mixed": "#dabb74",
+        "pigments": [[5, 3.75], [12, 2.25]]
+    }
 ]
 
 export const AnnotationPanel = ({
     targetColor,
-    pigments,
-    selectedOriginalPigments = [[6, 0.05], [7, 0.06], [3, 0.03]],
-    selectedSticker = demoSegmentation,
+    selectedSticker,
     pigmentConfirmed,
-    mixedPigments,
-    setEnableSelect
+    setEnableSelect,
+    matchedPalette, // matrixData
+    matchedPaletteDist,
+    mixedPigmentList,
+    mixedStepState,
+    changeMixedPigmentList,
+    changeTargetColor
 }) => {
 
     // 这里的颜色可能要改成16进制存储
     const [matchedColor, setMatchedColor] = useState("#ffffff");
-    const [currentDistance, setCurrentDistance] = useState(16.89);
-    // const [mixedPigments, setMixedPigments] = useState([[6, 0.02], [7, 0.06], [3, 0.03]]);
+    const [currentDistance, setCurrentDistance] = useState(0);
+    const [currentAnnotations, setCurrentAnnotations] = useState([]);
+
+    useEffect(() => {
+        if(targetColor === "#ffffff") {
+            setMatchedColor("#ffffff");
+            setCurrentDistance(0);
+            setCurrentAnnotations([]);
+        }
+    }, [targetColor])
+
+    useEffect(() => {
+        if(matchedPaletteDist) {
+            const distMatrix = matchedPaletteDist['focus'];
+            let minDist = 100000;
+            let minDistIndex = [1, 1];
+            for(let i = 1; i < distMatrix.length; i++) {
+                for(let j = 1; j < distMatrix[i].length; j++) {
+                    const dist = distMatrix[i][j];
+                    if(dist < minDist) {
+                        minDist = dist;
+                        minDistIndex = [i, j];
+                    }
+                }
+            }
+            console.log("matched_color_dist", minDist, minDistIndex)
+            setMatchedColor(matchedPalette['mixed'][minDistIndex[0] - 1][minDistIndex[1] - 1][0])
+            setCurrentDistance(minDist.toFixed(2))
+        }
+    }, [matchedPalette, matchedPaletteDist])
 
     // items in the pigment list => 要抽象成组件，不然不好写滑动交互
     const apigmentItems = useMemo(() => {
-        
-        console.log("pigmentConfirmed:", selectedOriginalPigments);
-        setMatchedColor(mixedPigments[0] === undefined ? "#ffffff" : mixedPigments[mixedPigments.length - 1][0]);
-        return selectedOriginalPigments.map((pigment, index) => (
-            <PigmentItem
-                key={index}
-                pigments={pigments}
-                mixedPigments={mixedPigments}
-                setMatchedColor={setMatchedColor}
-                pigment={pigment}
-                index={index}
-                originPigment={originPigment}
-                demoSliderLength={demoSliderLength}
-                demoSilderBlockWidth={demoSilderBlockWidth}
-                iconSize={iconSize}
-            />)
-        )
-    }, [pigmentConfirmed]);
+        console.log("pigmentConfirmed:", mixedPigmentList);
 
-    // TODO: Add pigment button 添加pigment
+        if(mixedStepState.length > 0) {
+            setMatchedColor(mixedStepState[mixedStepState.length - 1][2][0]);
+            setCurrentDistance(mixedStepState[mixedStepState.length - 1][3].toFixed(2));
+        }
+
+        // console.log("aaaaaaaaaaaaaaaaaaaa", targetColor)
+
+        if(targetColor === "#ffffff") { // 缓兵之计
+            return []
+        } else {
+            return mixedPigmentList.map((_, index) => {
+                return <PigmentSlider
+                    key={`pigment-slider-item-${index}`}
+                    pigmentList={mixedPigmentList}
+                    currentIndex={index}
+                    targetColor={targetColor}
+                    changeMatchedColor={setMatchedColor}
+                    changeMatchedDist={setCurrentDistance}
+                    sliderLength={demoSliderLength}
+                    sliderBlockWidth={demoSilderBlockWidth}
+                    iconSize={iconSize}
+                    changeMixedPigmentList={changeMixedPigmentList}
+                />
+            })
+        }
+
+    }, [pigmentConfirmed, targetColor]);
+
+    // TODO: Add pigment button 添加pigment // currentAnnotations
+    for(let i = 0; i < currentAnnotations.length; i++) {
+        demoAnnotations.push(currentAnnotations[i])
+    }
+
     const annotationItems = demoAnnotations.map((data, index) => {
-        const pigments = data.pigments;
-        const mixedPigments = data.mixedPigments;
+        // console.log("test-print-currentAnnotations", currentAnnotations, data) // currentAnnotation里有数值
+
+        // bug 没法提交两次
 
         // copy from MixingMethod.js
         const itemList = [];
+        const pigments = data['pigments'];
+        const mixedPigment = data['mixed'];
+
+        // color labels
+        console.log("test-annotation-mixedPigment", mixedPigment)
+        itemList.push(<div
+            key={`annotation-mixed-${index}`} 
+            className="Pigment-item-container"
+            style={{
+                width: `${rectSize}px`,
+                height: `${rectSize}px`,
+                borderRadius: `${rectSize / 2}px`,
+                background: `${mixedPigment}`,
+            }}
+        >
+        </div>)
+
+        itemList.push(<span
+            key={`annotation-(:)-${index}`} 
+            className="STitle-text-contrast" 
+            style={{
+                margin: "0px 6px",
+                fontSize: "24px",
+                fontWeight: "600"
+            }}
+        >
+            :
+        </span>)
+
         for (let i = 0; i < pigments.length; i++) {
-            if (i === 0) {
-                itemList.push(<div
-                    key={`pigment-item-${i}`}
-                    className="Pigment-item-container"
-                    style={{
-                        marginTop: "4px",
-                        width: `${rectSize}px`,
-                        height: `${rectSize}px`,
-                        background: `${originPigment[pigments[i][0]][0]}`
-                    }}
-                >
-                    <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
-                </div>)
-            } else {
-                // +
-                itemList.push(<div
-                    key={`symbol(+)-${i}`}
-                    className="Pigment-symbol-container"
-                    style={{
-                        width: `${rectSize + symbolGap}px`,
-                        height: `${rectSize}px`,
-                    }}
-                >
-                    <span className="STitle-text-contrast"
-                        style={{
-                            marginLeft: "0px",
-                            fontSize: "24px",
-                            fontWeight: "600"
-                        }}>
-                        {"+"}
-                    </span>
-                </div>)
+            itemList.push(<div
+                key={`annotation-pigment-${index}-${i}`} 
+                className="Pigment-item-container"
+                style={{
+                    width: `${rectSize}px`,
+                    height: `${rectSize}px`,
+                    background: `${originPigment[pigments[i][0]][0]}`
+                }}
+            />)
 
-                // pigment
-                itemList.push(<div
-                    key={`pigment-item-${i}`}
-                    className="Pigment-item-container"
-                    style={{
-                        marginTop: "4px",
-                        width: `${rectSize}px`,
-                        height: `${rectSize}px`,
-                        background: `${originPigment[pigments[i][0]][0]}`
-                    }}
-                >
-                    <span className="Pigment-quantity-text">{Math.round(pigments[i][1] / basisQuantity)}</span>
-                </div>)
+            itemList.push(<span
+                key={`annotation-quantity-${index}-${i}`} 
+                style={{
+                    color: "#5a4e3b",
+                    margin: "0px 6px 0px 6px",
+                    fontSize: "16px",
+                    fontWeight: "500"
+                }}
+            >
+                {`(${pigments[i][1].toFixed(2)})`}
+            </span>)
 
-                // =
-                itemList.push(<div
-                    key={`symbol(=)-${i}`}
-                    className="Pigment-symbol-container"
+            if(i !== pigments.length - 1) {
+                itemList.push(<span
+                    key={`annotation-(+)-${index}-${i}`} 
+                    className="STitle-text-contrast" 
                     style={{
-                        width: `${rectSize + symbolGap}px`,
-                        height: `${rectSize}px`,
+                        margin: "0px 6px 0px 0px",
+                        fontSize: "24px",
+                        fontWeight: "600"
                     }}
                 >
-                    <span className="STitle-text-contrast"
-                        style={{
-                            marginLeft: "0px",
-                            fontSize: "24px",
-                            fontWeight: "600"
-                        }}>
-                        {"="}
-                    </span>
-                </div>)
-
-                // mixed pigment
-                itemList.push(<div
-                    key={`pigment-mixed-${i}`}
-                    className="Pigment-item-container"
-                    style={{
-                        marginTop: "4px",
-                        width: `${rectSize}px`,
-                        height: `${rectSize}px`,
-                        borderRadius: `${rectSize / 2}px`,
-                        background: `${mixedPigments[i - 1][0]}`,
-                    }}
-                >
-                    <span className="Pigment-quantity-text">{Math.round(mixedPigments[i - 1][1] / basisQuantity)}</span>
-                </div>)
+                    +
+                </span>)
             }
         }
+
+        itemList.push(
+        <div className="A-pigment-delete" key={`annotation-delete-${index}`} >
+            <div className="Icon-button" 
+            style={{
+                background: `url(${DeletePigmentIcon}) no-repeat`,
+                backgroundSize: 'contain',
+                width: `${iconSize}px`,
+                height: `${iconSize}px`,
+                cursor: 'pointer',
+            }} />
+        </div>)
 
         return <div
             key={`annotation-item-${index}`}
@@ -170,18 +207,6 @@ export const AnnotationPanel = ({
                 <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>{`(${index + 1})`}</span>
             </div>
             <div className="A-method-container">
-                {/* {itemList} */}
-                {itemList[itemList.length - 1]}
-                <span
-                    className="STitle-text-contrast"
-                    style={{
-                        margin: "0px 6px",
-                        fontSize: "24px",
-                        fontWeight: "600"
-                    }}
-                >
-                    :
-                </span>
                 {itemList}
             </div>
         </div>
@@ -203,6 +228,9 @@ export const AnnotationPanel = ({
                             background: `${targetColor}`
                         }}
                     />
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px", marginLeft: "8px" }}>
+                        {`(${targetColor})`}
+                    </span>
                     <div className="A-button-container">
                         <div
                             className="Icon-button"
@@ -219,10 +247,7 @@ export const AnnotationPanel = ({
                 </div>
                 <div className="A-text-container" style={{ marginTop: "2px" }}>
                     <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
-                        Matched Color:
-                    </span>
-                    <span className="STitle-text-contrast" style={{ fontSize: "16px", marginLeft: "8px" }}>
-                        {`(${matchedColor})`}
+                        Current Color:
                     </span>
                     <div
                         className="A-color-block"
@@ -230,6 +255,9 @@ export const AnnotationPanel = ({
                             background: `${matchedColor}`
                         }}
                     />
+                    <span className="STitle-text-contrast" style={{ fontSize: "16px", marginLeft: "8px" }}>
+                        {`(${matchedColor})`}
+                    </span>
                     <div className="A-button-container">
                         <div
                             className="Icon-button"
@@ -240,6 +268,14 @@ export const AnnotationPanel = ({
                                 height: `${iconSize}px`,
                                 cursor: 'pointer',
                             }}
+
+                            onClick={() => {
+                                currentAnnotations.push({
+                                    "pigments": mixedPigmentList,
+                                    "mixed": matchedColor
+                                });
+                                setCurrentAnnotations(JSON.parse(JSON.stringify(currentAnnotations)));
+                            }}
                         />
                     </div>
                 </div>
@@ -248,7 +284,7 @@ export const AnnotationPanel = ({
                         Current Distance:
                     </span>
                     <span className="STitle-text-contrast" style={{ fontSize: "16px", marginLeft: "8px" }}>
-                        {`${currentDistance}`}
+                        {`${parseFloat(currentDistance).toFixed(2)}`}
                     </span>
                 </div>
                 <div className="A-last-container">
@@ -283,7 +319,12 @@ export const AnnotationPanel = ({
                     <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
                         Current Color Annotations:
                     </span>
-                    <div className="A-button-container">
+                    <div className="A-button-container" onClick={() => {
+                        changeTargetColor("#ffffff");
+                        setCurrentAnnotations([]);
+
+                        // 还要把它转移出去
+                    }}>
                         <div
                             className="Icon-button"
                             style={{

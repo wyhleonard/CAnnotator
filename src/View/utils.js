@@ -55,10 +55,10 @@ export function adaptTooltipPosition (hoverPosition, rectSize, pigmentNum, hover
     }
 }
 
-
 export function valuePositionWithMinMaxValues (value, list) {
     if(list.length > 0) {
-        let min = list[0][1];
+        // let min = list[0][1];
+        let min = 0;
         let max = list[0][1];
         list.forEach(d => {
             if(d[1] < min) min = d[1];
@@ -70,10 +70,3 @@ export function valuePositionWithMinMaxValues (value, list) {
         return 0;
     }
 }
-
-// export function getPigmentQuantity(quantity) {
-//     const roundValue = Math.round(quantity);
-//     if(Math.abs(roundValue - quantity) < 0.25) {
-//         return 
-//     }
-// }

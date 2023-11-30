@@ -15,7 +15,7 @@
 
 .Reference-toolbar-search {
     width: 20%;
-    padding: 1.43px 0px 1.43px 4px;
+    padding: 0px 0px 0.2px 4px;
     margin-left: 4px;
     outline-style: none;
     border: 2px solid #5a4e3b;
@@ -107,23 +107,24 @@
 }
 
 .Reference-image-appendrow {
-    margin-top: 8px;
     width: 100%;
-    height: calc(33.33% - 8px);
+    height: calc(33.333% - 5px);
     display: flex;
 }
 
 .Reference-image-rows {
-    height: 75%;
+    margin-top: 8px;
+    height: calc(75% - 8px);
     overflow-y: scroll;
 }
 
 .Reference-projection-container {
     width: calc(25% - 6px);
     height: 100%;
-    border: 3px dashed #fff6dc;
     border-radius: 8px;
-    box-sizing: border-box;
+    padding: 4px;
+    border: 3px dashed transparent;
+    background: linear-gradient(#b09872, #b09872) padding-box, repeating-linear-gradient(-45deg, #fff6dc 0, #fff6dc 6px, #b09872 6px, #b09872 12px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -142,15 +143,15 @@
 }
 
 .Reference-projection {
-    width: calc(100% - 12px);
-    height: calc(100% - 12px);
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
     border-radius: 6px;
     background: #fff6dc;
 }
 
 .Reference-image {
-    width: calc(100% - 12px);
-    height: calc(100% - 12px);
+    width: calc(100% - 8px);
+    height: calc(100% - 8px);
     border-radius: 6px;
     background: #fff6dc;
     font-size: 0;
@@ -262,20 +263,20 @@
 }
 
 .R-segmentation-mask button {
-    height: 60px;
-    width: 60px;
+    height: 56px;
+    width: 56px;
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 5px;
+    border-radius: 6px;
     background-color: #fff6dc;
 }
 
 .Segmentation-image-container {
-    width: 60%;
-    height: 60%;
+    width: 50%;
+    height: 50%;
     object-fit: contain;
-    margin-top: -22px;
+    margin-top: -20px;
 }
 
 .Segmentation-color-list {
@@ -283,17 +284,16 @@
     height: 18px;
     position: absolute;
     z-index: 1;
-    bottom: 6px;
+    bottom: 6.6px;
     overflow-x: auto;
     overflow-y: hidden;
-    /* background: #5a4e3b; */
 }
 
 .Segmentation-color-item {
-    height: 18px;
-    width: 18px;
-    margin-right: 2px;
-    border-radius: 5px;
+    height: 17.00px;
+    width: 17.00px;
+    margin-right: 3.0px;
+    border-radius: 2px;
     display: inline-block;
     cursor: pointer;
 }

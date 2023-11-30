@@ -12,13 +12,6 @@ export const MatrixPalette = ({
     setMatrixDistances,
     matrixLabs,
     setMatrixLabs,
-    pigmentChanged,
-    setPigmentChanged,
-    setOriginalPigments,
-    pigments,
-    setPigments,
-    mixedPigments,
-    setMixedPigments,
     setPlotIndex,
     hoveredScatter,
     plotIndex,
@@ -35,6 +28,11 @@ export const MatrixPalette = ({
 
     const [focusStep, setFocusStep] = useState(0);
     const [clickPosition, setClickPosition] = useState([[-1, -1]]);
+
+    useEffect(() => {
+        setFocusStep(0)
+        setClickPosition([[-1, -1]])
+    }, [targetColor])
 
     // 跳转距离直接hardcode吧，这样最准确
     const stepSize = 284.49 + 16;
@@ -69,6 +67,7 @@ export const MatrixPalette = ({
                     matrixData[index]['col'][col],
                     matrixData[index]['row'][row],
                     matrixData[index]['mixed'][col][row],
+                    matrixDistances[index]['focus'][col + 1][row + 1]
                 ]])
 
             } else {
@@ -77,18 +76,21 @@ export const MatrixPalette = ({
                         matrixData[index]['col'][col],
                         matrixData[index]['row'][row],
                         matrixData[index]['mixed'][col][row],
+                        matrixDistances[index]['focus'][col + 1][row + 1]
                     ];
                 } else if (genMatrix[genMatrix.length - 1] === 'm') {
                     mixedStepState.push([
                         matrixData[index]['col'][col],
                         matrixData[index]['row'][row],
                         matrixData[index]['mixed'][col][row],
+                        matrixDistances[index]['focus'][col + 1][row + 1]
                     ]);
                 } else if (genMatrix[genMatrix.length - 1] === 's') {
                     mixedStepState[mixedStepState.length - 1] = [
                         matrixData[index]['col'][col],
                         matrixData[index]['row'][row],
                         matrixData[index]['mixed'][col][row],
+                        matrixDistances[index]['focus'][col + 1][row + 1]
                     ];
                 }
                 changeMixedStepState(JSON.parse(JSON.stringify(mixedStepState)));
@@ -118,6 +120,7 @@ export const MatrixPalette = ({
                         matrixData[index]['col'][col],
                         matrixData[index]['row'][row],
                         matrixData[index]['mixed'][col][row],
+                        matrixDistances[index]['focus'][col + 1][row + 1]
                     ]])
 
                 } else {
@@ -126,18 +129,21 @@ export const MatrixPalette = ({
                             matrixData[index]['col'][col],
                             matrixData[index]['row'][row],
                             matrixData[index]['mixed'][col][row],
+                            matrixDistances[index]['focus'][col + 1][row + 1]
                         ];
                     } else if (genMatrix[genMatrix.length - 1] === 'm') {
                         mixedStepState.push([
                             matrixData[index]['col'][col],
                             matrixData[index]['row'][row],
                             matrixData[index]['mixed'][col][row],
+                            matrixDistances[index]['focus'][col + 1][row + 1]
                         ]);
                     } else if (genMatrix[genMatrix.length - 1] === 's') {
                         mixedStepState[mixedStepState.length - 1] = [
                             matrixData[index]['col'][col],
                             matrixData[index]['row'][row],
                             matrixData[index]['mixed'][col][row],
+                            matrixDistances[index]['focus'][col + 1][row + 1]
                         ];
                     }
     
@@ -167,10 +173,12 @@ export const MatrixPalette = ({
                 changePaletteInfo(current => [...current, data.palette])
                 
                 if(index === 0) {
+                    console.log("test-mixture-enter-index0")
                     changeMixedStepState([[
                         matrixData[index]['col'][col],
                         matrixData[index]['row'][row],
                         matrixData[index]['mixed'][col][row],
+                        matrixDistances[index]['focus'][col + 1][row + 1]
                     ]])
                 } else {
                     if(genMatrix[genMatrix.length - 1] === 'q') {
@@ -178,23 +186,25 @@ export const MatrixPalette = ({
                             matrixData[index]['col'][col],
                             matrixData[index]['row'][row],
                             matrixData[index]['mixed'][col][row],
+                            matrixDistances[index]['focus'][col + 1][row + 1]
                         ];
                     } else if (genMatrix[genMatrix.length - 1] === 'm') {
                         mixedStepState.push([
                             matrixData[index]['col'][col],
                             matrixData[index]['row'][row],
                             matrixData[index]['mixed'][col][row],
+                            matrixDistances[index]['focus'][col + 1][row + 1]
                         ]);
                     } else if (genMatrix[genMatrix.length - 1] === 's') {
                         mixedStepState[mixedStepState.length - 1] = [
                             matrixData[index]['col'][col],
                             matrixData[index]['row'][row],
                             matrixData[index]['mixed'][col][row],
+                            matrixDistances[index]['focus'][col + 1][row + 1]
                         ];
                     }
+                    changeMixedStepState(JSON.parse(JSON.stringify(mixedStepState)));
                 }
-
-                changeMixedStepState(JSON.parse(JSON.stringify(mixedStepState)));
 
                 genMatrix.push('m');
                 changeGenMatrix(JSON.parse(JSON.stringify(genMatrix)));
@@ -219,6 +229,7 @@ export const MatrixPalette = ({
         }
 
     }, [matrixData, stepSize, focusStep])
+
 
     const matrixItems = matrixData.map((data, index) => {
         const floatDirection = (index - focusStep) % 2 === 0 ? true : false;

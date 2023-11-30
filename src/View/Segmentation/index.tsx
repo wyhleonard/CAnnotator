@@ -361,18 +361,22 @@ export const SegmentationView = ({
             //         )
             //     }
             // });
-            clicks2model(
-                imageContext[key]["stickers"][index],
-                newClicks, imageContext[key]["tensor"]["tensor"],
-                imageContext[key]["image"]["modelScale"], imageContext[key]["stickers"][index]["predMask"]
-            ).then((svgStr: any) => {
-                // const imgdata = model2stickers(key ?? "undefined", svgStr);
-                model2stickers(key ?? "undefined", svgStr).then(imgdata => {
-                    getColorsCounts(imageContext[key]["stickers"][index], imgdata, 20);
-                    setShowLoadingModal(false);
-                });
+            if (newClicks !== null) {
+                clicks2model(
+                    imageContext[key]["stickers"][index],
+                    newClicks, imageContext[key]["tensor"]["tensor"],
+                    imageContext[key]["image"]["modelScale"], imageContext[key]["stickers"][index]["predMask"]
+                ).then((svgStr: any) => {
+                    // const imgdata = model2stickers(key ?? "undefined", svgStr);
+                    model2stickers(key ?? "undefined", svgStr).then(imgdata => {
+                        getColorsCounts(imageContext[key]["stickers"][index], imgdata, 20);
+                        setShowLoadingModal(false);
+                    });
+                }
+                )
+            } else {
+                imageContext[key]["stickers"][index]["sticker"] = null;
             }
-            )
         });
         setCallCount(prev => prev + 1);
     };
@@ -796,7 +800,7 @@ export const SegmentationView = ({
                     </div>
                     <div className="Description-container">
                         <div className="STitle-container">
-                            <span className="STitle-text">Content Descriptions</span>
+                            <span className="STitle-text">Content Commentaries</span>
                         </div>
                         <div className="SContent-container">
                             <ContentDescription />

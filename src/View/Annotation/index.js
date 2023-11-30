@@ -28,10 +28,6 @@ export const AnnotationView = ({
     const [matrixLabs, setMatrixLabs] = useState([])
     const [paletteInfo, setPaletteInfo] = useState([])
 
-    const [originalPigments, setOriginalPigments] = useState([])
-    const [pigments, setPigments] = useState([])
-    const [mixedPigments, setMixedPigments] = useState([])
-    const [pigmentChanged, setPigmentChanged] = useState(true)
     const [pigmentConfirmed, setPigmentConfirmed] = useState(false)
 
     // new state - wyh
@@ -40,7 +36,7 @@ export const AnnotationView = ({
     const [genMatrix, setGenMatrix] = useState([]);
 
     const [plotIndex, setPlotIndex] = useState(0);
-    const [targetColor, setTargetColor] = useState("#fff");
+    const [targetColor, setTargetColor] = useState("#ffffff");
     const [targetColorCoordinate, setTargetColorCoordinate] = useState([]);
 
     // hover in scatterplot
@@ -48,7 +44,7 @@ export const AnnotationView = ({
 
     // initialize matrix
     useEffect(() => {
-        if (targetColor !== "#fff") {
+        if (targetColor !== "#ffffff") {
             let body = { option: 'i', target_color: targetColor, selected_coord: [0, 0], matrix_num: -1 }
             fetch("http://localhost:8000/gen_matrix", {
                 method: "POST",
@@ -66,6 +62,17 @@ export const AnnotationView = ({
                     setPaletteInfo([data.palette])
                 })
                 .catch(error => console.error("Error fetching data:", error));
+        } else {
+            setMatrices([]);
+            setMatrixDistances([]);
+            setMatrixLabs([]);
+            setPaletteInfo([]);
+            setTargetColorCoordinate([]);
+            setSelectSpace(0);
+            setMixedPigmentList([]);
+            setMixedStepState([]);
+            setGenMatrix([]);
+            setHoveredScatter([-1, -1]);
         }
     }, [targetColor])
 
@@ -74,6 +81,8 @@ export const AnnotationView = ({
     const [enableSelect, setEnableSelect] = useState(false);
     const handleCanvasClick = (e) => {
         if (enableSelect) {
+
+
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d');
 
@@ -88,6 +97,13 @@ export const AnnotationView = ({
             setTargetColor(hexColor);
             console.log(hexColor)
             setEnableSelect(false);
+
+            // initial
+            setSelectSpace(0);
+            setMixedPigmentList([]);
+            setMixedStepState([]);
+            setGenMatrix([]);
+            setHoveredScatter([-1, -1]);
         }
     };
 
@@ -246,37 +262,37 @@ export const AnnotationView = ({
         </div>
         <div className="Annotation-panel-container">
             <AnnotationPanel
-                pigments={pigments}
-                targetColor={targetColor} setTargetColor={setTargetColor}
-                selectedOriginalPigments={originalPigments}
+                targetColor={targetColor}
                 selectedSticker="/demoData/segmentations/6.png"
                 pigmentConfirmed={pigmentConfirmed}
-                mixedPigments={mixedPigments}
                 setEnableSelect={setEnableSelect}
+                matchedPalette={matrices.length > 0 ? matrices[0] : null}
+                matchedPaletteDist={matrixDistances.length > 0 ? matrixDistances[0] : null}
+                mixedPigmentList={mixedPigmentList}
+                mixedStepState={mixedStepState}
+                changeMixedPigmentList={setMixedPigmentList}
+                changeTargetColor={setTargetColor}
             />
         </div>
         <div className="Annotation-mixing-container">
             <div className="MatrixSpace-title-container">
                 <MixingMethod
-                    pigments={pigments}
-                    mixedPigments={mixedPigments}
-                    pigmentChanged={pigmentChanged}
                     setPigmentConfirmed={setPigmentConfirmed}
                     mixedStepState={mixedStepState}
-                    genMatrix={genMatrix}
                 />
             </div>
             <div className="MatrixSpace-display-container">
                 <MatrixPalette
-                    matrixData={matrices} setMatrixData={setMatrices}
-                    matrixDistances={matrixDistances} setMatrixDistances={setMatrixDistances}
-                    matrixLabs={matrixLabs} setMatrixLabs={setMatrixLabs}
-                    pigmentChanged={pigmentChanged} setPigmentChanged={setPigmentChanged}
-                    setOriginalPigments={setOriginalPigments}
-                    pigments={pigments} setPigments={setPigments}
-                    mixedPigments={mixedPigments} setMixedPigments={setMixedPigments} 
-                    setPlotIndex={setPlotIndex} hoveredScatter={hoveredScatter}
-                    plotIndex={plotIndex} targetColor={targetColor}
+                    matrixData={matrices}
+                    setMatrixData={setMatrices}
+                    matrixDistances={matrixDistances}
+                    setMatrixDistances={setMatrixDistances}
+                    matrixLabs={matrixLabs}
+                    setMatrixLabs={setMatrixLabs}
+                    setPlotIndex={setPlotIndex}
+                    hoveredScatter={hoveredScatter}
+                    plotIndex={plotIndex}
+                    targetColor={targetColor}
                     mixedStepState={mixedStepState}
                     changeMixedStepState={setMixedStepState}
                     genMatrix={genMatrix}

@@ -41,8 +41,8 @@ function Histogram(props) {
 
     // colors = colors.slice(0, 50);
 
-    const barWidth = 8; // 柱状条的宽度  
-    const barSpacing = 3; // 柱状条之间的间距
+    const barWidth = 8.06; // 柱状条的宽度  
+    const barSpacing = 2.96; // 柱状条之间的间距
     const WIDTH = (barWidth + barSpacing) * colors.length;
 
     const chartWidth = WIDTH;
@@ -76,6 +76,8 @@ function Histogram(props) {
                         y={y}
                         width={barWidth}
                         height={barHeight}
+                        rx={2}
+                        ry={2}
                         fill={
                             !chosenColors.size ?
                                 d.color :

@@ -3,8 +3,8 @@ import React, { useContext, useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import AppContext from "../hooks/createContext";
 
-const WIDTH = 110;
-const HEIGHT = 110;
+const WIDTH = 113.44;
+const HEIGHT = 110.56;
 
 function Scatter(props) {
     const {
@@ -12,6 +12,8 @@ function Scatter(props) {
         filteredImages: [filteredImages,],
     } = useContext(AppContext);
     const { handleFilter, dots } = props;
+
+    console.log("test-print-dots", dots)
 
     const chartWidth = WIDTH;
     const chartHeight = HEIGHT;
@@ -55,12 +57,16 @@ function Scatter(props) {
         const minY = Math.min(startY, endY);
         const maxX = Math.max(startX, endX);
         const maxY = Math.max(startY, endY);
-        const rectWidth = maxX - minX;
-        const rectHeight = maxY - minY;
+
         handleFilter(Object.entries({ ...dots }).filter(item =>
             minX <= (xScale(item[1][0]) + margin.left) && (xScale(item[1][0]) + margin.left) <= maxX
             && minY <= (yScale(item[1][1]) + margin.top) && (yScale(item[1][1]) + margin.top) <= maxY
-        ).map(item => Number(item[0])));
+        ).map(item => {
+            // console.log("test-print-item", item); // ['38', item]
+            return Number(item[0])
+        }));
+
+        // 移除rect
         d3.select(svgRef.current).selectAll('#rectangle').remove();
     };
 
@@ -73,12 +79,8 @@ function Scatter(props) {
             .attr('width', chartWidth)
             .attr('height', chartHeight);
 
-        xScale = d3.scaleLinear()
-            .domain([d3.min(data, d => d[0]), d3.max(data, d => d[0])])
-            .range([0, width]);
-        yScale = d3.scaleLinear()
-            .domain([d3.min(data, d => d[1]), d3.max(data, d => d[1])])
-            .range([height, 0]);
+        xScale = d3.scaleLinear().domain([d3.min(data, d => d[0]), d3.max(data, d => d[0])]).range([0, width]);
+        yScale = d3.scaleLinear().domain([d3.min(data, d => d[1]), d3.max(data, d => d[1])]).range([height, 0]);
 
         svg.selectAll('*').remove();
 
@@ -88,10 +90,11 @@ function Scatter(props) {
             .append('circle')
             .attr('cx', d => xScale(d[0]) + margin.left)
             .attr('cy', d => yScale(d[1]) + margin.top)
-            .attr('r', 5)
-            .attr('fill', (d, i) => filteredImages[i].marked == -1 ? 'rgba(176, 152, 114, 0.2)' : 'rgba(176, 152, 114, 1)')
-            .attr('stroke', (d, i) => filteredImages[i].marked == 1 ? '#534835' : 'none')  
-            .attr('stroke-width', (d, i) => filteredImages[i].marked == 1 ? 2 : 0);
+            .attr('r', 6)
+            .attr('fill', '#b09872')
+            .attr('opacity', (_, i) => filteredImages[i].marked === 1 ? 0.8 : (filteredImages[i].marked === -1 ? 0 : 0.3))
+            .attr('stroke', (_, i) => filteredImages[i].marked === 1 ? '#534835' : 'none')  
+            .attr('stroke-width', (_, i) => filteredImages[i].marked === 1 ? 2 : 0);
 
         // 绘制矩形  
         svg.append('rect')
@@ -126,8 +129,6 @@ function Scatter(props) {
             onMouseLeave={handleMouseLeave}
         ></svg>
     );
-
-
 }
 
 export default Scatter;

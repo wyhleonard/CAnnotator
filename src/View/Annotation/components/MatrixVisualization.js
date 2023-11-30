@@ -151,6 +151,8 @@ export const MatrixVisualization = ({
         setIsClicked(false);
     }
 
+
+
     return <div className="SDefault-container" style={{ overflow: "visible" }} ref={svgRef}>
         <div className="Matrix-firstrow-container" style={{ height: `${rectSize[1]}px` }}>
             <div className="Matrix-index-container" style={{ width: `${rectSize[0]}px` }}
@@ -261,6 +263,7 @@ export const MatrixVisualization = ({
                         >
                             <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
                                 {`See More Quantities (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][0].toFixed(2)})`}
+                                {/* {`See More Quantities (${28.66})`} */}
                             </span>
                         </div>
                         <div
@@ -276,6 +279,7 @@ export const MatrixVisualization = ({
                         >
                             <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
                                 {`See More Mixtures (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][1].toFixed(2)})`}
+                                {/* {`See More Mixtures (${51.17})`} */}
                             </span>
                         </div>
                     </div>
