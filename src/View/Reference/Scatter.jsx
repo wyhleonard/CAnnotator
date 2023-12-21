@@ -1,5 +1,4 @@
-import ReactDOM from "react-dom";
-import React, { useContext, useRef, useEffect, useState } from "react";
+import { useContext, useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import AppContext from "../hooks/createContext";
 
@@ -13,7 +12,7 @@ function Scatter(props) {
     } = useContext(AppContext);
     const { handleFilter, dots } = props;
 
-    console.log("test-print-dots", dots)
+    // console.log("test-print-dots", dots)
 
     const chartWidth = WIDTH;
     const chartHeight = HEIGHT;

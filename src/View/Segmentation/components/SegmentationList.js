@@ -1,80 +1,75 @@
 import "../../sharedCss.css"
 import "./SegmentationList.css"
-import React, {
-    useContext,
-} from "react";
+import { useContext } from "react";
 import Histogram from "./Histogram";
 import AppContext from "../../hooks/createContext";
-
-const demoSegs = [
-    {
-        image: "/demoData/segmentations/1.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/2.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/3.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/4.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/5.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/6.png",
-        colorHistogram: []
-    },
-    {
-        image: "/demoData/segmentations/7.png",
-        colorHistogram: []
-    }
-]
 
 const segSize = 60;
 
 export const SegmentationList = ({
-    redoMask, colors
+    colors
 }) => {
     const {
-        stickers: [stickers, setStickers],
-        activeSticker: [activeSticker, setActiveSticker],
+        stickers: [stickers, ],
+        activeSticker: [, setActiveSticker],
         chosenStickers: [chosenStickers, setChosenStickers],
-        isEditing: [isEditing, setIsEditing],
+        isEditing: [isEditing,],
     } = useContext(AppContext);
 
     const handleStickerClick = (i) => {
         if (isEditing === 0) {
-            // setIsEditing(1);
-            setActiveSticker(i);
-            setChosenStickers(new Set([...chosenStickers, i]));
+
+            const chosenStickersArray = Array.from(chosenStickers);
+            const stickerIndex = chosenStickersArray.indexOf(i);
+            if(stickerIndex !== -1) {
+                chosenStickersArray.splice(stickerIndex, 1);
+                setChosenStickers(new Set(chosenStickersArray));
+            } else {
+                setChosenStickers(new Set([...chosenStickersArray, i]));
+            }
+
+            setActiveSticker(i); // 有什么用
         }
     };
 
+    // console.log("test-print-stickers", stickers)
+    // console.log("test-print-colors", colors) // [{}]
+
     const segItems = stickers.map((el, i) => {
+
         return <div
             key={`segment-item-${i}`}
             className="Segment-item-container"
             style={{ height: `${segSize}px` }}
         >
             <div className={`Segment-item-image ${chosenStickers.has(i) ? "active" : ""}`} style={{ width: `${segSize}px` }}>
-                <img className="Image-container" src={el.toDataURL()} alt="" onClick={(e) => {
-                    handleStickerClick(i);
-                }} />
+                <img 
+                    className="Image-container" 
+                    src={el.toDataURL()} 
+                    alt="" 
+                    onClick={() => handleStickerClick(i)} 
+                />
             </div>
-            <div className={`Segment-item-histogram`} style={{ width: `calc(100% - ${segSize}px - 8px)`}}>
-                <Histogram colors={colors[i]} />
-            </div>
+            {
+                JSON.stringify(colors[i]) !== "{}" &&
+                <div className={`Segment-item-histogram`} style={{ width: `calc(100% - ${segSize}px - 8px)`}}>
+                    <Histogram colors={colors[i]} />
+                </div>
+            }
         </div>
     })
 
-    return <div className="SDefault-container">
-        {segItems}
+    return <div className="SDefault-container" style={{overflowY: "hidden"}}>
+        <div className="STitle-container" style={{ marginTop: "8px", background: "#b09872" }}>
+            <div className="Segment-title-container" style={{width: "60px"}}>
+                <span className="STitle-text-contrast" style={{marginLeft: "0px", fontSize: "16px"}}>SEG</span>
+            </div>
+            <div className="Segment-title-container" style={{width: "calc(100% - 68px)", marginLeft: "8px"}}>
+                <span className="STitle-text-contrast" style={{marginLeft: "0px", fontSize: "16px"}}>Color DIST</span>
+            </div>
+        </div>
+        <div className="Segment-list-container">
+            {segItems}
+        </div>
     </div>
 }

@@ -25,7 +25,7 @@ export function adaptWH(img, container) {
     }
 }
 
-export function adaptTooltipPosition (hoverPosition, rectSize, pigmentNum, hoverPanelSize, floatDirection) {
+export function adaptTooltipPosition(hoverPosition, rectSize, pigmentNum, hoverPanelSize, floatDirection) {
     let hoverPanelLeft = 0;
     let hoverPanelTop = 0;
 
@@ -55,7 +55,7 @@ export function adaptTooltipPosition (hoverPosition, rectSize, pigmentNum, hover
     }
 }
 
-export function valuePositionWithMinMaxValues (value, list) {
+export function valuePositionWithMinMaxValues(value, list) {
     if(list.length > 0) {
         // let min = list[0][1];
         let min = 0;

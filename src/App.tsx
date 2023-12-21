@@ -2,21 +2,17 @@ import './App.css';
 import { ReferenceView } from './View/Reference';
 import { SegmentationView } from './View/Segmentation';
 import { AnnotationView } from './View/Annotation'
-import LZString from "lz-string";
 import { InferenceSession, Tensor } from "onnxruntime-web";
 import * as ort from 'onnxruntime-web';
-import React, { useContext, useEffect, useState, useRef } from "react";
+import { useContext, useEffect, useState } from "react";
 import getFile from "./View/helpers/getFile";
 import { handleImageScale } from "./View/helpers/ImageHelper";
 import { modelScaleProps } from "./View/helpers/Interface";
-import ImagePicker from './View/helpers/ImagePicker';
 import {
-    traceCompressedRLeStringToSVG,
     traceOnnxMaskToSVG,
 } from "./View/helpers/mask_utils";
 import {
     modelData,
-    setParmsandQueryModel,
 } from "./View/helpers/modelAPI";
 import AppContext from "./View/hooks/createContext";
 
@@ -44,7 +40,7 @@ function App() {
         clicks: [clicks, setClicks],
         clicksHistory: [, setClicksHistory],
         image: [image, setImage],
-        prevImage: [prevImage, setPrevImage],
+        prevImage: [, setPrevImage],
         svg: [, setSVG],
         svgs: [, setSVGs],
         allsvg: [, setAllsvg],
@@ -62,14 +58,15 @@ function App() {
         predMask: [predMask, setPredMask],
         predMasks: [predMasks, setPredMasks],
         predMasksHistory: [predMasksHistory, setPredMasksHistory],
-        isToolBarUpload: [, setIsToolBarUpload],
+        // isToolBarUpload: [, setIsToolBarUpload],
         blobMap: [blobMap,],
         imageContext: [imageContext,],
+        segMaskArray: [, setSegMaskArray]
     } = useContext(AppContext)!;
     const [model, setModel] = useState<InferenceSession | null>(null);
     const [tensor, setTensor] = useState<Tensor | null>(null);
     const [hasClicked, setHasClicked] = useState<boolean>(false);
-    const [mask, setMask] = useState<
+    const [, setMask] = useState<
         | string[]
         | Uint8Array
         | Float32Array
@@ -83,10 +80,12 @@ function App() {
         | BigUint64Array
         | null
     >(null);
-    const [modelScale, setModelScale] = useState<modelScaleProps | null>(null);
+    const [modelScale, setModelScale] = useState<modelScaleProps | null>(null); // 作用未知
     const [colors, setColors] = useState([{}]);
     const imgSrc = "/demoData/paintings/0.png";
     const [annotationSelectedImg, setAnnotationSelectedImg] = useState(-1);
+
+    // console.log("test-print-modelScale", modelScale)
 
     useEffect(() => {
         const initModel = async () => {
@@ -212,9 +211,9 @@ function App() {
         runOnnx();
     }, [clicks, hasClicked]);
 
+    // 载入图片
     const handleSelectedImage = async (
         data: File | URL,
-        options?: { shouldNotFetchAllModel?: boolean; shouldDownload?: boolean; saveOnly?: boolean }
     ) => {
 
         if (data instanceof File) {
@@ -226,30 +225,30 @@ function App() {
         }
 
         try {
-            const shouldNotFetchAllModel = options?.shouldNotFetchAllModel;
-            const shouldDownload = options?.shouldDownload;
-            const saveOnly = options?.saveOnly ?? false;
-            !saveOnly && handleResetState();
-            // setIsLoading(true);
-            !saveOnly && setShowLoadingModal(true);
-            let imgName: string = "";
-            if (data instanceof URL) {
-                imgName = data.pathname;
-            }
-            imgName = imgName.substring(imgName.lastIndexOf("/") + 1);
+            handleResetState();
+            setShowLoadingModal(true);
+
+            // console.log("test-print-data", data)
             const imgData: File = data instanceof File ? data : await getFile(data);
             const img = new window.Image();
-            // img.src = URL.createObjectURL(imgData);
+
             img.src = data instanceof File ? data.name : URL.createObjectURL(imgData);
             const srcUrl = img.src;
+            // console.log("test-print-srcUrl", srcUrl);
+
             (data instanceof URL) && (blobMap[data.href] = srcUrl);
-            (data instanceof File) && (blobMap[data.name] = srcUrl);
+            (data instanceof File) && (blobMap[data.name] = srcUrl); // key-value => "/demoData/paintings/0.png": http://localhost:3000/demoData/paintings/0.png
+
             const addedImageContext = (srcUrl && imageContext[srcUrl]) || {};
+            // console.log("test-print-addedImageContext", addedImageContext); // {}
+
             addedImageContext["image"] = {};
             img.onload = () => {
-                !saveOnly && setIsToolBarUpload(false);
                 const { height, width, scale, uploadScale } = handleImageScale(img);
-                !saveOnly && setModelScale({
+                // console.log("test-print-imgParams", height, width, scale, uploadScale) // 1914, 2234, 1, 1
+                
+                // 作用未知
+                const newModelScale = {
                     onnxScale: scale / uploadScale,
                     maskWidth: width * uploadScale,
                     maskHeight: height * uploadScale,
@@ -257,51 +256,30 @@ function App() {
                     uploadScale: uploadScale,
                     width: width,
                     height: height,
-                });
-                addedImageContext["image"]["modelScale"] = {
-                    onnxScale: scale / uploadScale,
-                    maskWidth: width * uploadScale,
-                    maskHeight: height * uploadScale,
-                    scale: scale,
-                    uploadScale: uploadScale,
-                    width: width,
-                    height: height,
-                };
+                }
+                setModelScale(newModelScale);
+                addedImageContext["image"]["modelScale"] = newModelScale;
+
                 img.width = Math.round(width);
                 img.height = Math.round(height);
-                !saveOnly && setImage(img);
-                !saveOnly && setPrevImage(img);
-                !saveOnly && setIsErased(false);
-                // setParmsandQueryModel({
-                //     width,
-                //     height,
-                //     uploadScale,
-                //     imgData: img,
-                //     handleSegModelResults: ({ tensor }: { tensor: Tensor }) => addedImageContext["tensor"] = handleSegModelResults({ tensor, saveOnly, name }),
-                //     handleAllModelResults: ({
-                //         allJSON,
-                //         image_height,
-                //     }: {
-                //         allJSON: {
-                //             encodedMask: string;
-                //             bbox: number[];
-                //             score: number;
-                //             point_coord: number[];
-                //             uncertain_iou: number;
-                //             area: number;
-                //         }[];
-                //         image_height: number;
-                //     }) => addedImageContext["json"] = handleAllModelResults({ allJSON, image_height, saveOnly, name }),
-                //     imgName,
-                //     shouldDownload,
-                //     shouldNotFetchAllModel,
-                // });
+
+                // 作用未知
+                setImage(img); // 古画？
+                setPrevImage(img);
+
+                // 创建与原画大小相同的maskImage = [h, w]
+                const createdMaskImage = Array.from(new Array(height), () => new Array(width).fill(0))
+                // console.log("test-print-createdMaskImage", createdMaskImage.length, createdMaskImage[0].length, createdMaskImage[0][0])
+                setSegMaskArray(createdMaskImage);
             };
+
             const regex = /\/(\d+)\.(jpg|png)$/;
             const match = srcUrl.match(regex);
             const name = match ? match[1] : '-1';
-            loadSegModelResults(name, addedImageContext, saveOnly);
-            const pending = await loadllModelResults(name, addedImageContext, saveOnly);
+            // console.log("test-print-name", name); // "0"
+
+            loadSegModelResults(name, addedImageContext);
+            const pending = await loadllModelResults(name, addedImageContext);
             addedImageContext["image"]["img"] = img;
             addedImageContext["image"]["prevImage"] = img;
             addedImageContext["image"]["isErased"] = false;
@@ -313,8 +291,10 @@ function App() {
         }
     };
 
-    const loadSegModelResults = (fileName: string, addedImageContext: any, saveOnly: boolean) => {
-        fetch('/processData/tensor-' + fileName + '.json') // 指定文件路径  
+    // 加载tensor数据
+    const loadSegModelResults = (fileName: string, addedImageContext: any) => {
+        // paintings/0.png 古画为什么也要load这个东西
+        fetch('/processData/tensor-' + fileName + '.json') // 指定文件路径 
             .then(response => response.json())
             .then(data => {
                 const arr = new Float32Array(data.size);
@@ -322,13 +302,15 @@ function App() {
                     arr[i] = data.data[i];
                 }
                 const tensor = new Tensor(arr, data.dims);
-                if (!saveOnly) {
-                    setTensor(tensor);
-                    setIsLoading(false);
-                    setIsErasing(false);
-                    setShowLoadingModal(false);
-                    setEraserText({ isErase: false, isEmbedding: false });
-                }
+
+                setTensor(tensor);
+                // setIsLoading(false);
+                setShowLoadingModal(false);
+
+                // 作用未知
+                setIsErasing(false);
+                setEraserText({ isErase: false, isEmbedding: false });
+                
                 addedImageContext["tensor"] = {
                     "tensor": tensor,
                     "isLoading": false,
@@ -343,94 +325,20 @@ function App() {
             });
     };
 
-    const loadllModelResults = async (fileName: string, addedImageContext: any, saveOnly: boolean) => {
+    // 加载mask数据
+    const loadllModelResults = async (fileName: string, addedImageContext: any) => {
         const response = await fetch('/processData/mask-' + fileName + '.json') // 指定文件路径  
         const data = await response.json();
-        if (!saveOnly) {
-            setAllsvg(data);
-            setIsModelLoaded((prev) => {
-                return { ...prev, allModel: true };
-            });
-        }
+
+        // console.log("test-print-svgData", data); // [[svg, coords]] 还不知道怎么画出来的
+
+        setAllsvg(data);
+        setIsModelLoaded((prev) => {
+            return { ...prev, allModel: true };
+        });
+        
         addedImageContext["json"] = {
             "allsvg": data,
-            "isModelLoaded": { ...isModelLoaded, allModel: true },
-        };
-    };
-
-    function saveObjectAsFile(obj: any, fileName: any) {
-        // 将对象转换为 JSON 字符串  
-        const jsonString = JSON.stringify(obj);
-
-        // 创建 Blob 对象  
-        const blob = new Blob([jsonString], { type: 'application/json' });
-
-        // 创建临时 URL  
-        const url = URL.createObjectURL(blob);
-
-        // 创建 <a> 标签  
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-
-        // 模拟点击 <a> 标签，触发文件下载  
-        link.click();
-
-        // 释放临时 URL  
-        URL.revokeObjectURL(url);
-    }
-
-    const handleSegModelResults = ({ tensor, saveOnly, name }: any) => {
-        console.log(tensor, saveOnly);
-        if (!saveOnly) {
-            setTensor(tensor);
-            setIsLoading(false);
-            setIsErasing(false);
-            setShowLoadingModal(false);
-            setEraserText({ isErase: false, isEmbedding: false });
-        }
-        saveObjectAsFile(tensor, 'tensor-'+name+'.json');
-        return {
-            "tensor": tensor,
-            "isLoading": false,
-            "isErasing": false,
-            "showLoadingModal": false,
-            "eraserText": { isErase: false, isEmbedding: false },
-        };
-    };
-
-    const handleAllModelResults = ({
-        allJSON,
-        image_height,
-        saveOnly,
-        name,
-    }: any) => {
-        console.log(allJSON, image_height, saveOnly);
-        const allMaskSVG = allJSON.map(
-            (el: {
-                encodedMask: string;
-                bbox: number[];
-                score: number;
-                point_coord: number[];
-                uncertain_iou: number;
-                area: number;
-            }) => {
-                const maskenc = LZString.decompressFromEncodedURIComponent(
-                    el.encodedMask
-                );
-                const svg = traceCompressedRLeStringToSVG(maskenc, image_height);
-                return { svg: svg, point_coord: el.point_coord };
-            }
-        );
-        if (!saveOnly) {
-            setAllsvg(allMaskSVG);
-            setIsModelLoaded((prev) => {
-                return { ...prev, allModel: true };
-            });
-        }
-        saveObjectAsFile(allMaskSVG, 'mask-'+name+'.json');
-        return {
-            "allsvg": allMaskSVG,
             "isModelLoaded": { ...isModelLoaded, allModel: true },
         };
     };
@@ -482,14 +390,10 @@ function App() {
         setHasClicked(true);
     };
 
-
     return (
         <div className="App" >
             <div className="App-header" >
                 <span className="App-header-title" > CAnnotator </span>
-                {/* <ImagePicker
-                    handleSelectedImage={handleSelectedImage}
-                /> */}
             </div>
             <div className="App-content" >
                 <div className="App-content-top" >
@@ -511,7 +415,7 @@ function App() {
                         <ReferenceView 
                             colors={colors} 
                             handleMaskEdit={handleMaskEdit} 
-                            handleSelectedImage={handleSelectedImage} 
+                            // handleSelectedImage={handleSelectedImage} 
                             selectedImg={annotationSelectedImg}
                             setSelectedImg={setAnnotationSelectedImg}
                         />

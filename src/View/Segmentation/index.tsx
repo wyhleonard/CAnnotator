@@ -46,38 +46,41 @@ export const SegmentationView = ({
         clicksHistory: [clicksHistory, setClicksHistory],
         svg: [svg, setSVG],
         stickers: [stickers, setStickers],
-        isErased: [isErased, setIsErased],
+        isErased: [, setIsErased],
         maskImg: [maskImg, setMaskImg],
         userNegClickBool: [userNegClickBool, setUserNegClickBool],
-        activeSticker: [activeSticker, setActiveSticker],
+        activeSticker: [activeSticker],
         isLoading: [isLoading, setIsLoading],
-        hasNegClicked: [hasNegClicked, setHasNegClicked],
+        hasNegClicked: [, setHasNegClicked],
         stickerTabBool: [stickerTabBool, setStickerTabBool],
         svgs: [svgs, setSVGs],
         isHovering: [isHovering, setIsHovering],
         isEditing: [isEditing, setIsEditing],
-        showLoadingModal: [showLoadingModal, setShowLoadingModal],
+        showLoadingModal: [, setShowLoadingModal],
         predMask: [predMask, setPredMask],
         predMasks: [predMasks, setPredMasks],
         predMasksHistory: [predMasksHistory, setPredMasksHistory],
-        filteredImages: [filteredImages, setFilteredImages],
+        filteredImages: [filteredImages],
         image: [, setImage],
-        prevImage: [prevImage, setPrevImage],
+        prevImage: [, setPrevImage],
         allsvg: [, setAllsvg],
         segUrl: [segUrl, setSegUrl],
-        blobMap: [blobMap, setBlobMap],
-        imageContext: [imageContext, setImageContext],
+        blobMap: [blobMap],
+        imageContext: [imageContext],
+        segMaskArray: [segMaskArray],
+        segMaskIndex: [segMaskIndex, setSegMaskIndex]
     } = useContext(AppContext)!;
-    const [canvasScale, setCanvasScale] = useState<number>(1);
+
     const konvaRef = useRef<Konva.Stage>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [colorHandle, setColorHandle] = useState(false);
     const [callCount, setCallCount] = useState(0);
     const [currentScale, setCurrentScale] = useState(1);
     
     if (image && segUrl === "") {
         setSegUrl(image.src);
     }
+
+    // console.log("test-print-userNegClickBool", userNegClickBool)
+    // console.log("test-print-stickerTabBool", stickerTabBool)
 
     useEffect(() => {
         // @ts-ignore
@@ -130,9 +133,9 @@ export const SegmentationView = ({
                 });
             }
         }
-        console.log(newColors);
+        // console.log(newColors);
         setColors(newColors);
-    }, [stickers, colorHandle]);
+    }, [stickers]);                       
 
     const superDefer = (cb: Function) => {
         setTimeout(
@@ -146,10 +149,10 @@ export const SegmentationView = ({
         );
     };
 
+    // 保存当前的segmentation
     const handleCreateSticker = () => {
         if (konvaRef.current === null) return;
         setIsLoading(true);
-        setShowLoadingModal(true);
         superDefer(() =>
             superDefer(() => superDefer(() => superDefer(doHandleCreateSticker)))
         );
@@ -162,7 +165,7 @@ export const SegmentationView = ({
             let newCanvas = null;
             try {
                 const canvas = ref!.toCanvas().getContext("2d");
-                console.log(canvas);
+                // console.log(canvas);
 
                 let w = ref.width();
                 let h = ref.height();
@@ -172,12 +175,20 @@ export const SegmentationView = ({
                 let y;
                 let index;
 
+                // console.log("test-print-cutParams", w, h) // (2234, 1914) 古画原图的大小 => 乘积为4275876
+                // console.log("test-print-imageData", imageData.data.length) // 17103504 => 是乘积的4倍
+
+                const maskIndex = segMaskIndex + 1;
+
                 for (y = 0; y < h; y++) {
                     for (x = 0; x < w; x++) {
                         index = (y * w + x) * 4;
                         if (imageData.data[index + 3] > 0) {
+                            // console.log("test-print-imageData.data", imageData.data[index + 3]) // 127 or 255 or 32 or 64 
                             pix.x.push(x);
                             pix.y.push(y);
+
+                            segMaskArray[y][x] = maskIndex;
                         }
                     }
                 }
@@ -188,19 +199,27 @@ export const SegmentationView = ({
                     return a - b;
                 });
                 const n = pix.x.length - 1;
-                console.log(pix);
+                // console.log(pix);
 
+                // 裁剪了最小外包矩形
                 w = 1 + pix.x[n] - pix.x[0];
                 h = 1 + pix.y[n] - pix.y[0];
                 const cut = canvas.getImageData(pix.x[0], pix.y[0], w, h);
 
+                // console.log("test-print-cutParams", w, h) // 77 61
+
+                // 不理解下面三行
                 canvas.width = w;
                 canvas.height = h;
                 canvas.putImageData(cut, 0, 0);
+
                 newCanvas = document.createElement("canvas");
                 newCanvas.width = w;
                 newCanvas.height = h;
                 newCanvas.getContext("2d")!.putImageData(cut, 0, 0);
+
+                setSegMaskIndex(maskIndex);
+
             } catch (error) {
                 console.log(error);
                 return;
@@ -209,23 +228,43 @@ export const SegmentationView = ({
         };
 
         const konvaClone = konvaRef.current.clone();
+        // console.log("test-print-konvaClone", typeof(konvaClone), konvaClone); // object
+
+        // 按交互比例缩放
         konvaClone.width(konvaClone.width() / currentScale);
         konvaClone.height(konvaClone.height() / currentScale);
+
         const svgLayer = konvaClone.findOne(".svgMask");
+        // console.log("test-print-svgLayer", svgLayer); // 有三层layers：svgMask, animateAllSvg, annotations
+
+        // 这个是什么可能得看怎么画的了
         const pathNodes = svgLayer.find("Path");
         const imageNode = svgLayer.find("Image")[0];
         const newStickers: HTMLCanvasElement[] = [];
-        const srcUrl = image?.src;
-        const addedImageContext = (srcUrl && imageContext[srcUrl]) || {};
-        addedImageContext["stickers"] = addedImageContext["stickers"] ?? [];
+        // console.log("test-print-pathNodes", pathNodes)
+        // console.log("test-print-imageNode", imageNode)
+        
+        const srcUrl = image?.src; 
+        // console.log("test-print-image", image) // <img>标签
+
+        const addedImageContext = (srcUrl && imageContext[srcUrl]) || {}; // 双竖杠前面为null、undefined、false、‘’、0时取后面的值
+        addedImageContext["stickers"] = addedImageContext["stickers"] ?? []; // 双问号前面为null、undefined时取后面的值
+        
+        // 隐藏图层
         konvaClone.findOne(".annotations").hide();
         konvaClone.findOne(".animateAllSvg").hide();
+
+        // globalCompositeOperation指某个全局复合操作；
+        // destination-atop: 在源图像顶部显示目标图像
         svgLayer.globalCompositeOperation("destination-atop");
+
         imageNode.opacity(-1);
         imageNode.remove();
-        for (const pathNode of pathNodes) {
+
+        for (const pathNode of pathNodes) { 
             pathNode.opacity(-1).remove();
         }
+
         for (const pathNode of pathNodes) {
             svgLayer.add(imageNode);
             svgLayer.add(pathNode);
@@ -234,7 +273,9 @@ export const SegmentationView = ({
             imageNode.remove();
             pathNode.remove();
         }
-        // console.log(isEditing);
+
+        // console.log("test-print-isEditing", isEditing) // 0
+
         if (isEditing === 1) {
             setIsEditing(0);
             stickers[activeSticker] = newStickers[0];
@@ -244,136 +285,48 @@ export const SegmentationView = ({
             setIsEditing(0);
             handleSaveInteraction(addedImageContext["stickers"], activeSticker);
             addedImageContext["stickers"][activeSticker]["sticker"] = newStickers[0];
-            setColorHandle(false);
             newStickers[0] && getColorsCounts(addedImageContext["stickers"][activeSticker], newStickers[0].toDataURL(), 20);
             handleMaskEdit(segUrl, activeSticker);
         } else {
             setStickers([...(stickers || []), ...(newStickers || [])]);
+
             handleSaveInteraction(addedImageContext["stickers"], -1);
-            setColorHandle(false);
-            handleSegment(srcUrl ?? "undefined");
+            console.log("test-print-addedImageContext", addedImageContext);
+
+            // handleSegment();
         }
+
         handleResetInteraction();
         setIsLoading(false);
         imageContext[srcUrl ?? "undefined"] = addedImageContext;
-        console.log(imageContext);
+        // console.log(imageContext);
     };
 
-    const handleSegment = (srcUrl: string | null) => {
-        // fetch('http://localhost:8000/coseg/init/points', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json'
-        //   },
-        //   body: JSON.stringify(clicks?.map(item => [item.ex, item.ey]) || [[0, 0]])
-        // })
-        //   .then(response => {
-        //     console.log('列表数据传输成功！');
-        //     Object.keys(imageContext).forEach((key: any) => {
-        //       if (key === srcUrl) {
-        //         return;
-        //       }
-        //       createFormData(key)
-        //         .then(formData => {
-        //           return fetch('http://localhost:8000/coseg/match/point', {
-        //             method: 'POST',
-        //             body: formData as BodyInit
-        //           });
-        //         })
-        //         .then(response => response.json())
-        //         .then(data => {
-        //           const newClicks = data["points"].map((item: any, index: number) => {
-        //             return {
-        //               "x": item[0], "y": item[1], "width": null, "height": null,
-        //               // @ts-ignore
-        //               "clickType": clicks[index].clickType
-        //             };
-        //           })
-        //           // console.log(key);
-        //           const index = stickers.length;
-        //           imageContext[key]["stickers"][index] = { ...(imageContext[key]["stickers"][index] || {}), "clicks": newClicks, "predMask": null };
-        //           // console.log(imageContext[key]);
-        //           newClicks.forEach((item: any, i: number) => {
-        //             const curClicks = newClicks.slice(0, i + 1);
-        //             console.log(imageContext[key]["stickers"][i]["predMask"], curClicks);
-        //             if (i !== newClicks.length - 1) {
-        //               clicks2model(
-        //                 imageContext[key]["stickers"][i],
-        //                 curClicks, imageContext[key]["tensor"]["tensor"],
-        //                 imageContext[key]["image"]["modelScale"], imageContext[key]["stickers"][i]["predMask"]
-        //               )
-        //             } else {
-        //               clicks2model(
-        //                 imageContext[key]["stickers"][i],
-        //                 newClicks, imageContext[key]["tensor"]["tensor"],
-        //                 imageContext[key]["image"]["modelScale"], imageContext[key]["stickers"][i]["predMask"]
-        //               ).then((svgStr: any) => {
-        //                 // const imgdata = model2stickers(key ?? "undefined", svgStr);
-        //                 model2stickers(key ?? "undefined", svgStr).then(imgdata => {
-        //                   getColorsCounts(imageContext[key]["stickers"][index], imgdata, 4800);
-        //                   setColorHandle(prev => !prev);
-        //                 });
-        //               }
-        //               )
-        //             }
-        //           });
-
-        //         })
-        //         .catch(error => {
-        //           console.error('Blob 数据传输失败：', error);
-        //         });
-        //     });
-        //   })
-        //   .catch(error => {
-        //     console.error('列表数据传输失败：', error);
-        //   });
+    // 逆天 ~ 这块需要改掉
+    const handleSegment = () => {
         filteredImages.forEach((item: any, ini: number) => {
+            // what's this ? => hardcode 8个case
             const cclicks = nclicks[callCount % 8];
+
             const key = blobMap[item.contentUrl];
             const newClicks = cclicks[ini];
             const index = stickers.length;
+
             imageContext[key]["stickers"][index] = { ...(imageContext[key]["stickers"][index] || {}), "clicks": newClicks, "predMask": null };
-            // console.log(imageContext[key]);
-            // @ts-ignore
-            // newClicks.forEach((item: any, i: number) => {
-            //     // @ts-ignore
-            //     const curClicks = newClicks.slice(0, i + 1);
-            //     console.log(key, i, curClicks);
-            //     // console.log(imageContext[key]["stickers"][i]["predMask"], curClicks);
-            //     // @ts-ignore
-            //     if (i !== newClicks.length - 1) {
-            //         clicks2model(
-            //             imageContext[key]["stickers"][index],
-            //             curClicks, imageContext[key]["tensor"]["tensor"],
-            //             imageContext[key]["image"]["modelScale"], imageContext[key]["stickers"][index]["predMask"]
-            //         )
-            //     } else {
-            //         clicks2model(
-            //             imageContext[key]["stickers"][index],
-            //             newClicks, imageContext[key]["tensor"]["tensor"],
-            //             imageContext[key]["image"]["modelScale"], imageContext[key]["stickers"][index]["predMask"]
-            //         ).then((svgStr: any) => {
-            //             // const imgdata = model2stickers(key ?? "undefined", svgStr);
-            //             model2stickers(key ?? "undefined", svgStr).then(imgdata => {
-            //                 getColorsCounts(imageContext[key]["stickers"][index], imgdata, 20);
-            //             });
-            //         }
-            //         )
-            //     }
-            // });
+
             if (newClicks !== null) {
                 clicks2model(
                     imageContext[key]["stickers"][index],
-                    newClicks, imageContext[key]["tensor"]["tensor"],
-                    imageContext[key]["image"]["modelScale"], imageContext[key]["stickers"][index]["predMask"]
+                    newClicks,
+                    imageContext[key]["tensor"]["tensor"],
+                    imageContext[key]["image"]["modelScale"],
+                    imageContext[key]["stickers"][index]["predMask"]
                 ).then((svgStr: any) => {
-                    // const imgdata = model2stickers(key ?? "undefined", svgStr);
                     model2stickers(key ?? "undefined", svgStr).then(imgdata => {
+                        // check这个函数
                         getColorsCounts(imageContext[key]["stickers"][index], imgdata, 20);
-                        setShowLoadingModal(false);
                     });
-                }
-                )
+                })
             } else {
                 imageContext[key]["stickers"][index]["sticker"] = null;
             }
@@ -381,31 +334,8 @@ export const SegmentationView = ({
         setCallCount(prev => prev + 1);
     };
 
-    const createFormData = (blobUrl: string) => {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', blobUrl);
-            xhr.responseType = 'blob';
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    const blob = xhr.response;
-                    const file = new File([blob], 'filename'); // 创建一个文件对象，可以指定文件名  
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    resolve(formData);
-                } else {
-                    reject(new Error('无法获取 Blob 数据'));
-                }
-            };
-            xhr.onerror = function () {
-                reject(new Error('无法获取 Blob 数据'));
-            };
-            xhr.send();
-        });
-    }
-
     const MyKonva = (props: any) => {
-        const { blobUrl, base, index, mykonvaRef, svgStr } = props;
+        const { blobUrl, base, mykonvaRef, svgStr } = props;
 
         const MAX_CANVAS_AREA = 1677721;
         const w = base["image"]["modelScale"]!.width;
@@ -565,18 +495,21 @@ export const SegmentationView = ({
         return newStickers[0].toDataURL();
     };
 
+    // 
     const getColorsCounts = (base: any, imageURL: any, threshold: number) => {
         const img = new window.Image();
         img.onload = function () {
             const canvas = document.createElement('canvas');
             const pixelSize = 5; // 每个超像素的大小
             const scaledWidth = Math.ceil(img.width / pixelSize);
-            const scaledHeight = Math.ceil(img.height / pixelSize);
+            const scaledHeight = Math.ceil(img.height / pixelSize);  // 不是这么算的
+
             canvas.width = scaledWidth;
             canvas.height = scaledHeight;
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0, scaledWidth, scaledHeight);
             const imageData = ctx?.getImageData(0, 0, scaledWidth, scaledHeight);
+
             // @ts-ignore    
             const pixels = imageData.data;
             const colorFrequency = {};
@@ -593,35 +526,34 @@ export const SegmentationView = ({
                 const color = d3.rgb(r, g, b);
                 labs.push(d3.lab(color));
             }
+            
+            // 这里也有问题
             const dbscanner = jDBSCAN().eps(50).minPts(20).data(labs);
-            const point_assignment_result = dbscanner();
             const cluster_centers = dbscanner.getClusters();
-            // console.log(labs, point_assignment_result, cluster_centers);
             cluster_centers.forEach(({ l, a, b, dimension, parts }: any) => {
                 const key = d3.rgb(d3.lab(l, a, b)).toString();
                 // @ts-ignore
                 colorFrequency[key] = Array.from(new Set(parts)).length / total;
             });
-            // console.log(colorFrequency, cluster_centers, total, labs);
-            // // @ts-ignore
-            // Object.keys(colorFrequency).forEach(k => colorFrequency[k] /= total);
+            // @ts-ignore
             base["colors"] = colorFrequency;
-            setColorHandle(true);
         };
         img.src = imageURL;
     }
 
     const handleMouseDown = (e: any) => {
+        // console.log("test-print-stickerTabBool", stickerTabBool)
+        // console.log("test-print-clicksHistory", clicksHistory)
         if (stickerTabBool) return;
         if (clicksHistory) setClicksHistory(null);
         if (predMasksHistory) setPredMasksHistory(null);
     };
 
-    const handleMouseUp = (e: any, shouldSetClick?: boolean) => {
+    const handleMouseUp = (e: any) => {
         if (stickerTabBool) return;
         setIsLoading(true);
         setHasClicked(true);
-        const { x, y } = e.target.getStage().getPointerPosition();
+        const {x, y} = e.target.getStage().getPointerPosition();
         const newClick = getClick(e, x, y) || null;
         if (newClick?.clickType === 0) {
             setHasNegClicked(true);
@@ -662,72 +594,7 @@ export const SegmentationView = ({
         setPredMasksHistory(null);
         setIsLoading(false);
         setHasClicked(false);
-    };
-
-    const handleSaveInteraction = (base: any, index: number) => {
-        index = index !== -1 ? index : stickers.length;
-        base[index] = {
-            ...(base[index] || {}),
-            "svg": svg,
-            "svgs": svgs,
-            "click": click,
-            "clicks": clicks,
-            "clicksHistory": clicksHistory,
-            "maskImg": maskImg,
-            "userNegClickBool": userNegClickBool,
-            "isHovering": isHovering,
-            "predMask": predMask,
-            "predMasks": predMasks,
-            "predMasksHistory": predMasksHistory,
-            "isLoading": isLoading,
-        };
-
-    };
-
-    const redoMask = (i: number) => {
-        if (image?.src !== segUrl) {
-            return;
-        }
-        const context = imageContext[image?.src ?? "undefined"]["stickers"][i];
-        setSVG(context["svg"]);
-        setSVGs(context["svgs"]);
-        setClick(context["click"]);
-        setClicks(context["clicks"]);
-        setClicksHistory(context["clicksHistory"]);
-        setMaskImg(context["maskImg"]);
-        setUserNegClickBool(context["userNegClickBool"]);
-        setIsHovering(context["isHovering"]);
-        setPredMask(context["predMask"]);
-        setPredMasks(context["predMasks"]);
-        setPredMasksHistory(context["predMasksHistory"]);
-        setIsLoading(context["isLoading"]);
-        setHasClicked(true);
-    };
-
-    const handleMaskEdit = (blobUrl: string, stickerId: number) => {
-        const context = imageContext[blobUrl]["stickers"][stickerId];
-        const image = imageContext[blobUrl]["image"];
-        handleResetState();
-        setModelScale(image["modelScale"]);
-        setTensor(imageContext[blobUrl]["tensor"]["tensor"]);
-        setImage(image["img"]);
-        setPrevImage(image["img"]);
-        setIsErased(false);
-        setIsLoading(false);
-        setShowLoadingModal(false);
-        setAllsvg(imageContext[blobUrl]["json"]["allsvg"]);
-        setSVG(context["svg"]);
-        setSVGs(context["svgs"]);
-        setClick(context["click"]);
-        setClicks(context["clicks"]);
-        setClicksHistory(null);
-        setMaskImg(context["maskImg"]);
-        setUserNegClickBool(context["userNegClickBool"]);
-        setIsHovering(context["isHovering"]);
-        setPredMask(context["predMask"]);
-        setPredMasks(context["predMasks"]);
-        setPredMasksHistory(context["predMasksHistory"]);
-        setHasClicked(true);
+        setStickerTabBool(true); // work
     };
 
     const handleUndoInteraction = () => {
@@ -786,6 +653,71 @@ export const SegmentationView = ({
         }
     };
 
+    const handleSaveInteraction = (base: any, index: number) => {
+        index = index !== -1 ? index : stickers.length;
+        base[index] = {
+            ...(base[index] || {}),
+            "svg": svg,
+            "svgs": svgs,
+            "click": click,
+            "clicks": clicks,
+            "clicksHistory": clicksHistory,
+            "maskImg": maskImg,
+            "userNegClickBool": userNegClickBool,
+            "isHovering": isHovering,
+            "predMask": predMask,
+            "predMasks": predMasks,
+            "predMasksHistory": predMasksHistory,
+            "isLoading": isLoading,
+        };
+    };
+
+    const redoMask = (i: number) => {
+        if (image?.src !== segUrl) {
+            return;
+        }
+        const context = imageContext[image?.src ?? "undefined"]["stickers"][i];
+        setSVG(context["svg"]);
+        setSVGs(context["svgs"]);
+        setClick(context["click"]);
+        setClicks(context["clicks"]);
+        setClicksHistory(context["clicksHistory"]);
+        setMaskImg(context["maskImg"]);
+        setUserNegClickBool(context["userNegClickBool"]);
+        setIsHovering(context["isHovering"]);
+        setPredMask(context["predMask"]);
+        setPredMasks(context["predMasks"]);
+        setPredMasksHistory(context["predMasksHistory"]);
+        setIsLoading(context["isLoading"]);
+        setHasClicked(true);
+    };
+
+    const handleMaskEdit = (blobUrl: string, stickerId: number) => {
+        const context = imageContext[blobUrl]["stickers"][stickerId];
+        const image = imageContext[blobUrl]["image"];
+        handleResetState();
+        setModelScale(image["modelScale"]);
+        setTensor(imageContext[blobUrl]["tensor"]["tensor"]);
+        setImage(image["img"]);
+        setPrevImage(image["img"]);
+        setIsErased(false);
+        setIsLoading(false);
+        setShowLoadingModal(false);
+        setAllsvg(imageContext[blobUrl]["json"]["allsvg"]);
+        setSVG(context["svg"]);
+        setSVGs(context["svgs"]);
+        setClick(context["click"]);
+        setClicks(context["clicks"]);
+        setClicksHistory(null);
+        setMaskImg(context["maskImg"]);
+        setUserNegClickBool(context["userNegClickBool"]);
+        setIsHovering(context["isHovering"]);
+        setPredMask(context["predMask"]);
+        setPredMasks(context["predMasks"]);
+        setPredMasksHistory(context["predMasksHistory"]);
+        setHasClicked(true);
+    };
+
     return <div className="SView-container">
         <div className="View-content">
             <div className={isDrawerOpen ? "Drawer" : "Drawer-hidden"}>
@@ -828,7 +760,6 @@ export const SegmentationView = ({
                     handleMouseUp={handleMouseUp}
                     handleMouseDown={handleMouseDown}
                     hasClicked={hasClicked}
-                    handleResetState={handleResetState}
                     currentScale={currentScale}
                     setCurrentScale={setCurrentScale}
                 />
@@ -845,10 +776,10 @@ export const SegmentationView = ({
             <div className="SandA-container">
                 <div className="Segmentations-container">
                     <div className="STitle-container">
-                        <span className="STitle-text">Segmentations</span>
+                        <span className="STitle-text">Segments</span>
                     </div>
                     <div className="SContent-container">
-                        <SegmentationList redoMask={redoMask} colors={colors} />
+                        <SegmentationList colors={colors} />
                     </div>
                 </div>
                 <div className="Annotations-container">

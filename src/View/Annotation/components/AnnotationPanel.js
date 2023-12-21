@@ -121,7 +121,7 @@ export const AnnotationPanel = ({
         const mixedPigment = data['mixed'];
 
         // color labels
-        console.log("test-annotation-mixedPigment", mixedPigment)
+        // console.log("test-annotation-mixedPigment", mixedPigment)
         itemList.push(<div
             key={`annotation-mixed-${index}`} 
             className="Pigment-item-container"

@@ -6,20 +6,16 @@ import LoadingModal from "./LoadingModal";
 import Canvas from "./Canvas";
 import AppContext from "../../hooks/createContext";
 
-const imgSrc = "/demoData/paintings/1.png";
-
 export const PaintingBoard = ({
     konvaRef,
     scale,
     handleMouseUp,
     handleMouseDown,
     hasClicked,
-    handleResetState,
     currentScale,
     setCurrentScale,
 }) => {
     const {
-        showLoadingModal: [showLoadingModal,],
         image: [image,],
     } = useContext(AppContext);
     // canvas大小
@@ -56,7 +52,7 @@ export const PaintingBoard = ({
             setCurrentWH(orgSize);
             setCurrentLT([left, top]);
         }
-    }, [canvasSize, image])
+    }, [canvasSize, image, setCurrentScale])
 
     // 拖拽
     const [isMaskDrag, setIsMaskDrag] = useState(false);

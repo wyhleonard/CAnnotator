@@ -160,6 +160,23 @@ interface contextProps {
     imageContext: any,
     setImageContext: any
   ];
+
+  isTracking: [
+    isTracking: boolean,
+    setIsTracking: React.Dispatch<React.SetStateAction<boolean>>
+  ]
+  stickerForTrack: [
+    stickerForTrack: HTMLCanvasElement[], 
+    setStickerForTrack: (e: HTMLCanvasElement[]) => void
+  ]
+  segMaskArray: [
+    segMaskArray: any, 
+    setSegMaskArray: any
+  ]
+  segMaskIndex: [
+    segMaskIndex: any, 
+    setSegMaskIndex: any
+  ]
 }
 
 const AppContext = createContext<contextProps | null>(null);

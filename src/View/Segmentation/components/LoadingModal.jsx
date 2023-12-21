@@ -1,10 +1,10 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { Spin } from 'antd';
 import AppContext from "../../hooks/createContext";
 
 const LoadingModal = () => {
   const {
-    showLoadingModal: [showLoadingModal, setShowLoadingModal]
+    showLoadingModal: [showLoadingModal, ]
   } = useContext(AppContext);
 
   return (

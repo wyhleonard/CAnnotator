@@ -139,7 +139,7 @@ export interface StageProps {
   setHasClicked: (e: boolean) => void;
   handleSelectedImage: (
     data: File | URL,
-    options?: { shouldNotFetchAllModel?: boolean; shouldDownload?: boolean; saveOnly?: boolean }
+    // options?: { shouldNotFetchAllModel?: boolean; shouldDownload?: boolean; saveOnly?: boolean }
   ) => void;
   image: HTMLImageElement | null;
   clicks2model: (base: any, clicks: any, tensor: any, modelScale: any, predMask: any) => any;

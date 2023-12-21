@@ -13,6 +13,10 @@ for (let i = 1; i <= 60; ++i) {
     });
 }
 
-localPictureData = [].concat(localPictureData.filter((item, i) => reorderSeq.has(i))).concat(localPictureData.filter((item, i) => !(reorderSeq.has(i))))
+localPictureData = [].concat(
+    localPictureData
+    .filter((_, i) => reorderSeq.has(i)))
+    .concat(localPictureData.filter((_, i) => !(reorderSeq.has(i)))
+)
 
 export { localPictureData };

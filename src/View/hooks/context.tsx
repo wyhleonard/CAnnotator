@@ -25,7 +25,9 @@ const AppContextProvider = (props: {
     boxModel: boolean;
     allModel: boolean;
   }>({ boxModel: false, allModel: false });
-  const [stickers, setStickers] = useState<HTMLCanvasElement[]>([]);
+
+  const [stickers, setStickers] = useState<HTMLCanvasElement[]>([]); // 只存储古画的segs
+
   const [chosenStickers, setChosenStickers] = useState<Set<number>>(new Set());
   const [activeSticker, setActiveSticker] = useState<number>(0);
   const [segmentTypes, setSegmentTypes] = useState<"Box" | "Click" | "All">(
@@ -62,6 +64,15 @@ const AppContextProvider = (props: {
   const [filteredImages, setFilteredImages] = useState([]);
   const [chosenColors, setChosenColors] = useState(new Set());
   const [imageContext, setImageContext] = useState({});
+
+  // 是否进行part-tracking
+  const [isTracking, setIsTracking] = useState<boolean>(false);
+  // 将所有seg存在一个二维数组里
+  const [segMaskArray, setSegMaskArray] = useState([]);
+  // maskIndex
+  const [segMaskIndex, setSegMaskIndex] = useState(0);
+  // 自然图片的segs
+  const [stickerForTrack, setStickerForTrack] = useState<HTMLCanvasElement[]>([]);
 
   return (
     <AppContext.Provider
@@ -108,6 +119,10 @@ const AppContextProvider = (props: {
         filteredImages: [filteredImages, setFilteredImages],
         chosenColors: [chosenColors, setChosenColors],
         imageContext: [imageContext, setImageContext],
+        isTracking: [isTracking, setIsTracking],
+        stickerForTrack: [stickerForTrack, setStickerForTrack],
+        segMaskArray: [segMaskArray, setSegMaskArray],
+        segMaskIndex: [segMaskIndex, setSegMaskIndex],
       }}
     >
       {props.children}

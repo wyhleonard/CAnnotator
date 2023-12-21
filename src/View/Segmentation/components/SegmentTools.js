@@ -41,12 +41,11 @@ export const SegmentTools = ({
     hasClicked,
 }) => {
     const {
-        isErased: [isErased, setIsErased],
-        isEditing: [isEditing, setIsEditing],
+        isErased: [isErased, ],
         stickerTabBool: [stickerTabBool, setStickerTabBool],
-        svg: [svg, setSVG],
-        svgs: [svgs, setSVGs],
-        clicksHistory: [clicksHistory, setClicksHistory],
+        svg: [svg, ],
+        svgs: [svgs, ],
+        clicksHistory: [clicksHistory, ],
     } = useContext(AppContext);
 
     // 拖拽
@@ -99,7 +98,7 @@ export const SegmentTools = ({
     >
         {/* positive point button */}
         <div className={`Icon-container ${!stickerTabBool && !userNegClickBool && "active"}`}
-            style={iconContainerStyle}
+            style={Object.assign(JSON.parse(JSON.stringify(iconContainerStyle)), {marginLeft: "0px"})}
         >
             <div
                 className="Icon-button"

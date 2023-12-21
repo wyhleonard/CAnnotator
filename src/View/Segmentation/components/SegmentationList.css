@@ -1,6 +1,6 @@
 .Segment-item-container {
     width: 100%;
-    margin-top: 8px;
+    margin-bottom: 8px;
     display: flex;
 }
 
@@ -38,4 +38,20 @@
 
 .Segment-item-image:hover {
     box-shadow: 3px 5px 5px rgba(0, 0, 0, 0.3);
+}
+
+.Segment-title-container {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #fff6dc;
+}
+
+.Segment-list-container {
+    margin-top: 8px;
+    width: 100%;
+    height: calc(100% - 8px - 44px);
+    overflow-y: auto;
 }

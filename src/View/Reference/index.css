@@ -11,6 +11,7 @@
     border-radius: 6px;
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .Reference-toolbar-search {
@@ -27,6 +28,41 @@
     background: #fff6dc;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
+
+.Search-tooltip {
+    width: 20%;
+    height: 84px;
+    background: #fff6dc;
+    position: absolute;
+    top: 32px;
+    left: 4px;
+    border-radius: 0px 0px 4px 4px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    cursor: pointer;
+}
+
+.Search-item {
+    width: 100%;
+    height: 28px;
+    display: flex;
+    align-items: center;
+}
+
+/* .Search-item:hover {
+    background: #5a4e3b;
+} */
+
+.Search-item-text {
+    font-weight: 500;
+    font-size: 16px;
+    color: #5a4e3b;
+    margin-left: 4px;
+}
+
+/* .Search-item-text:hover {
+    color: #fff6dc;
+} */
 
 .Reference-search-button {
     margin: 4px 0px;
@@ -78,6 +114,18 @@
     justify-content: center;
 }
 
+.Reference-image-track {
+    margin: 4px 0px 4px 4px;
+    width: 28px;
+    height: calc(100% - 8px);
+    border: 2px solid #5a4e3b;
+    box-sizing: border-box;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .Reference-image-confirm {
     margin: 4px;
     width: 28px;
@@ -95,34 +143,36 @@
 }
 
 .Reference-image-list {
+    margin-top: 8px;
     width: 100%;
-    height: calc(100% - 80px);
+    height: calc(100% - 88px);
 }
 
 .Reference-image-firstrow {
-    margin-top: 8px;
+    margin-top: 0px;
     width: 100%;
-    height: calc(25% - 8px);
+    height: calc(25% - 4.5px);
     display: flex;
 }
 
 .Reference-image-appendrow {
     width: 100%;
-    height: calc(33.333% - 5px);
+    height: calc(33.333% - 4px);
     display: flex;
 }
 
 .Reference-image-rows {
-    margin-top: 8px;
-    height: calc(75% - 8px);
-    overflow-y: scroll;
+    margin-top: 6px;
+    height: calc(75% - 1.5px);
+    overflow-y: hidden;
+    position: relative;
 }
 
 .Reference-projection-container {
-    width: calc(25% - 6px);
+    width: calc(25% - 4.5px);
     height: 100%;
     border-radius: 8px;
-    padding: 4px;
+    padding: 3px;
     border: 3px dashed transparent;
     background: linear-gradient(#b09872, #b09872) padding-box, repeating-linear-gradient(-45deg, #fff6dc 0, #fff6dc 6px, #b09872 6px, #b09872 12px);
     display: flex;
@@ -131,15 +181,15 @@
 }
 
 .Reference-image-container {
-    width: calc(25% - 6px);
+    width: calc(25% - 4.5px);
     background: #fff6dc;
-    border: 3px solid #fff6dc;
     height: 100%;
-    border-radius: 8px;
+    border-radius: 4px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .Reference-projection {
@@ -150,9 +200,9 @@
 }
 
 .Reference-image {
-    width: calc(100% - 8px);
-    height: calc(100% - 8px);
-    border-radius: 6px;
+    width: calc(100% - 6px);
+    height: calc(100% - 6px);
+    border-radius: 4px;
     background: #fff6dc;
     font-size: 0;
     text-align: center;
@@ -164,9 +214,7 @@
     display: inline-block;
     height: 100%;
     vertical-align: middle;
-  }
-
-
+}
 
 .Reference-image img{
     height: 100%;
@@ -176,12 +224,18 @@
     font-size: 12px;
 }
 
+.Reference-image-container:hover .R-segmentation-mask {
+    visibility: visible;
+}
+
+/* .marked? */
 .Reference-image-container.marked {
     border: 3px dashed #fff6dc;
 }
 
 .Reference-image-container.active {
-    border: 3px solid #594d3a;
+    /* border: 3px solid #594d3a; */
+    background: #594d3a;
 }
 
 .Reference-image-appendrow.miss {
@@ -189,8 +243,8 @@
 }
 
 .Reference-segmentation-list {
-    margin-left: 8px;
-    width: calc(75% - 2px);
+    margin-left: 6px;
+    width: calc(75% - 1.5px);
     height: 100%;
     display: flex;
     white-space: nowrap;
@@ -199,10 +253,10 @@
 
 .R-segmentation-item {
     flex: 0 0 auto;
-    width: calc(33.33% - 5.33px);
+    width: calc(33.3333% - 4px);
     height: 100%;
     background: #fff6dc;
-    border-radius: 6px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -211,14 +265,14 @@
 
 .R-segmentation-image {
     flex: 0 0 auto;
-    width: calc(33.33% - 5.33px);
+    width: calc(33.3333% - 4px);
     height: 100%;
-    padding: 5px;
+    /* padding: 5px; */
     background: #fff6dc;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: 4px;
     position: relative;
     overflow: hidden;
 }
@@ -296,4 +350,14 @@
     border-radius: 2px;
     display: inline-block;
     cursor: pointer;
+}
+
+.Detail-view-container {
+    width: 75%;
+    height: 100%;
+    top: 0px;
+    background: #5a4e3b;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 100;
 }

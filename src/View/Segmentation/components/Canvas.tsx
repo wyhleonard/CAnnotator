@@ -1,23 +1,7 @@
 import Konva from "konva";
-import { KonvaEventObject } from "konva/lib/Node";
-import React, {
-  RefObject,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { RadialProgress } from "react-daisyui";
-import { Circle, Image, Layer, Path, Rect, Ring, Stage } from "react-konva";
-import {
-  canvasScaleInitializer,
-  canvasScaleResizer,
-} from "../../helpers/CanvasHelper";
-import {
-  AnnotationProps,
-  modelInputProps,
-  modelScaleProps,
-} from "../../helpers/Interface";
+import { useContext, useEffect } from "react";
+import { Circle, Image, Layer, Path, Stage } from "react-konva";
+import { modelInputProps } from "../../helpers/Interface";
 import AppContext from "../../hooks/createContext";
 import SvgMask from "./SvgMask";
 
@@ -31,14 +15,14 @@ const Canvas = ({
   handleMouseDown,
   hasClicked,
   currentWH,
-  currentScale
+  currentScale,
 }: any) => {
   const {
-    click: [click, setClick],
-    clicks: [clicks, setClicks],
+    click: [click, setClick], // 新点击的points
+    clicks: [clicks, setClicks],  // 之前存储的points
     image: [image],
     svg: [svg],
-    isLoading: [isLoading, setIsLoading],
+    isLoading: [isLoading],
   } = useContext(AppContext)!;
 
   const imageClone = new window.Image();
@@ -60,7 +44,6 @@ const Canvas = ({
   };
   const clickColor = click ? handleClickColor(click.clickType) : null;
 
-
   const superDefer = (cb: Function) => {
     setTimeout(
       () =>
@@ -76,37 +59,37 @@ const Canvas = ({
   useEffect(() => {
     let newClicks: modelInputProps[] | null = null;
     if (clicks && click) {
-      newClicks = [...clicks, click];
+      newClicks = [...clicks, click]; // add new click
     } else if (click) {
       newClicks = [click];
     }
     if (newClicks) {
-      superDefer(() => superDefer(() => setClicks(newClicks)));
+      superDefer(() => superDefer(() => {
+        setClick(null);
+        setClicks(newClicks);
+      }));
     }
-  }, [click]);
+  }, [click, setClick, clicks, setClicks]); // correct usage of useEffect
 
   return (
     <>
       <div className="absolute w-full h-full bg-black pointer-events-none background"></div>
-      <img
+      <img /* 古画底图 */
         // @ts-ignore
         src={image.src}
-        className={`absolute w-full h-full pointer-events-none ${isLoading ||
-          (hasClicked)
-          ? "opacity-50"
-          : ""
-          }`}
+        className={`absolute w-full h-full pointer-events-none ${
+          isLoading || hasClicked ? "opacity-50" : ""
+        }`}
         style={{ margin: 0 }}
+        alt=""
       ></img>
-      {svg &&
-        scale &&
-        hasClicked && (
-          <SvgMask
-            xScale={currentWH[0]}
-            yScale={currentWH[1]}
-            svgStr={svg.join(" ")}
-          />
-        )}
+      {svg && scale && hasClicked && (
+        <SvgMask
+          xScale={currentWH[0]}
+          yScale={currentWH[1]}
+          svgStr={svg.join(" ")}
+        />
+      )}
       <Stage
         className="konva"
         width={currentWH[0] * currentScale}
@@ -123,24 +106,20 @@ const Canvas = ({
             width={currentWH[0]}
             height={currentWH[1]}
             opacity={0}
-            preventDefault={false}
+            preventDefault={false} // 允许浏览器的交互行为
           />
-          {svg &&
-            scale &&
-            hasClicked && (
-              <Path
-                data={svg.join(" ")}
-                fill="black"
-                lineCap="round"
-                lineJoin="round"
-                opacity={0}
-                preventDefault={false}
-              />
-            )}
+          {svg && scale && hasClicked && (
+            <Path
+              data={svg.join(" ")}
+              fill="black"
+              lineCap="round"
+              lineJoin="round"
+              opacity={0}
+              preventDefault={false}
+            />
+          )}
         </Layer>
-        <Layer name="animateAllSvg">
-
-        </Layer>
+        <Layer name="animateAllSvg"></Layer>
         <Layer name="annotations">
           {clicks &&
             hasClicked &&
@@ -149,18 +128,14 @@ const Canvas = ({
               return (
                 clickColor && (
                   <Circle
-                    key={idx}
+                    key={`click-${idx}`}
                     id={`${idx}`}
                     x={click.x * currentScale}
                     y={click.y * currentScale}
                     fill={clickColor}
                     radius={8}
                     shadowBlur={5}
-                    shadowColor={
-                      clickColor === positiveClickColor
-                        ? "black"
-                        : clickColor
-                    }
+                    shadowColor={clickColor === positiveClickColor ? "black" : "white"}
                     preventDefault={false}
                   />
                 )
@@ -169,14 +144,11 @@ const Canvas = ({
           {click && clickColor && (
             <>
               <Circle
+                key={"new-click"}
                 x={click.x * currentScale}
                 y={click.y * currentScale}
                 fill={clickColor}
-                shadowColor={
-                  clickColor === positiveClickColor
-                    ? "black"
-                    : negativeClickColor
-                }
+                shadowColor={clickColor === positiveClickColor ? "black" : "white"}
                 shadowBlur={5}
                 preventDefault={false}
                 radius={8}

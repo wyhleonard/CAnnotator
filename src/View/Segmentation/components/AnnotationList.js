@@ -34,7 +34,7 @@ const colorItemSize = 14.8;
 export const AnnotationList = (
 
 ) => {
-    const annoItems = demoAnnos.map((anno, idx) => {
+    const annoItems = [].map((anno, idx) => {
 
         const colorItems = anno.annotations.map((color, idx) => {
             return <div

@@ -1,34 +1,14 @@
-import ReactDOM from "react-dom";
-import React, { useState, useEffect, useContext } from "react";
+import { useContext } from "react";
 import * as d3 from "d3";
 import AppContext from "../../hooks/createContext";
-
-// let colors = [
-//     {
-//         color: "#16a3ff",
-//         value: 320
-//     },
-//     {
-//         color: "#6ddead",
-//         value: 200
-//     },
-//     {
-//         color: "#5edfff",
-//         value: 25
-//     }
-// ];
 
 const HEIGHT = 50;
 
 function Histogram(props) {
     const {
-        chosenColors: [chosenColors, setChosenColors],
-        filteredImages: [filteredImages,],
-        chosenStickers: [chosenStickers, setChosenStickers],
-        imageContext: [imageContext,],
-        blobMap: [blobMap,],
+        chosenColors: [chosenColors,],
     } = useContext(AppContext);
-    let { colors, el } = props;
+    let { colors } = props;
 
     colors = Object.keys(colors ?? {}).map(k => {
         return {
@@ -38,8 +18,6 @@ function Histogram(props) {
     });
 
     colors.sort((a, b) => b.value - a.value);
-
-    // colors = colors.slice(0, 50);
 
     const barWidth = 8.06; // 柱状条的宽度  
     const barSpacing = 2.96; // 柱状条之间的间距
