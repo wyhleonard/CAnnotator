@@ -70,3 +70,29 @@ export function valuePositionWithMinMaxValues(value, list) {
         return 0;
     }
 }
+
+export function findTargetInFilteredImages(index, filteredImages) {
+    let imagePath = "";
+    for(let i = 0; i < filteredImages.length; i++) {
+        for(let j = 0; j < filteredImages[i].length; j++) {
+            if(filteredImages[i][j]["index"] === index) {
+                imagePath = filteredImages[i][j]["contentUrl"];
+                break
+            }
+        }
+        if(imagePath !== "") break
+    }
+
+    return imagePath
+}
+
+export function findMaxValueInArray(array) {
+    let maxValue = 0;
+    for(let i = 0; i < array.length; i++) {
+        for(let j = 0; j < array.length; j++) {
+            if(array[i][j] > maxValue) maxValue = array[i][j];
+        }
+    }
+    
+    return maxValue
+}

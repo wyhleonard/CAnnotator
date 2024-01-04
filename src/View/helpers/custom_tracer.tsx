@@ -310,7 +310,7 @@ const splitPointKey = (point: string) => {
   
     // We use a canvas element to draw the paths and check isPointInPath to determine wanted direction
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
   
     for (const path of paths) {
       // Count how many other paths a point contained inside this path is contained within

@@ -29,10 +29,18 @@
     overflow-y: hidden;
 }
 
+.Segment-item-refs {
+    margin-left: 8px;
+    height: 100%;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
 .Image-container {
     margin: 8px;
     width: calc(100% - 16px);
     height: calc(100% - 16px);
+    background: #fff6dc;
     object-fit: contain;
 }
 
@@ -54,4 +62,17 @@
     width: 100%;
     height: calc(100% - 8px - 44px);
     overflow-y: auto;
+}
+
+.Segment-tooltip-item {
+    margin: 2px;
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
+    border-radius: 4px;
+    padding: 2px;
+    border: 3px dashed transparent;
+    background: linear-gradient(#fff6dc, #fff6dc) padding-box, repeating-linear-gradient(-45deg, #5a4e3b 0, #5a4e3b 3px, #fff6dc 3px, #fff6dc 6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

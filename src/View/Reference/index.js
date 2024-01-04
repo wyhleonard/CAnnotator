@@ -4,17 +4,19 @@ import SearchIcon from "../../Icons/search.svg";
 import LeftIcon from "../../Icons/triangle.svg";
 import ConfirmIcon from "../../Icons/confirm.svg";
 import TrackIcon from "../../Icons/track.svg";
-import { iconLevel1 } from "../sharedConstants";
+import { PaintingPath, iconLevel1 } from "../sharedConstants";
 import { useContext, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { localPictureData } from "../helpers/pictureData";
 import { initPositions } from "../helpers/hardcode";
 import AppContext from "../hooks/createContext";
 import Scatter from "./Scatter";
-import ExpandSVG from "../../Icons/expand.svg"
+import ExpandSVG from "../../Icons/expand.svg";
 import ReSegmentSVG from "../../Icons/resegment.svg";
 import { fetchStaticImageData } from "../helpers/staticImageData";
 import { ImageViewer } from "./components/ImageViewer";
+import { SegmentViewer } from "./components/SegmentViewer";
+import { findMaxValueInArray } from "../utils";
 
 const iconRatio = 0.7;
 const iconStyle = (iconPath) => {
@@ -32,9 +34,10 @@ const imageDatasetName = ["pheasant", "goshawk", "pigment", "preprocess", "eggle
 
 export const ReferenceView = ({
   colors, 
-  handleMaskEdit, 
+  // handleMaskEdit,
+  handleImageResegment, 
   selectedImg, 
-  setSelectedImg
+  setSelectedImg,
 }) => {
   const {
     chosenColors: [chosenColors, setChosenColors],
@@ -43,14 +46,18 @@ export const ReferenceView = ({
     filteredImages: [filteredImages, setFilteredImages],
     stickers: [stickers,],  // 古画已分割的components: [canvas, canvas, canvas]: stickers[el].toDataURL()关注这个变量
     blobMap: [blobMap,],
-    isEditing: [, setIsEditing],
     showLoadingModal: [, setShowLoadingModal],
     activeSticker: [, setActiveSticker],
     imageContext: [imageContext,],  // stickers各图片已分割好的components，都是canvas
     isTracking: [isTracking, setIsTracking],
     stickerForTrack: [stickerForTrack],
-    segMaskArray: [segMaskArray],
-    segMaskIndex: [segMaskIndex],
+    segMaskArray: [segMaskArray, setSegMaskArray],
+    segMaskIndex: [segMaskIndex, setSegMaskIndex],
+    currentIndex: [currentIndex, setCurrentIndex],
+    annotatedImage: [annotatedImage],
+    image: [image, setImage],
+    editingMode: [, setEditingMode],
+
   } = useContext(AppContext);
 
   // console.log("test-print-segUrl", segUrl) // http://localhost:3000/demoData/paintings/0.png
@@ -97,16 +104,15 @@ export const ReferenceView = ({
   const sortedImages = currentPageImages.toSorted((a, b) => b.marked - a.marked);
 
   // 当前显示在队列中的图片数量？
-  let displayedNum = 0;
-  sortedImages.forEach((item) => {
-    if(item.marked === -1 || (isFilter && item.marked === 0)) {
+  // let displayedNum = 0;
+  // sortedImages.forEach((item) => {
+  //   if(item.marked === -1 || (isFilter && item.marked === 0)) {
 
-    } else {
-      displayedNum++;
-    }
-  })
-
-  console.log("test-print-displayedNum", displayedNum)
+  //   } else {
+  //     displayedNum++;
+  //   }
+  // })
+  // console.log("test-print-displayedNum", displayedNum)
 
   // chosenStickers: {0, 1, 3}
   // chosenList: 当前显示在reference list中的Segments的index: [0, 1, 3]
@@ -155,7 +161,10 @@ export const ReferenceView = ({
     // 浏览细节图时锁定
     if(expandedImage === -1) {
       const scrollElement = verticalScroller.current;
-      const scrollStep = blockSize[1] * 0.25 - 4.5 + 6;
+      // const scrollStep = blockSize[1] * 0.25 - 4.5 + 6;
+      // const scrollStep = 129.916 + 6;
+      const scrollStep = 60;
+      // console.log("test-print-scroll", scrollStep, 129.916 + 6); (136, 135.916)
 
       // bug(fixed): 加的scrollStep但涨的不是scrollStep => css: overflow跟这个函数有一个就可以了
       if (e.deltaY > 0) {
@@ -306,6 +315,9 @@ export const ReferenceView = ({
 
   /************* * *************/
 
+  // 当前显示图片的物体类别
+  const [objectName, setObjectName] = useState("");
+
   // 先不载入mask.json和tensor.json
   const onSearch = () => {
     const value = inputRef.current.value;
@@ -316,6 +328,7 @@ export const ReferenceView = ({
         img["index"] = idx // 全局的索引
         img["marked"] = 0; // 控制显示
         img["trackedSegs"] = {}; // 用于存储tracked segs
+        img["highlightSegs"] = {}; // 用于存储高亮需要的数据
         if(idx % imageInOnePage === 0) {
           imageDataInPages.push([img]);
         } else {
@@ -324,6 +337,7 @@ export const ReferenceView = ({
         }
       });
 
+      setObjectName(value);
       setFilteredImages(imageDataInPages);
       setImagePageIndex(0);
       setCurrentPageImages(imageDataInPages[0]);
@@ -333,59 +347,93 @@ export const ReferenceView = ({
   // 将当前stickers整理好发给后端
   const handleStartTracking = () => {
 
-    // 当自然图片的track为0时，直接用古画的seg进行track => 结果一般很差
-    if(stickerForTrack.length === 0 && segMaskIndex > 0 && imagePageIndex !== -1) {
+    if(segMaskIndex > 0 && imagePageIndex !== -1) {
       // console.log("test-print-stickers", stickers) // [canvas]
       // console.log("test-print-stickersURL", stickers[0].toDataURL()) // 应该是在原图上直接裁剪的
+
       console.log("test-print-segMaskIndex", segMaskIndex); // 1
 
-      // crop masks' 最大外接矩形
-      const h = segMaskArray.length;
-      const w = segMaskArray[0].length;
-      const pix = { x: [], y: [] };
-      for(let y = 0; y < h; y++) {
-        for(let x = 0; x < w; x++) {
-          if(segMaskArray[y][x] > 0) {
-            pix.x.push(x);
-            pix.y.push(y);
+      const maskArray = [];
+      const positionInOrigin = [];
+      const annotatedImageArray = [];
+
+      const originSegMaskArray = [];
+      if(annotatedImage.length === 0) {
+        originSegMaskArray.push(segMaskArray);
+        annotatedImageArray.push("-1");
+
+      } else if(annotatedImage.length > 0 && currentIndex === -1) {
+        Object.keys(imageContext).forEach(key => {
+          const data = imageContext[key];
+          const splitOne = key.split("/");
+          const splitTwo = splitOne[splitOne.length - 1].split(".");
+
+          if(splitTwo[0] !== "0") { // "0"为painting的标识
+            annotatedImageArray.push(splitTwo[0]); // string
+            originSegMaskArray.push(data["maskArray"]);
+          }
+        })
+      }
+
+      for(let i = 0; i < originSegMaskArray.length; i++) {
+        const tempMaskArray = originSegMaskArray[i];
+
+        // crop masks' 最大外接矩形
+        const h = tempMaskArray.length;
+        const w = tempMaskArray[0].length;
+        const pix = { x: [], y: [] };
+        for(let y = 0; y < h; y++) {
+          for(let x = 0; x < w; x++) {
+            if(tempMaskArray[y][x] > 0) {
+              pix.x.push(x);
+              pix.y.push(y);
+            }
           }
         }
-      }
 
-      pix.x.sort((a, b) => a - b);
-      pix.y.sort((a, b) => a - b);
-      const n = pix.x.length - 1;
-      
-      const cropW = 1 + pix.x[n] - pix.x[0];
-      const cropH = 1 + pix.y[n] - pix.y[0];
+        pix.x.sort((a, b) => a - b);
+        pix.y.sort((a, b) => a - b);
+        const n = pix.x.length - 1;
+        
+        const cropW = 1 + pix.x[n] - pix.x[0];
+        const cropH = 1 + pix.y[n] - pix.y[0];
 
-      // 要稍微大一点，不然语义信息有限
-      const minW = 500;
-      const minH = 500;
-      let startX, startY, endX, endY = 0;
-      if(cropH < minH) {
-        const filledH = Math.floor((minH - cropH) / 2);
-        startY = pix.y[0] - filledH < 0 ? 0 : pix.y[0] - filledH;
-        endY = startY + minH - 1 >= h ? h - 1 : startY + minH - 1;
-      } else {
-        startY = pix.y[0];
-        endY = pix.y[n];
-      }
-
-      if(cropW < minW) {
-        const filledW = Math.floor((minW - cropW) / 2);
-        startX = pix.x[0] - filledW < 0 ? 0 : pix.x[0] - filledW;
-        endX = startX + minW - 1 >= w ? w - 1 : startX + minW - 1;
-      } else {
-        startX = pix.x[0];
-        endX = pix.x[n];
-      }
-
-      const cropMaskArray = Array.from(new Array(1 + endY - startY), () => new Array(1 + endX - startX).fill(0));
-      for(let y = startY; y < endY; y++) {
-        for(let x = startX; x < endX; x++) {
-          cropMaskArray[y - startY][x - startX] = segMaskArray[y][x];
+        let minW = w;
+        let minH = h;
+        // 要稍微大一点，不然语义信息有限
+        if(annotatedImage.length === 0) {
+          minW = Math.min(500, w);
+          minH = Math.min(500, h);
         }
+
+        let startX, startY, endX, endY = 0;
+        if(cropH < minH) {
+          const filledH = Math.floor((minH - cropH) / 2);
+          startY = pix.y[0] - filledH < 0 ? 0 : pix.y[0] - filledH;
+          endY = startY + minH - 1 >= h ? h - 1 : startY + minH - 1;
+        } else {
+          startY = pix.y[0];
+          endY = pix.y[n];
+        }
+
+        if(cropW < minW) {
+          const filledW = Math.floor((minW - cropW) / 2);
+          startX = pix.x[0] - filledW < 0 ? 0 : pix.x[0] - filledW;
+          endX = startX + minW - 1 >= w ? w - 1 : startX + minW - 1;
+        } else {
+          startX = pix.x[0];
+          endX = pix.x[n];
+        }
+
+        const cropMaskArray = Array.from(new Array(1 + endY - startY), () => new Array(1 + endX - startX).fill(0));
+        for(let y = startY; y < endY; y++) {
+          for(let x = startX; x < endX; x++) {
+            cropMaskArray[y - startY][x - startX] = tempMaskArray[y][x];
+          }
+        }
+
+        maskArray.push(cropMaskArray);
+        positionInOrigin.push([startX, startY, endX, endY])
       }
 
       const objectName = document.getElementById("natural-image-search").value;
@@ -393,8 +441,10 @@ export const ReferenceView = ({
       // 开始导入动画
       setShowLoadingModal(true);
 
+      console.log("test-print-backendData", maskArray, positionInOrigin, annotatedImageArray)
+
       /*
-        maskArray: 记录了mask的位置，
+        maskArray: 记录了mask的位置 => 这两个参数应该都是数组才对 => 对应多张reference
         positionInOrigin: [sx, sy, ex, ey]
       */
       fetch("http://localhost:8000/part-tracking", {
@@ -403,15 +453,16 @@ export const ReferenceView = ({
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          maskArray: cropMaskArray,
-          positionInOrigin: [startX, startY, endX, endY],
+          maskArray: maskArray, 
+          positionInOrigin: positionInOrigin,
           objectName: objectName,
           imageIndex: [
             imagePageIndex * imageInOnePage + 1,
             imagePageIndex === filteredImages.length - 1 
             ? imagePageIndex * imageInOnePage + filteredImages[filteredImages.length - 1].length
             : (imagePageIndex + 1) * imageInOnePage
-          ]
+          ],
+          annotatedImageArray: annotatedImageArray,
         }),
       })
       .then(response => response.json())
@@ -419,12 +470,32 @@ export const ReferenceView = ({
         console.log("test-print-firstConnection-to-my-backend", data) // good
 
         const trackedSegs = data["tracked_segs"];
+        const highlightSegs = data["tracked_coordinates"];
         for(let i = 0; i < trackedSegs.length; i++) {
           filteredImages[imagePageIndex][i]["trackedSegs"] = trackedSegs[i];
+          filteredImages[imagePageIndex][i]["highlightSegs"] = highlightSegs[i];
         }
 
         setFilteredImages([...filteredImages]);
         setShowLoadingModal(false);
+
+        // 将paintingboard中的内容切回古画
+        if(image) {
+          if((image.src).indexOf(PaintingPath) === -1) {
+            const keys = Object.keys(imageContext);
+            for(let k = 0; k < keys.length; k++) {
+              if(keys[k].indexOf(PaintingPath) !== -1) {
+                const paintingImage = imageContext[keys[k]]["image"]["img"];
+                const paintingMaskArray = imageContext[keys[k]]["maskArray"];
+                setImage(paintingImage);
+                setSegMaskArray(paintingMaskArray);
+                setEditingMode("painting");
+                setSegMaskIndex(findMaxValueInArray(paintingMaskArray));
+                break
+              }
+            }
+          }
+        }
 
         setIsTracking(true); // 切换reference view中的展现形式
       })
@@ -515,9 +586,26 @@ export const ReferenceView = ({
                 cursor: 'pointer',
               }}
               onClick={handleStartTracking}
+              alt="Tracking segments in the natural images"
             />
           </div>
-          <div className={`Reference-image-confirm ${selectedImg === -1 ? '' : 'active'}`}>
+          <div className={`Reference-image-confirm ${expandedImage === -1 ? '' : 'active'}`}
+            style={{
+              marginRight: "0px"
+            }}
+          >
+            <div
+              className="Icon-button"
+              style={iconStyle(ReSegmentSVG)}
+              onClick={() => {
+                if(objectName !== "") {
+                  handleImageResegment(expandedImage, objectName);
+                  setCurrentIndex(0); // initial the seg index
+                }
+              }}
+            />
+          </div>
+          <div className={`Reference-image-confirm ${expandedImage === -1 ? '' : 'active'}`}>
             <div
               className="Icon-button"
               style={iconStyle(ConfirmIcon)}
@@ -551,108 +639,96 @@ export const ReferenceView = ({
             }
             </div>
 
-            <div 
-              className="Reference-image-rows"
-              ref={verticalScroller}
-              onWheel={handleSegmentVerticalScroll}
-            >
-              {
-                sortedImages.length ? sortedImages.map((item, r) => (
-                  <div
-                    className={`Reference-image-appendrow ${sortedImages[r].marked === -1 || (isFilter && sortedImages[r].marked === 0) ? 'miss' : ''}`}
-                    key={`Reference-image-${r}`}
-                    style={{
-                      marginTop: `${r === 0 ? "0px" : "6px"}`,
-                    }}
-                  >
-                    {
-                      <>
-                        <div className={`Reference-image-container ${item["index"] === expandedImage ? 'active' : ''}`}>
-                          <div className="Reference-image">
-                            <img
-                              src={item.thumbnailUrl}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                                borderRadius: "4px"
-                              }}
-                              alt=""
-                            />
-                          </div>
-
-                          <div className="R-segmentation-mask">
-                            <button onClick={() => {
-                              setExpandedImage(expandedImage === item["index"] ? -1 : item["index"])
-                            }}>
-                              <div
+            <div className="Reference-image-rows-container">
+              <div 
+                className="Reference-image-rows"
+                ref={verticalScroller}
+                onWheel={handleSegmentVerticalScroll}
+              >
+                {
+                  sortedImages.length ? sortedImages.map((item, r) => (
+                    <div
+                      className={`Reference-image-appendrow ${sortedImages[r].marked === -1 || (isFilter && sortedImages[r].marked === 0) ? 'miss' : ''}`}
+                      key={`Reference-image-${r}`}
+                      style={{
+                        marginTop: `${r === 0 ? "0px" : "6px"}`,
+                      }}
+                    >
+                      {
+                        <>
+                          <div className={`Reference-image-container ${item["index"] === expandedImage ? 'active' : ''}`}>
+                            <div className="Reference-image">
+                              <img
+                                src={item.thumbnailUrl}
                                 style={{
-                                  background: `url(${ExpandSVG}) no-repeat`,
-                                  backgroundSize: 'contain',
-                                  width: `${48}px`,
-                                  height: `${48}px`,
-                                  cursor: 'pointer',
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  borderRadius: "4px"
                                 }}
+                                alt=""
                               />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="Reference-segmentation-list segmentList">
-                          {
-                            chosenList.map((el, i) => {
-                              const indexInAllImage = item["index"];
-                              const trackedSegs = filteredImages[imagePageIndex][indexInAllImage % imageInOnePage]["trackedSegs"];
-
-                              return <div
-                                key={`r-segmentation-projection-${i}`}
-                                className="R-segmentation-image"
-                                style={{
-                                  marginRight: i === chosenList.length - 1 ? "0px" : "6px",
-                                }}
-                              >
-                                <div className="Reference-image">
-                                  {
-                                    JSON.stringify(trackedSegs) !== "{}" && trackedSegs[el + 1] !== "" ?
-                                    <img 
-                                      src={`data:image/png;base64,${trackedSegs[el + 1]}`}
-                                      alt=""
-                                    /> : <></>
-                                  }
-                                </div>
-                                
-                                <div className="R-segmentation-mask">
-                                  <button>
-                                    <div
-                                      style={{
-                                        background: `url(${ReSegmentSVG}) no-repeat`,
-                                        backgroundSize: 'contain',
-                                        width: `${48}px`,
-                                        height: `${48}px`,
-                                        cursor: 'pointer',
-                                      }}
-                                    />
-                                  </button>
-                                </div>
                             </div>
-                            })
-                          }
-                      </div>
-                    </>
-                    }
-                  </div>
-                )) : <></>
-              }
+
+                            <div className="R-segmentation-mask">
+                              <button onClick={() => {
+                                setExpandedImage(expandedImage === item["index"] ? -1 : item["index"])
+                              }}>
+                                <div
+                                  style={{
+                                    backgroundImage: `url(${ExpandSVG})`,
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundSize: 'contain',
+                                    width: `${48}px`,
+                                    height: `${48}px`,
+                                    cursor: 'pointer',
+                                  }}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="Reference-segmentation-list segmentList">
+                            {
+                              chosenList.map((el, i) => {
+                                const indexInAllImage = item["index"];
+                                const trackedSegs = filteredImages[imagePageIndex][indexInAllImage % imageInOnePage]["trackedSegs"];
+
+                                return <div
+                                  key={`r-segmentation-projection-${i}`}
+                                  className="R-segmentation-image"
+                                  style={{
+                                    marginRight: i === chosenList.length - 1 ? "0px" : "6px",
+                                  }}
+                                >
+                                  <div className="Reference-image" style={{cursor: "default"}}>
+                                    {
+                                      JSON.stringify(trackedSegs) !== "{}" && trackedSegs[el + 1] !== "" ?
+                                      <img 
+                                        src={`data:image/png;base64,${trackedSegs[el + 1]}`}
+                                        alt=""
+                                      /> : <></>
+                                    }
+                                  </div>
+                              </div>
+                              })
+                            }
+                          </div>
+                        </>
+                      }
+                    </div>
+                  )) : <></>
+                }
+              </div>
 
               {
                 expandedImage !== -1 && 
                 <div 
                   className="Detail-view-container" 
                   style={{
-                    left: `${blockSize[0] * 0.25}px`,
-                    top: ``
+                    left: `${blockSize[0] * 0.25 + 1.5}px`,
                   }}
                 >
-
+                  <SegmentViewer imageIndex={expandedImage} />
                 </div>
               }
             </div>
@@ -668,5 +744,3 @@ export const ReferenceView = ({
 //   setActiveSticker(el);
 //   handleMaskEdit(blobMap[item.contentUrl], el)
 // }}>
-
-// 直接覆盖吧

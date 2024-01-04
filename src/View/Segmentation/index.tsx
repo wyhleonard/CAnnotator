@@ -49,13 +49,13 @@ export const SegmentationView = ({
         isErased: [, setIsErased],
         maskImg: [maskImg, setMaskImg],
         userNegClickBool: [userNegClickBool, setUserNegClickBool],
-        activeSticker: [activeSticker],
+        // activeSticker: [activeSticker],
         isLoading: [isLoading, setIsLoading],
         hasNegClicked: [, setHasNegClicked],
         stickerTabBool: [stickerTabBool, setStickerTabBool],
         svgs: [svgs, setSVGs],
         isHovering: [isHovering, setIsHovering],
-        isEditing: [isEditing, setIsEditing],
+        editingMode: [editingMode],
         showLoadingModal: [, setShowLoadingModal],
         predMask: [predMask, setPredMask],
         predMasks: [predMasks, setPredMasks],
@@ -68,7 +68,9 @@ export const SegmentationView = ({
         blobMap: [blobMap],
         imageContext: [imageContext],
         segMaskArray: [segMaskArray],
-        segMaskIndex: [segMaskIndex, setSegMaskIndex]
+        segMaskIndex: [segMaskIndex, setSegMaskIndex],
+        stickerForTrack: [stickerForTrack, setStickerForTrack],
+        currentIndex: [currentIndex, setCurrentIndex]
     } = useContext(AppContext)!;
 
     const konvaRef = useRef<Konva.Stage>(null);
@@ -82,6 +84,7 @@ export const SegmentationView = ({
     // console.log("test-print-userNegClickBool", userNegClickBool)
     // console.log("test-print-stickerTabBool", stickerTabBool)
 
+    // 更新color bins
     useEffect(() => {
         // @ts-ignore
         const newColors = [];
@@ -90,10 +93,13 @@ export const SegmentationView = ({
             newColors[i] = {};
             // @ts-ignore
             const labs = [], colorMap: string[] = [], keyMap: number[] = [];
+
+            // console.log("test-print-imageContext", imageContext)
             Object.keys(imageContext).forEach((key: any) => {
                 if (key === segUrl) {
                     return;
                 }
+                console.log("test-print-imageContext-key", key)
                 const item = imageContext[key]["stickers"][i];
                 item.hasColors = new Set();
                 if (!item.colors) {
@@ -164,7 +170,7 @@ export const SegmentationView = ({
         const cropImageFromCanvasTS = (ref: any) => { 
             let newCanvas = null;
             try {
-                const canvas = ref!.toCanvas().getContext("2d");
+                const canvas = ref!.toCanvas().getContext("2d", { willReadFrequently: true });
                 // console.log(canvas);
 
                 let w = ref.width();
@@ -216,7 +222,7 @@ export const SegmentationView = ({
                 newCanvas = document.createElement("canvas");
                 newCanvas.width = w;
                 newCanvas.height = h;
-                newCanvas.getContext("2d")!.putImageData(cut, 0, 0);
+                newCanvas.getContext("2d", { willReadFrequently: true })!.putImageData(cut, 0, 0);
 
                 setSegMaskIndex(maskIndex);
 
@@ -276,23 +282,24 @@ export const SegmentationView = ({
 
         // console.log("test-print-isEditing", isEditing) // 0
 
-        if (isEditing === 1) {
-            setIsEditing(0);
-            stickers[activeSticker] = newStickers[0];
-            setStickers([...(stickers || [])]);
-            handleSaveInteraction(addedImageContext["stickers"], activeSticker);
-        } else if (isEditing === 2) {
-            setIsEditing(0);
-            handleSaveInteraction(addedImageContext["stickers"], activeSticker);
-            addedImageContext["stickers"][activeSticker]["sticker"] = newStickers[0];
-            newStickers[0] && getColorsCounts(addedImageContext["stickers"][activeSticker], newStickers[0].toDataURL(), 20);
-            handleMaskEdit(segUrl, activeSticker);
+        if (editingMode === "natural-image" && currentIndex >= 0) {
+            stickerForTrack[currentIndex] = [...stickerForTrack[currentIndex], ...newStickers];
+            setStickerForTrack(stickerForTrack); // canvas对象不能用JSON.parse(JSON.stringify(...))深度拷贝
+            
+            if(currentIndex + 1 < stickerForTrack.length) {
+                setCurrentIndex(currentIndex + 1);
+            } else {
+                setCurrentIndex(-1);
+                // 将segMaskArray存起来
+                addedImageContext["maskArray"] = JSON.parse(JSON.stringify(segMaskArray));
+            }
+
         } else {
             setStickers([...(stickers || []), ...(newStickers || [])]);
-
+            // 更新古画stickers的同时初始化自然图片的stickerForTrack
+            const initialStickerArray = Array.from({length: newStickers.length}, () => []);
+            setStickerForTrack([...stickerForTrack, ...initialStickerArray]);
             handleSaveInteraction(addedImageContext["stickers"], -1);
-            console.log("test-print-addedImageContext", addedImageContext);
-
             // handleSegment();
         }
 
@@ -301,6 +308,8 @@ export const SegmentationView = ({
         imageContext[srcUrl ?? "undefined"] = addedImageContext;
         // console.log(imageContext);
     };
+
+    // console.log("test-print-setStickerForTrack", stickerForTrack);
 
     // 逆天 ~ 这块需要改掉
     const handleSegment = () => {
@@ -418,7 +427,7 @@ export const SegmentationView = ({
         const cropImageFromCanvasTS = (ref: any) => {
             let newCanvas = null;
             try {
-                const canvas = ref!.toCanvas().getContext("2d");
+                const canvas = ref!.toCanvas().getContext("2d", { willReadFrequently: true });
                 // console.log(canvas);
 
                 let w = ref.width();
@@ -457,7 +466,7 @@ export const SegmentationView = ({
                 newCanvas = document.createElement("canvas");
                 newCanvas.width = w;
                 newCanvas.height = h;
-                newCanvas.getContext("2d")!.putImageData(cut, 0, 0);
+                newCanvas.getContext("2d", { willReadFrequently: true })!.putImageData(cut, 0, 0);
             } catch (error) {
                 console.log(error);
                 return;
@@ -506,7 +515,7 @@ export const SegmentationView = ({
 
             canvas.width = scaledWidth;
             canvas.height = scaledHeight;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx?.drawImage(img, 0, 0, scaledWidth, scaledHeight);
             const imageData = ctx?.getImageData(0, 0, scaledWidth, scaledHeight);
 

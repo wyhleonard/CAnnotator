@@ -15,6 +15,8 @@ import {
     modelData,
 } from "./View/helpers/modelAPI";
 import AppContext from "./View/hooks/createContext";
+import { PAINTINGMASKTENSORDATAPATH } from './View/sharedConstants';
+import { findMaxValueInArray, findTargetInFilteredImages } from './View/utils';
 
 // Onnxruntime
 ort.env.debug = false;
@@ -61,7 +63,11 @@ function App() {
         // isToolBarUpload: [, setIsToolBarUpload],
         blobMap: [blobMap,],
         imageContext: [imageContext,],
-        segMaskArray: [, setSegMaskArray]
+        segMaskArray: [segMaskArray, setSegMaskArray],
+        filteredImages: [filteredImages],
+        editingMode: [, setEditingMode],
+        annotatedImage: [annotatedImage, setAnnotatedImage],
+        segMaskIndex: [, setSegMaskIndex]
     } = useContext(AppContext)!;
     const [model, setModel] = useState<InferenceSession | null>(null);
     const [tensor, setTensor] = useState<Tensor | null>(null);
@@ -103,13 +109,13 @@ function App() {
         };
         initModel();
         const url = new File([imgSrc], imgSrc);
-        handleSelectedImage(url);
+        handleSelectedImage(url, true);
     }, []);
 
     const runModel = async () => {
         // console.log("Running singleMaskModel");
         try {
-            console.log("running model...", model, clicks, tensor, modelScale);
+            // console.log("running model...", model, clicks, tensor, modelScale);
             if (
                 model === null ||
                 clicks === null ||
@@ -204,6 +210,7 @@ function App() {
         }
     };
 
+    // 找到你了
     useEffect(() => {
         const runOnnx = async () => {
             runModel();
@@ -214,6 +221,8 @@ function App() {
     // 载入图片
     const handleSelectedImage = async (
         data: File | URL,
+        isPainting: boolean,
+        objectName: string = "",
     ) => {
 
         if (data instanceof File) {
@@ -228,10 +237,14 @@ function App() {
             handleResetState();
             setShowLoadingModal(true);
 
-            // console.log("test-print-data", data)
+            // console.log("test-print-data", data instanceof File, data) // true
             const imgData: File = data instanceof File ? data : await getFile(data);
             const img = new window.Image();
 
+            const lastImage = image?.src;
+
+            // console.log("test-print-instanceof", data instanceof File, data)  // true
+ 
             img.src = data instanceof File ? data.name : URL.createObjectURL(imgData);
             const srcUrl = img.src;
             // console.log("test-print-srcUrl", srcUrl);
@@ -264,12 +277,18 @@ function App() {
                 img.height = Math.round(height);
 
                 // 作用未知
-                setImage(img); // 古画？
-                setPrevImage(img);
+                setImage(img); // 古画
+                setPrevImage(img); // 这个的作用是什么 => 似乎没用
 
                 // 创建与原画大小相同的maskImage = [h, w]
                 const createdMaskImage = Array.from(new Array(height), () => new Array(width).fill(0))
                 // console.log("test-print-createdMaskImage", createdMaskImage.length, createdMaskImage[0].length, createdMaskImage[0][0])
+                
+                // 如果segMaskArray不为[]，需要做状态保存
+                if(segMaskArray.length > 0 && lastImage !== undefined) {
+                    const lastImageContext = imageContext[lastImage];
+                    lastImageContext["maskArray"] = JSON.parse(JSON.stringify(segMaskArray));
+                } 
                 setSegMaskArray(createdMaskImage);
             };
 
@@ -278,23 +297,29 @@ function App() {
             const name = match ? match[1] : '-1';
             // console.log("test-print-name", name); // "0"
 
-            loadSegModelResults(name, addedImageContext);
-            const pending = await loadllModelResults(name, addedImageContext);
+            const loadPathRoot = isPainting ? PAINTINGMASKTENSORDATAPATH : (
+                objectName === "" ? "" : `/studyData/mask-and-tensor-jsons/${objectName}/`)
+            if(loadPathRoot !== "") {
+                loadSegModelResults(loadPathRoot, name, addedImageContext);
+                await loadllModelResults(loadPathRoot, name, addedImageContext);
+            } else {
+                console.log("mask/tensor path is undefined.")
+            }
             addedImageContext["image"]["img"] = img;
             addedImageContext["image"]["prevImage"] = img;
             addedImageContext["image"]["isErased"] = false;
             addedImageContext["stickers"] = [];
             imageContext[srcUrl ?? "undefined"] = addedImageContext;
-            return pending;
         } catch (error) {
             console.log(error);
         }
     };
 
     // 加载tensor数据
-    const loadSegModelResults = (fileName: string, addedImageContext: any) => {
-        // paintings/0.png 古画为什么也要load这个东西
-        fetch('/processData/tensor-' + fileName + '.json') // 指定文件路径 
+    const loadSegModelResults = (root: string, fileName: string, addedImageContext: any) => {
+        // console.log("test-print-tensor-dataPath", root + 'tensor-' + fileName + '.json')
+
+        fetch(root + 'tensor-' + fileName + '.json') // 指定文件路径 
             .then(response => response.json())
             .then(data => {
                 const arr = new Float32Array(data.size);
@@ -326,11 +351,9 @@ function App() {
     };
 
     // 加载mask数据
-    const loadllModelResults = async (fileName: string, addedImageContext: any) => {
-        const response = await fetch('/processData/mask-' + fileName + '.json') // 指定文件路径  
+    const loadllModelResults = async (root: string, fileName: string, addedImageContext: any) => {
+        const response = await fetch(root + 'mask-' + fileName + '.json') // 指定文件路径  
         const data = await response.json();
-
-        // console.log("test-print-svgData", data); // [[svg, coords]] 还不知道怎么画出来的
 
         setAllsvg(data);
         setIsModelLoaded((prev) => {
@@ -364,6 +387,7 @@ function App() {
         setPredMasks(null);
     };
 
+    // 这里需要改掉
     const handleMaskEdit = (blobUrl: string, stickerId: number) => {
         const context = imageContext[blobUrl]["stickers"][stickerId];
         const image = imageContext[blobUrl]["image"];
@@ -390,6 +414,33 @@ function App() {
         setHasClicked(true);
     };
 
+    const handleImageResegment = (imageIndex: number, objectName: string) => {
+        console.log("test-print-expandedImage", imageIndex, objectName) // 0 pheasant
+
+        
+        if(imageIndex !== -1) {
+            // 读取选中图片的mask and tensor.json, 修改当前显示在paintingboard中的内容
+            const imagePath = findTargetInFilteredImages(imageIndex, filteredImages);
+            const imageFile = new File([imagePath], imagePath);
+            handleSelectedImage(imageFile, false, objectName);
+
+            // state reset
+            handleResetState();
+
+            // 告诉segmentation view关于状态的更新
+            setEditingMode("natural-image");
+            annotatedImage.push(imagePath);
+            setAnnotatedImage(JSON.parse(JSON.stringify(annotatedImage)));
+            setSegMaskIndex(0);
+
+            // 还需要再看下是否需要
+            // setAllsvg(imageContext[blobUrl]["json"]["allsvg"]);
+            // setSVG(context["svg"]);
+            // setSVGs(context["svgs"]);
+            // setClicksHistory(null);
+        }
+    }
+    
     return (
         <div className="App" >
             <div className="App-header" >
@@ -414,8 +465,9 @@ function App() {
                     < div className="Reference-container" >
                         <ReferenceView 
                             colors={colors} 
-                            handleMaskEdit={handleMaskEdit} 
-                            // handleSelectedImage={handleSelectedImage} 
+                            // handleMaskEdit={handleMaskEdit} 
+                            // handleSelectedImage={handleSelectedImage}
+                            handleImageResegment={handleImageResegment}
                             selectedImg={annotationSelectedImg}
                             setSelectedImg={setAnnotationSelectedImg}
                         />

@@ -263,7 +263,7 @@ const {
   
   function imageDataToCanvas(imageData: ImageData) {
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     canvas.width = imageData.width;
     canvas.height = imageData.height;
     ctx?.putImageData(imageData, 0, 0);

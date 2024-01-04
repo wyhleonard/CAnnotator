@@ -71,6 +71,8 @@ const Canvas = ({
     }
   }, [click, setClick, clicks, setClicks]); // correct usage of useEffect
 
+  // console.log("test-print-svg", svg)
+
   return (
     <>
       <div className="absolute w-full h-full bg-black pointer-events-none background"></div>

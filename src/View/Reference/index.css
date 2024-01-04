@@ -162,9 +162,13 @@
 }
 
 .Reference-image-rows {
+    height: 100%;
+    overflow-y: hidden;
+}
+
+.Reference-image-rows-container {
     margin-top: 6px;
     height: calc(75% - 1.5px);
-    overflow-y: hidden;
     position: relative;
 }
 
@@ -353,11 +357,11 @@
 }
 
 .Detail-view-container {
-    width: 75%;
+    width: calc(75% - 1.5px);
     height: 100%;
     top: 0px;
     background: #5a4e3b;
-    border-radius: 5px;
+    /* border-radius: 4px; */
     position: absolute;
     z-index: 100;
 }

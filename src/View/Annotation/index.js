@@ -84,7 +84,7 @@ export const AnnotationView = ({
 
 
             const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
             const x = e.nativeEvent.offsetX;
             const y = e.nativeEvent.offsetY;
@@ -157,7 +157,7 @@ export const AnnotationView = ({
     useEffect(() => {
         if(currentWH[0] > 0) {
             const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.drawImage(currentRefer, 0, 0, currentWH[0] * currentScale, currentWH[1] * currentScale);
         }
     }, [currentWH, currentScale, currentRefer])

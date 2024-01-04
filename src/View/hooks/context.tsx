@@ -43,7 +43,7 @@ const AppContextProvider = (props: {
   const [enableDemo, setEnableDemo] = useState(false);
   const [isMultiMaskMode, setIsMultiMaskMode] = useState<boolean>(false);
   const [isHovering, setIsHovering] = useState<boolean | null>(null);
-  const [isEditing, setIsEditing] = useState<number | null>(0);
+  const [editingMode, setEditingMode] = useState<string>("painting"); // "natural-image" or "painting"
   const [isPreProcess, setIsPreProcess] = useState<boolean | null>(false);
   const [showLoadingModal, setShowLoadingModal] = useState<boolean>(false);
   const [eraserText, setEraserText] = useState<{
@@ -71,8 +71,11 @@ const AppContextProvider = (props: {
   const [segMaskArray, setSegMaskArray] = useState([]);
   // maskIndex
   const [segMaskIndex, setSegMaskIndex] = useState(0);
+
   // 自然图片的segs
-  const [stickerForTrack, setStickerForTrack] = useState<HTMLCanvasElement[]>([]);
+  const [stickerForTrack, setStickerForTrack] = useState<HTMLCanvasElement[][]>([]); // 应该并到imageContext里的
+  const [annotatedImage, setAnnotatedImage] = useState<string[]>([]); // 应该并到imageContext里的
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   return (
     <AppContext.Provider
@@ -104,7 +107,7 @@ const AppContextProvider = (props: {
         enableDemo: [enableDemo, setEnableDemo],
         isMultiMaskMode: [isMultiMaskMode, setIsMultiMaskMode],
         isHovering: [isHovering, setIsHovering],
-        isEditing: [isEditing, setIsEditing],
+        editingMode: [editingMode, setEditingMode],
         isPreProcess: [isPreProcess, setIsPreProcess],
         showLoadingModal: [showLoadingModal, setShowLoadingModal],
         eraserText: [eraserText, setEraserText],
@@ -123,6 +126,8 @@ const AppContextProvider = (props: {
         stickerForTrack: [stickerForTrack, setStickerForTrack],
         segMaskArray: [segMaskArray, setSegMaskArray],
         segMaskIndex: [segMaskIndex, setSegMaskIndex],
+        annotatedImage: [annotatedImage, setAnnotatedImage],
+        currentIndex: [currentIndex, setCurrentIndex],
       }}
     >
       {props.children}

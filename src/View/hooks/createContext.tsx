@@ -92,10 +92,14 @@ interface contextProps {
     isHovering: boolean | null,
     setIsHovering: React.Dispatch<React.SetStateAction<boolean | null>>
   ];
-  isEditing: [
-    isEditing: number | null,
-    setIsEditing: React.Dispatch<React.SetStateAction<number | null>>
-  ];
+  // isEditing: [
+  //   isEditing: number | null,
+  //   setIsEditing: React.Dispatch<React.SetStateAction<number | null>>
+  // ];
+  editingMode: [
+    editingMode: string, 
+    setEditingMode: React.Dispatch<React.SetStateAction<string>>
+  ],
   isPreProcess: [
     isPreProcess: boolean | null,
     setIsPreProcess: React.Dispatch<React.SetStateAction<boolean | null>>
@@ -166,8 +170,8 @@ interface contextProps {
     setIsTracking: React.Dispatch<React.SetStateAction<boolean>>
   ]
   stickerForTrack: [
-    stickerForTrack: HTMLCanvasElement[], 
-    setStickerForTrack: (e: HTMLCanvasElement[]) => void
+    stickerForTrack: HTMLCanvasElement[][], 
+    setStickerForTrack: (e: HTMLCanvasElement[][]) => void
   ]
   segMaskArray: [
     segMaskArray: any, 
@@ -177,6 +181,14 @@ interface contextProps {
     segMaskIndex: any, 
     setSegMaskIndex: any
   ]
+  annotatedImage: [
+    annotatedImage: any, 
+    setAnnotatedImage: any
+  ],
+  currentIndex: [
+    currentIndex: any, 
+    setCurrentIndex: any,
+  ],
 }
 
 const AppContext = createContext<contextProps | null>(null);

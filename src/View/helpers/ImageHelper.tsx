@@ -6,7 +6,7 @@ const handleImageScale = (data: HTMLImageElement) => {
     let scale;
 
     scale = IMAGE_SIZE / h;
-    scale = 1;
+    scale = 1; // hard code
     return { height: h, width: w, scale, uploadScale: scale };
   };
   

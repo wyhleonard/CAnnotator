@@ -28,7 +28,7 @@ const demoAnnos = [
     },
 ]
 
-const annoSize = 60;
+const annoSize = 63.8;
 const colorItemSize = 14.8;
 
 export const AnnotationList = (

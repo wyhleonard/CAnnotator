@@ -1,0 +1,20 @@
+.Detail-view-image-container {
+    margin-top: 4px;
+    margin-left: 4px;
+    width: calc(100% - 8px);
+    height: calc(66.66% - 4px);
+    background-color: #fff6dc;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.Detail-view-segment-container {
+    margin-top: 4px;
+    margin-left: 4px;
+    width: calc(100% - 8px);
+    height: calc(33.33% - 8px);
+    display: flex;
+    white-space: nowrap;
+    overflow-x: scroll;
+}

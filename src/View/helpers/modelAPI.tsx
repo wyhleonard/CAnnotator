@@ -31,7 +31,7 @@ const setParmsandQueryModel = ({
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(width * uploadScale);
   canvas.height = Math.round(height * uploadScale);
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return;
   ctx.drawImage(imgData, 0, 0, canvas.width, canvas.height);
   // console.log("plot uploaded image");
@@ -161,7 +161,7 @@ const setParmsandQueryEraseModel = ({
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(width * uploadScale);
   canvas.height = Math.round(height * uploadScale);
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return;
   ctx.drawImage(imgData || new Image(), 0, 0, canvas.width, canvas.height);
   const dataURL = canvas.toDataURL();
@@ -217,19 +217,7 @@ const modelData = ({
   let pointLabels;
   let pointCoordsTensor;
   let pointLabelsTensor;
-  // point_coords, point_labels params below are only truthy in text model
-  // if (point_coords && point_labels) {
-  //   pointCoords = new Float32Array(4);
-  //   pointLabels = new Float32Array(2);
-  //   pointCoords[0] = point_coords[0][0];
-  //   pointCoords[1] = point_coords[0][1];
-  //   pointLabels[0] = point_labels[0]; // UPPER_LEFT
-  //   pointCoords[2] = point_coords[1][0];
-  //   pointCoords[3] = point_coords[1][1];
-  //   pointLabels[1] = point_labels[1]; // BOTTOM_RIGHT
-  //   pointCoordsTensor = new Tensor("float32", pointCoords, [1, 2, 2]);
-  //   pointLabelsTensor = new Tensor("float32", pointLabels, [1, 2]);
-  // }
+
   // point click model check
   if (clicks) {
     let n = clicks.length;

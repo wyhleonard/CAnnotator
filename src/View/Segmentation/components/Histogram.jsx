@@ -49,7 +49,7 @@ function Histogram(props) {
 
                 return (
                     <rect
-                        key={i}
+                        key={`histogram-bar-${i}`}
                         x={x}
                         y={y}
                         width={barWidth}
