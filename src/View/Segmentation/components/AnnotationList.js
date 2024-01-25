@@ -3,29 +3,29 @@ import "./AnnotationList.css"
 import "./SegmentationList.css"
 
 const demoAnnos = [
-    {
-        image: "/demoData/segmentations/1.png",
-        annotations: [
-            [133, 8, 4],
-            [144, 77, 34],
-            [37, 9, 0],
-        ]
-    },
-    {
-        image: "/demoData/segmentations/10.png",
-        annotations: [
-            [207, 162, 105],
-            [134, 98, 66],
-        ],
-    },
-    {
-        image: "/demoData/segmentations/11.png",
-        annotations: [
-            [211, 168, 134],
-            [211, 188, 156],
-            [46, 37, 22]
-        ],
-    },
+    // {
+    //     image: "/demoData/segmentations/1.png",
+    //     annotations: [
+    //         [133, 8, 4],
+    //         [144, 77, 34],
+    //         [37, 9, 0],
+    //     ]
+    // },
+    // {
+    //     image: "/demoData/segmentations/10.png",
+    //     annotations: [
+    //         [207, 162, 105],
+    //         [134, 98, 66],
+    //     ],
+    // },
+    // {
+    //     image: "/demoData/segmentations/11.png",
+    //     annotations: [
+    //         [211, 168, 134],
+    //         [211, 188, 156],
+    //         [46, 37, 22]
+    //     ],
+    // },
 ]
 
 const annoSize = 63.8;
@@ -34,7 +34,7 @@ const colorItemSize = 14.8;
 export const AnnotationList = (
 
 ) => {
-    const annoItems = [].map((anno, idx) => {
+    const annoItems = demoAnnos.map((anno, idx) => {
 
         const colorItems = anno.annotations.map((color, idx) => {
             return <div

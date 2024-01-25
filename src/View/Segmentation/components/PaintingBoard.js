@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useContext } from "react";
 import "../../sharedCss.css"
 import "./PaintingBoard.css"
 import { adaptWH } from "../../utils";
-import LoadingModal from "./LoadingModal";
 import Canvas from "./Canvas";
 import AppContext from "../../hooks/createContext";
 
@@ -112,6 +111,8 @@ export const PaintingBoard = ({
         ])
     }
 
+    // console.log("test-print-PaintingBoard", currentScale, currentWH) // 切换回来后会重置
+
     return <div
         className="SDefault-container"
         ref={canvasRef}
@@ -133,7 +134,6 @@ export const PaintingBoard = ({
         >
             {image ? (
                 <>
-                    <LoadingModal />
                     <Canvas
                         konvaRef={konvaRef}
                         scale={scale}

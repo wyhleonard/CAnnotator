@@ -4,7 +4,8 @@
 /node_modules
 /public/demoData/
 /public/processData/
-/public/studyData/mask-and-tensor-jsons/
+/public/studyData/
+
 /.pnp
 .pnp.js
 

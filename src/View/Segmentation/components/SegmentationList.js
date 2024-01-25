@@ -1,19 +1,25 @@
 import "../../sharedCss.css"
 import "./SegmentationList.css"
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import Histogram from "./Histogram";
 import AppContext from "../../hooks/createContext";
+import { imageInOnePage } from "../../sharedConstants";
 
 const segSize = 63.8;
+
+/*
+TODO:
+    1) 默认显示 "Extra SEG"，当有 "Color DIST"的时候才显示bar chart
+    2) 自由切换 "Extra SEG" and "Color DIST"
+*/
 
 export const SegmentationList = ({
     colors,
 }) => {
     const {
         stickers: [stickers, ],
-        activeSticker: [, setActiveSticker],
+        activeSticker: [activeSticker, setActiveSticker],
         chosenStickers: [chosenStickers, setChosenStickers],
-        // isEditing: [isEditing,],
         editingMode: [editingMode],
         stickerForTrack: [stickerForTrack, setStickerForTrack],
         currentIndex: [currentIndex, setCurrentIndex],
@@ -21,11 +27,18 @@ export const SegmentationList = ({
         image: [image],
         imageContext: [imageContext],
         segMaskArray: [segMaskArray],
+        imagePageIndex: [imagePageIndex],
+        filteredImages: [filteredImages, setFilteredImages],
+        resegmentedSticker: [resegmentedSticker],
     } = useContext(AppContext);
+
+    const hasCountColors = colors.length > 0 && JSON.stringify(colors[0]) !== "{}";
+    const isDisplayHistogram = hasCountColors && (editingMode === "painting" || editingMode === "sticker")
+    // console.log("test-print-colors", colors, hasCountColors, editingMode, isDisplayHistogram)
+    // console.log("test-print-filteredImages", filteredImages);
 
     const handleStickerClick = (i) => {
         if (editingMode === "painting") {
-
             const chosenStickersArray = Array.from(chosenStickers);
             const stickerIndex = chosenStickersArray.indexOf(i);
             if(stickerIndex !== -1) {
@@ -34,22 +47,48 @@ export const SegmentationList = ({
             } else {
                 setChosenStickers(new Set([...chosenStickersArray, i]));
             }
+        } else if (editingMode === "natural-image") {
 
-            setActiveSticker(i); // 有什么用
         }
     };
 
-    // console.log("test-print-stickers", stickers)
-    // console.log("test-print-colors", colors) // [{}]
-    // console.log("test-print-imageContext", imageContext)
-    // console.log("test-print-stickerForTrack", stickerForTrack)
+    const handleStickerAnnotate = (e, index) => {
+        if(e.button === 2) {
+            if(activeSticker !== index) {
+                setActiveSticker(index);
+            } else {
+                setActiveSticker(-1);
+            }
+        }
+    }
 
     const segItems = stickers.map((sticker, i) => {
         const displayedSegs = [];
-        if(editingMode === "natural-image") {
+        if(isDisplayHistogram) {
+            // console.log("test-print-colors", i, colors[i])
+
+            if(editingMode === "sticker" && i === currentIndex) { // 允许纹理为空
+                displayedSegs.push(
+                    <div className="Segment-item-image" key={`natural-seg-todo-${i}`} style={{width: "100%"}}>
+                        <div className="Segment-tooltip-item" onClick={() => {
+                            // update countedColors, trackedSegs, highlightSegs
+                            const imageIndex = resegmentedSticker[0] % imageInOnePage;
+                            filteredImages[imagePageIndex][imageIndex]["countedColors"][(resegmentedSticker[1] + 1).toString()] = {};
+                            filteredImages[imagePageIndex][imageIndex]["trackedSegs"][(resegmentedSticker[1] + 1).toString()] = "";
+                            filteredImages[imagePageIndex][imageIndex]["highlightSegs"][(resegmentedSticker[1] + 1).toString()] = {};
+                            
+                            setFilteredImages(JSON.parse(JSON.stringify(filteredImages)));
+                            setCurrentIndex(-1);
+                        }}>
+                            <span className="STitle-text-contrast" style={{marginLeft: "0px", fontSize: "16px"}}>TODO</span>
+                        </div>
+                    </div>
+                )
+            }
+        } else {
             if(i === currentIndex) {
                 displayedSegs.push(
-                    <div className="Segment-item-image">
+                    <div className="Segment-item-image" key={`natural-seg-todo-${i}`} style={{width: "100%"}}>
                         <div className="Segment-tooltip-item" onClick={() => {
                             if(currentIndex + 1 < stickerForTrack.length) {
                                 // skip this seg时候往里面存一个空对象
@@ -71,13 +110,18 @@ export const SegmentationList = ({
                     for(let m = 0; m < stickerForTrack[i].length; m++) {
                         if(stickerForTrack[i][m] === undefined) continue
                         displayedSegs.push(
-                        <div className="Segment-item-image" key={`natural-seg-${i}-${m}`} style={{ width: `${segSize}px` }}>
-                            <img 
-                                className="Image-container" 
+                            <img
+                                key={`natural-seg-${i}-${m}`}
                                 src={stickerForTrack[i][m].toDataURL()} 
-                                alt="" 
+                                alt=""
+                                style={{
+                                    marginLeft: "11px",
+                                    width: `${segSize - 22}px`,
+                                    height: `${segSize - 22}px`,
+                                    objectFit: "contain"
+                                }}
                             />
-                        </div>)
+                        )
                     }
                 }
             }
@@ -93,23 +137,28 @@ export const SegmentationList = ({
                     className="Image-container" 
                     src={sticker.toDataURL()} 
                     alt="" 
-                    onClick={() => handleStickerClick(i)} 
+                    onClick={() => handleStickerClick(i)}
+                    onMouseDown={(e) => handleStickerAnnotate(e, i)}
+                    onContextMenu={(e) => e.preventDefault()}
                 />
             </div>
             {
-                editingMode === "painting" ? 
-                (JSON.stringify(colors[i]) !== "{}" &&
+                isDisplayHistogram ?
+                ((JSON.stringify(colors[i]) !== "{}" && colors[i] !== undefined) ?
                 <div 
                     className="Segment-item-histogram"
-                    key={`histogram-item-${i}`}
                     style={{ width: `calc(100% - ${segSize}px - 8px)`}}
                 >
-                    {/* <Histogram colors={colors[i]} /> */}
-                </div>) :
-                <div 
+                    {
+                        (editingMode === "sticker" && i === currentIndex) ? displayedSegs :
+                        <div className="Histogram-container">
+                            <Histogram colors={colors[i]} height={segSize} stickerIndex={i}/>
+                        </div>
+                    }
+                </div> : <></>) :
+                <div
                     className="Segment-item-refs"
                     style={{ width: `calc(100% - ${segSize}px - 8px)`}}
-                    key={`refSeg-item-${i}`}
                 >
                     {displayedSegs}
                 </div>
@@ -123,7 +172,9 @@ export const SegmentationList = ({
                 <span className="STitle-text-contrast" style={{marginLeft: "0px", fontSize: "16px"}}>SEG</span>
             </div>
             <div className="Segment-title-container" style={{width: `calc(100% - ${segSize + 8}px)`, marginLeft: "8px"}}>
-                <span className="STitle-text-contrast" style={{marginLeft: "0px", fontSize: "16px"}}>{editingMode === "natural-image" ? "Extra SEG" :"Color DIST"}</span>
+                <span className="STitle-text-contrast" style={{marginLeft: "0px", fontSize: "16px"}}>
+                    {isDisplayHistogram ? "Color DIST" : "Extra REFs"}
+                </span>
             </div>
         </div>
         <div className="Segment-list-container">

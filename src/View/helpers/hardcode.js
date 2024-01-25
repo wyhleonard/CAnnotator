@@ -1,5 +1,5 @@
-// const reorderSeq = new Set([0, 8, 13, 18, 19, 21, 24, 37, 44]);
-const reorderSeq = new Set([2, 5, 24]);
+// const reorderSeq = new Set([2, 5, 24]);
+const reorderSeq = new Set([]);
 
 // 60个？
 let initPositions = [

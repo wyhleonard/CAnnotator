@@ -1,3 +1,7 @@
+import * as d3 from "d3";
+import jDBSCAN from "./helpers/jDBScan";
+import { pixelSize } from "./sharedConstants";
+
 export function adaptWH(img, container) {
     const w1 = img[0];
     const h1 = img[1];
@@ -95,4 +99,64 @@ export function findMaxValueInArray(array) {
     }
     
     return maxValue
+}
+
+// 似乎可以直接用index
+export function checkImageIsLoaded(context, index) {
+    const keys = Object.keys(context);
+    const loadedInfo = [false, ""];
+    for(let k = 0; k < keys.length; k++) {
+        const splitOne = keys[k].split("/");
+        const splitTwo = splitOne[splitOne.length - 1].split(".")
+        if(parseInt(splitTwo[0]) === index + 1) {
+            loadedInfo[0] = true;
+            loadedInfo[1] = keys[k];
+            break
+        }
+    }
+    return loadedInfo
+}
+
+export function countColorinSticker(w, h, image) {
+    const canvas = document.createElement('canvas');
+    const scaledWidth = Math.ceil(w / pixelSize);
+    const scaledHeight = Math.ceil(h / pixelSize);
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const colorFrequency = {};
+
+    if(!!ctx) {
+        ctx.drawImage(image, 0, 0, scaledWidth, scaledHeight);
+        const imageData = ctx.getImageData(0, 0, scaledWidth, scaledHeight);
+
+        // statistic
+        const pixels = imageData.data;
+        const labs = [];
+        let total = 0;
+        for (let i = 0; i < pixels.length; i += 4) {
+            const r = pixels[i];
+            const g = pixels[i + 1];
+            const b = pixels[i + 2];
+            const a = pixels[i + 3];
+            if (a === 0) { // 直接用alpha判断吧
+                continue;
+            }
+            ++total;
+            const color = d3.rgb(r, g, b);
+            labs.push(d3.lab(color));
+        }
+
+        // eps越大簇的规模越大 => 第一次聚类
+        const dbscanner = jDBSCAN().eps(30).minPts(5).data(labs);
+        dbscanner();
+        const cluster_centers = dbscanner.getClusters();
+
+        cluster_centers.forEach(({ l, a, b, parts }) => {
+            const key = d3.rgb(d3.lab(l, a, b)).toString();
+            colorFrequency[key] = Array.from(new Set(parts)).length / total;
+        });
+    }
+
+    return colorFrequency
 }

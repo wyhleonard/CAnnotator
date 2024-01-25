@@ -29,7 +29,7 @@ const AppContextProvider = (props: {
   const [stickers, setStickers] = useState<HTMLCanvasElement[]>([]); // 只存储古画的segs
 
   const [chosenStickers, setChosenStickers] = useState<Set<number>>(new Set());
-  const [activeSticker, setActiveSticker] = useState<number>(0);
+  const [activeSticker, setActiveSticker] = useState<number>(-1);
   const [segmentTypes, setSegmentTypes] = useState<"Box" | "Click" | "All">(
     "Click"
   );
@@ -43,7 +43,7 @@ const AppContextProvider = (props: {
   const [enableDemo, setEnableDemo] = useState(false);
   const [isMultiMaskMode, setIsMultiMaskMode] = useState<boolean>(false);
   const [isHovering, setIsHovering] = useState<boolean | null>(null);
-  const [editingMode, setEditingMode] = useState<string>("painting"); // "natural-image" or "painting"
+  const [editingMode, setEditingMode] = useState<string>("painting"); // "natural-image" or "painting" or "sticker"
   const [isPreProcess, setIsPreProcess] = useState<boolean | null>(false);
   const [showLoadingModal, setShowLoadingModal] = useState<boolean>(false);
   const [eraserText, setEraserText] = useState<{
@@ -62,7 +62,8 @@ const AppContextProvider = (props: {
   const [blobMap, setBlobMap] = useState({});
   const [segUrl, setSegUrl] = useState<string>("");
   const [filteredImages, setFilteredImages] = useState([]);
-  const [chosenColors, setChosenColors] = useState(new Set());
+  const [chosenColors, setChosenColors] = useState<string[][]>([]);
+  const [displayedColors, setDisplayedColors] = useState<string[][]>([]);
   const [imageContext, setImageContext] = useState({});
 
   // 是否进行part-tracking
@@ -73,9 +74,15 @@ const AppContextProvider = (props: {
   const [segMaskIndex, setSegMaskIndex] = useState(0);
 
   // 自然图片的segs
-  const [stickerForTrack, setStickerForTrack] = useState<HTMLCanvasElement[][]>([]); // 应该并到imageContext里的
-  const [annotatedImage, setAnnotatedImage] = useState<string[]>([]); // 应该并到imageContext里的
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [stickerForTrack, setStickerForTrack] = useState<HTMLCanvasElement[][]>([]); // 应该并到imageContext里的 => 这个东西的出现挺失败的
+  // 当前正在被额外分割的sticker
+  const [currentIndex, setCurrentIndex] = useState(-1);
+
+  // reffernce view中的page索引
+  const [imagePageIndex, setImagePageIndex] = useState(-1);
+
+  // 当前被重新分割的image-sticker
+  const [resegmentedSticker, setResegmentedSticker] = useState([-1, -1]);
 
   return (
     <AppContext.Provider
@@ -126,8 +133,10 @@ const AppContextProvider = (props: {
         stickerForTrack: [stickerForTrack, setStickerForTrack],
         segMaskArray: [segMaskArray, setSegMaskArray],
         segMaskIndex: [segMaskIndex, setSegMaskIndex],
-        annotatedImage: [annotatedImage, setAnnotatedImage],
         currentIndex: [currentIndex, setCurrentIndex],
+        imagePageIndex: [imagePageIndex, setImagePageIndex],
+        displayedColors: [displayedColors, setDisplayedColors],
+        resegmentedSticker: [resegmentedSticker, setResegmentedSticker],
       }}
     >
       {props.children}

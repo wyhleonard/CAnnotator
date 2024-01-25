@@ -11,7 +11,10 @@ const LoadingModal = () => {
     <>
       {showLoadingModal && (
         <div className="modal modal-open">
-          <div className="flex flex-col items-center justify-center h-72 modal-box">
+          <div className="flex flex-col items-center justify-center h-72 modal-box" style={{
+            position: "absolute",
+            zIndex: "101"
+          }}>
             <h1 className="py-4 text-sm md:text-lg">
               Processing...
             </h1>

@@ -24,7 +24,9 @@
     height: 100%;
     border-radius: 6px;
     background: #fff6dc;
-    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow-x: auto;
     overflow-y: hidden;
 }
@@ -32,8 +34,11 @@
 .Segment-item-refs {
     margin-left: 8px;
     height: 100%;
+    background: #fff6dc;
     border-radius: 6px;
     overflow-x: auto;
+    display: flex;
+    align-items: center;
 }
 
 .Image-container {
@@ -75,4 +80,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.Histogram-container {
+    margin: 6px;
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    overflow-x: auto;
+    overflow-y: hidden;
 }

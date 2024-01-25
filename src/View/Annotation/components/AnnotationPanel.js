@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useContext } from "react";
+import AppContext from "../../hooks/createContext";
 import "../../sharedCss.css";
 import "./AnnotationPanel.css";
 import ExtractorIcon from "../../../Icons/extractor.svg";
@@ -10,7 +11,6 @@ import DeletePigmentIcon from "../../../Icons/negative.svg";
 
 const originPigment = [['#de3e35', 0.01], ['#962c35', 0.01], ['#b04d36', 0.01], ['#f1e159', 0.01], ['#ffa53c', 0.01], ['#ef9043', 0.01], ['#5d7d37', 0.01], ['#227dc1', 0.01], ['#2154ac', 0.01], ['#1a3b9f', 0.01], ['#201f29', 0.01], ['#2f3438', 0.01], ['#ebe6da', 0.01]];
 
-const demoSegmentation = "/demoData/segmentations/9.png";
 const demoSliderLength = 121.27; // 126.33
 const demoSilderBlockWidth = 12;
 const iconSize = 16;
@@ -29,7 +29,6 @@ const demoAnnotations = [
 
 export const AnnotationPanel = ({
     targetColor,
-    selectedSticker,
     pigmentConfirmed,
     setEnableSelect,
     matchedPalette, // matrixData
@@ -39,6 +38,10 @@ export const AnnotationPanel = ({
     changeMixedPigmentList,
     changeTargetColor
 }) => {
+    const {
+        stickers: [stickers],
+        activeSticker: [activeSticker, setActiveSticker],
+    } = useContext(AppContext);
 
     // 这里的颜色可能要改成16进制存储
     const [matchedColor, setMatchedColor] = useState("#ffffff");
@@ -110,7 +113,8 @@ export const AnnotationPanel = ({
         demoAnnotations.push(currentAnnotations[i])
     }
 
-    const annotationItems = demoAnnotations.map((data, index) => {
+    // 先清空
+    const annotationItems = [].map((data, index) => {
         // console.log("test-print-currentAnnotations", currentAnnotations, data) // currentAnnotation里有数值
 
         // bug 没法提交两次
@@ -215,7 +219,14 @@ export const AnnotationPanel = ({
     return <div className="SDefault-container" style={{ overflowY: "scroll" }}>
         <div className="Annotation-panel-firstrow">
             <div className="A-segment-container">
-                <img className="A-segmentation-image" src={selectedSticker} alt="" />
+                {
+                    activeSticker !== -1 && 
+                    <img 
+                        className="A-segmentation-image" 
+                        src={stickers[activeSticker].toDataURL()} 
+                        alt=""
+                    />
+                }
             </div>
             <div className="A-color-annotation">
                 <div className="A-text-container" style={{ marginTop: "4px" }}>

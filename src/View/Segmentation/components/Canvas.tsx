@@ -72,6 +72,10 @@ const Canvas = ({
   }, [click, setClick, clicks, setClicks]); // correct usage of useEffect
 
   // console.log("test-print-svg", svg)
+  // console.log("test-print-currentWH", currentWH);
+  // console.log("test-print-currentScale", currentScale);
+  // console.log("test-print-isLoading", isLoading);
+  // console.log("test-print-canvas-scale", scale);
 
   return (
     <>
@@ -85,13 +89,15 @@ const Canvas = ({
         style={{ margin: 0 }}
         alt=""
       ></img>
-      {svg && scale && hasClicked && (
-        <SvgMask
-          xScale={currentWH[0]}
-          yScale={currentWH[1]}
-          svgStr={svg.join(" ")}
-        />
-      )}
+      {svg && scale && hasClicked &&
+        (
+          <SvgMask
+            xScale={currentWH[0]}
+            yScale={currentWH[1]}
+            svgStr={svg.join(" ")}
+          />
+        )
+      }
       <Stage
         className="konva"
         width={currentWH[0] * currentScale}
@@ -101,7 +107,7 @@ const Canvas = ({
         ref={konvaRef}
       >
         <Layer name="svgMask">
-          <Image
+          <Image // 用于裁剪
             x={0}
             y={0}
             image={imageClone}

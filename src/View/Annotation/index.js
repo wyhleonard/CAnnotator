@@ -8,13 +8,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { AnnotationPanel } from "./components/AnnotationPanel";
 import { adaptWH } from "../utils";
 
-const demoSrc = "/demoData/annotations/2.png";
-const demoSpace = 1;
 const iconSize = 15;
-const gridSize = 14;
-
 const dropdownContent = ["a * b", "L * a", "L * b"];
-
 
 export const AnnotationView = ({
     imageSrc
@@ -45,7 +40,12 @@ export const AnnotationView = ({
     // initialize matrix
     useEffect(() => {
         if (targetColor !== "#ffffff") {
-            let body = { option: 'i', target_color: targetColor, selected_coord: [0, 0], matrix_num: -1 }
+            let body = { 
+                option: 'i', 
+                target_color: targetColor, 
+                selected_coord: [0, 0], 
+                matrix_num: -1 
+            }
             fetch("http://localhost:8000/gen_matrix", {
                 method: "POST",
                 headers: {
@@ -263,7 +263,6 @@ export const AnnotationView = ({
         <div className="Annotation-panel-container">
             <AnnotationPanel
                 targetColor={targetColor}
-                selectedSticker="/demoData/segmentations/6.png"
                 pigmentConfirmed={pigmentConfirmed}
                 setEnableSelect={setEnableSelect}
                 matchedPalette={matrices.length > 0 ? matrices[0] : null}

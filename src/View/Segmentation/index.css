@@ -63,14 +63,14 @@
 
 .Painting-board-contaienr {
     margin: 8px 0px 8px 28px;
-    width: calc(85% - 28px);
+    width: calc(84.6% - 28px);
     height: calc(100% - 16px);
     background: #fff6dc;
 }
 
 .SandA-container{
     margin: 8px;
-    width: calc(16.425% - 16px);
+    width: calc(15.4% - 16px);
     height: calc(100% - 16px);
 }
 

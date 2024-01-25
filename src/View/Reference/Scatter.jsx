@@ -8,11 +8,16 @@ const HEIGHT = 110.56;
 function Scatter(props) {
     const {
         chosenColors: [chosenColors, ],
-        filteredImages: [filteredImages,],
     } = useContext(AppContext);
-    const { handleFilter, dots } = props;
+    const { 
+        handleFilter, 
+        dots,
+        currentImages,
+     } = props;
 
-    // console.log("test-print-dots", dots)
+    // TODO check 这里的逻辑
+
+    // console.log("test-print-dots and currentImages", dots, currentImages)
 
     const chartWidth = WIDTH;
     const chartHeight = HEIGHT;
@@ -78,9 +83,6 @@ function Scatter(props) {
             .attr('width', chartWidth)
             .attr('height', chartHeight);
 
-        xScale = d3.scaleLinear().domain([d3.min(data, d => d[0]), d3.max(data, d => d[0])]).range([0, width]);
-        yScale = d3.scaleLinear().domain([d3.min(data, d => d[1]), d3.max(data, d => d[1])]).range([height, 0]);
-
         svg.selectAll('*').remove();
 
         svg.selectAll('circle')
@@ -91,9 +93,9 @@ function Scatter(props) {
             .attr('cy', d => yScale(d[1]) + margin.top)
             .attr('r', 6)
             .attr('fill', '#b09872')
-            .attr('opacity', (_, i) => filteredImages[i].marked === 1 ? 0.8 : (filteredImages[i].marked === -1 ? 0 : 0.3))
-            .attr('stroke', (_, i) => filteredImages[i].marked === 1 ? '#534835' : 'none')  
-            .attr('stroke-width', (_, i) => filteredImages[i].marked === 1 ? 2 : 0);
+            .attr('opacity', (_, i) => currentImages[i].marked === 1 ? 0.8 : (currentImages[i].marked === -1 ? 0 : 0.3))
+            .attr('stroke', (_, i) => currentImages[i].marked === 1 ? '#534835' : 'none')  
+            .attr('stroke-width', (_, i) => currentImages[i].marked === 1 ? 2 : 0);
 
         // 绘制矩形  
         svg.append('rect')
@@ -103,7 +105,7 @@ function Scatter(props) {
             .attr('stroke-width', 2)
             .attr('pointer-events', 'none');
 
-    }, [data, chosenColors, isDrawing]);
+    }, [data, chosenColors, isDrawing, currentImages]);
 
     useEffect(() => {
         const svg = d3.select(svgRef.current);

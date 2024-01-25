@@ -26,37 +26,11 @@ const jDBSCAN = function () {
 
 			if (distance(data[i], d) <= eps) {
 				neighbours.push(i);
-				// console.log("neighbours", distance(data[i], d), eps);
 			}
 		}
 
 		return neighbours;
 	}
-
-	// function expand_cluster(point_idx, neighbours, cluster_idx) {
-	// 	clusters[cluster_idx - 1].push(point_idx); // add point to cluster
-	// 	status[point_idx] = cluster_idx; // assign cluster id
-
-	// 	for (let i = 0; i < neighbours.length; i++) {
-	// 		const curr_point_idx = neighbours[i];
-
-	// 		if (status[curr_point_idx] === undefined) {
-	// 			status[curr_point_idx] = 0; // visited and marked as noise by default
-	// 			let curr_neighbours = get_region_neighbours(curr_point_idx);
-	// 			let curr_num_neighbours = curr_neighbours.length;
-
-	// 			if (curr_num_neighbours >= minPts) {
-	// 				expand_cluster(curr_point_idx, curr_neighbours, cluster_idx);
-	// 			}
-	// 		}
-
-	// 		if (status[curr_point_idx] < 1) {
-	// 			// not assigned to a cluster but visited (= 0)
-	// 			status[curr_point_idx] = cluster_idx;
-	// 			clusters[cluster_idx - 1].push(curr_point_idx);
-	// 		}
-	// 	}
-	// }
 
 	function expand_cluster(point_idx, neighbours, cluster_idx) {
 		let stack = []; // 创建一个栈，用于迭代替代递归  
@@ -110,6 +84,7 @@ const jDBSCAN = function () {
 			}
 		}
 
+		// console.log("test-print-status", status) // 会出现全是0的情况
 		return status;
 	};
 
@@ -117,6 +92,8 @@ const jDBSCAN = function () {
 	dbscan.getClusters = function () {
 		const num_clusters = clusters.length;
 		const clusters_centers = [];
+
+		// console.log("dbscan-data", data, num_clusters) // 太小了？
 
 		for (let i = 0; i < num_clusters; i++) {
 			clusters_centers[i] = { l: 0, a: 0, b: 0 };

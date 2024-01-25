@@ -4,10 +4,9 @@ import SearchIcon from "../../Icons/search.svg";
 import LeftIcon from "../../Icons/triangle.svg";
 import ConfirmIcon from "../../Icons/confirm.svg";
 import TrackIcon from "../../Icons/track.svg";
-import { PaintingPath, iconLevel1 } from "../sharedConstants";
+import { PAINTINGPATH, iconLevel1, imageInOnePage } from "../sharedConstants";
 import { useContext, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import { localPictureData } from "../helpers/pictureData";
 import { initPositions } from "../helpers/hardcode";
 import AppContext from "../hooks/createContext";
 import Scatter from "./Scatter";
@@ -16,7 +15,7 @@ import ReSegmentSVG from "../../Icons/resegment.svg";
 import { fetchStaticImageData } from "../helpers/staticImageData";
 import { ImageViewer } from "./components/ImageViewer";
 import { SegmentViewer } from "./components/SegmentViewer";
-import { findMaxValueInArray } from "../utils";
+import jDBSCAN from "../helpers/jDBScan";
 
 const iconRatio = 0.7;
 const iconStyle = (iconPath) => {
@@ -34,31 +33,29 @@ const imageDatasetName = ["pheasant", "goshawk", "pigment", "preprocess", "eggle
 
 export const ReferenceView = ({
   colors, 
-  // handleMaskEdit,
-  handleImageResegment, 
-  selectedImg, 
-  setSelectedImg,
+  handleImageResegment,
+  setReferenceImage,
+  handleResetPaintingImage,
+  handleSelectedImage,
 }) => {
   const {
     chosenColors: [chosenColors, setChosenColors],
-    // isPreProcess: [, setIsPreProcess],
+    displayedColors: [displayedColors, setDisplayedColors],
     chosenStickers: [chosenStickers,],
     filteredImages: [filteredImages, setFilteredImages],
     stickers: [stickers,],  // 古画已分割的components: [canvas, canvas, canvas]: stickers[el].toDataURL()关注这个变量
-    blobMap: [blobMap,],
     showLoadingModal: [, setShowLoadingModal],
-    activeSticker: [, setActiveSticker],
     imageContext: [imageContext,],  // stickers各图片已分割好的components，都是canvas
-    isTracking: [isTracking, setIsTracking],
-    stickerForTrack: [stickerForTrack],
-    segMaskArray: [segMaskArray, setSegMaskArray],
-    segMaskIndex: [segMaskIndex, setSegMaskIndex],
-    currentIndex: [currentIndex, setCurrentIndex],
-    annotatedImage: [annotatedImage],
-    image: [image, setImage],
+    isTracking: [, setIsTracking],
+    segMaskArray: [segMaskArray],
+    segMaskIndex: [segMaskIndex],
+    currentIndex: [currentIndex],
+    image: [image],
     editingMode: [, setEditingMode],
-
+    imagePageIndex: [imagePageIndex, setImagePageIndex],
   } = useContext(AppContext);
+
+  // console.log("test-print-colors", colors);
 
   // console.log("test-print-segUrl", segUrl) // http://localhost:3000/demoData/paintings/0.png
   // console.log("test-print-imageContext", imageContext)
@@ -84,15 +81,15 @@ export const ReferenceView = ({
   const blockRef = useRef(null);  // 每个block的大小，用于控制滑块的距离
   const [blockSize, setBlockSize] = useState([0, 0]);
   const inputRef = useRef(null);
-  const [dots, setDots] = useState([[0, 0]]);
+  const [dots, setDots] = useState(initPositions); // 目前这里是hardcode
   const [isFilter, setIsFilter] = useState(false);
 
   // 是否将自然图片展开查看
   const [expandedImage, setExpandedImage] = useState(-1);
 
   // 控制当前显示的图片数量
-  const imageInOnePage = 50;
-  const [imagePageIndex, setImagePageIndex] = useState(-1);
+  // const imageInOnePage = 50;
+  // const [imagePageIndex, setImagePageIndex] = useState(-1);
 
   // 只处理当前页面的图片
   const [currentPageImages, setCurrentPageImages] = useState([]);
@@ -117,6 +114,7 @@ export const ReferenceView = ({
   // chosenStickers: {0, 1, 3}
   // chosenList: 当前显示在reference list中的Segments的index: [0, 1, 3]
   const chosenList = Array.from(chosenStickers);
+  // console.log("test-print-chosenList", chosenList)
 
   useEffect(() => {
     setBlockSize([
@@ -145,6 +143,7 @@ export const ReferenceView = ({
   // 滚轮隐藏后，无法直接触发滑动行为，需要新写一个滚轮函数 👇 => Done
   const handleSegmentScroll = (e) => {
     const srollElements = document.getElementsByClassName("segmentList");
+
     for (const srollElement of srollElements) {
       if (e.deltaY > 0) {
         srollElement.scrollLeft += blockSize[0] + 8;
@@ -176,43 +175,85 @@ export const ReferenceView = ({
     }
   }
 
+  // console.log("test-print-chosenColors", chosenColors)
   /*
       marked === -1: 不包含任意当前关注颜色的图片
       marked === 0: 图片默认的显示状态
       marked === 1: 被散点图框选的图片
   */
-  const handleBarClick = (color) => {
-    if (chosenColors.has(color)) {
-      chosenColors.delete(color);
+  const handleColorClickForFilter = (stickerIndex, clickedColor) => {
+    // console.log("test-print-handleColorClickForFilter", stickerIndex, clickedColor);
+    
+    const clickedColorIndex = chosenColors[stickerIndex].indexOf(clickedColor);
+    if(clickedColorIndex !== -1) {
+      chosenColors[stickerIndex].splice(clickedColorIndex, 1)
     } else {
-      chosenColors.add(color);
+      chosenColors[stickerIndex].push(clickedColor)
     }
-    if (chosenColors.size === 0) {
-      currentPageImages.forEach(item =>
-        (item.marked = 0)
-      );
-    } else {
-      currentPageImages.forEach(item =>
-        (item.marked = -1)
-      );
 
-      // 图片只要包含了一个被关注的颜色，就会被显示
-      chosenColors.forEach((c) => {
-        chosenList.forEach(el => {
-          currentPageImages.forEach(item =>
-            imageContext[blobMap[item.contentUrl]]["stickers"][el]["hasColors"].has(c) && (item.marked = 0)
-          )
-        })
-      });
+    // compute the displayedColors according to the chosenColors
+    const displayedImages = [];
+    for(let k = 0; k < currentPageImages.length; k++) {
+      let ifImageContainAllColors = true; 
+      let isUndefined = true;
+      for(let i = 0; i < chosenColors.length; i++) {
+        for(let j = 0; j < chosenColors[i].length; j++) {
+          if(isUndefined === true) isUndefined = false
+
+          const color = chosenColors[i][j];
+          const imageContainColors = currentPageImages[k]["hasColors"];
+          if(imageContainColors !== undefined) {
+            if(imageContainColors[i + 1].indexOf(color) === -1) {
+              ifImageContainAllColors = false;
+              break
+            }
+          } else {
+            ifImageContainAllColors = false;
+            break
+          }
+        }
+        if(ifImageContainAllColors === false) break
+      }
+      
+      if(isUndefined) {
+        currentPageImages[k].marked = 0;
+      } else {
+        if(ifImageContainAllColors) {
+          currentPageImages[k].marked = 0;
+          displayedImages.push(currentPageImages[k]);
+        } else {
+          currentPageImages[k].marked = -1;
+        }
+      }
     }
-    setChosenColors(new Set([...chosenColors]));
-  };
+
+    // console.log("test-print-displayedImages", displayedImages)
+
+    const newDisplayedColors = [];
+    stickers.forEach((_) => newDisplayedColors.push([]));
+    for(let k = 0; k < displayedImages.length; k++) {
+      const containedColors = displayedImages[k]["hasColors"];
+      const colorKeys = Object.keys(containedColors);
+      for(let m = 0; m < colorKeys.length; m++) {
+        const tempStickerIndex = parseInt(colorKeys[m]) - 1;
+        for(let n = 0; n < containedColors[colorKeys[m]].length; n++) {
+          const tempColor = containedColors[colorKeys[m]][n];
+          if(newDisplayedColors[tempStickerIndex].indexOf(tempColor) === -1) {
+            newDisplayedColors[tempStickerIndex].push(tempColor)
+          }
+        }
+      }
+    }
+
+    setChosenColors(JSON.parse(JSON.stringify(chosenColors)));
+    setDisplayedColors(newDisplayedColors);
+  }
 
   // 第一行的segments
   const segItem = chosenList.map((el, i) => {
     // console.log("test-print-el", el, i) // el != i
     return <div
-      key={`r-segmentation-item-${i}`}
+      key={`r-segmentation-item-${el}`}
       className="R-segmentation-item"
       style={{
         marginRight: i === chosenList.length - 1 ? "0px" : "6px",
@@ -221,16 +262,21 @@ export const ReferenceView = ({
       <img className="Segmentation-image-container" src={stickers[el].toDataURL()} alt="" />
       <div className="Segmentation-color-list" onWheel={(e) => { e.stopPropagation() }}>
         {
-          Object.keys(colors[el]).toSorted((a, b) => colors[el][b] - colors[el][a]).map((item) => {
+          colors[el] !== undefined && 
+          Object.keys(colors[el]).toSorted((a, b) => colors[el][b] - colors[el][a]).map((item, idx) => {
             const c = d3.color(item);
-            c.opacity = 0.2;
+            c.opacity = 0.15;
             return (<div
-              className="Segmentation-color-item" style={{
-                backgroundColor: !chosenColors.size ?
-                  item :
-                  (chosenColors.has(item) ? item : c)
+              className="Segmentation-color-item"
+              key={`r-segmentation-item-color-${idx}`}
+              style={{
+                backgroundColor: displayedColors[el].length === 0 ? item :
+                (displayedColors[el].indexOf(item) !== -1 ? item : c),
+                border: chosenColors[el].indexOf(item) !== -1 ? "3px solid #5a4e3b" : "none",
+                display: displayedColors[el].length === 0 ? "inline-block" :
+                (displayedColors[el].indexOf(item) !== -1 ? "inline-block" : "none")
               }}
-              onClick={() => handleBarClick(item)}
+              onClick={() => handleColorClickForFilter(el, item)}
             />)
           })
         }
@@ -346,29 +392,30 @@ export const ReferenceView = ({
 
   // 将当前stickers整理好发给后端
   const handleStartTracking = () => {
+    // console.log("test-print-segMaskIndex", segMaskIndex, imagePageIndex) // segMaskIndex = 0
 
     if(segMaskIndex > 0 && imagePageIndex !== -1) {
       // console.log("test-print-stickers", stickers) // [canvas]
       // console.log("test-print-stickersURL", stickers[0].toDataURL()) // 应该是在原图上直接裁剪的
 
-      console.log("test-print-segMaskIndex", segMaskIndex); // 1
-
       const maskArray = [];
       const positionInOrigin = [];
-      const annotatedImageArray = [];
+      const annotatedImageArray = []; // 当前被额外标注的自然图片
 
       const originSegMaskArray = [];
-      if(annotatedImage.length === 0) {
+      const imageNumberInContext = (Object.keys(imageContext)).length - 1;
+
+      if(imageNumberInContext === 0) {
         originSegMaskArray.push(segMaskArray);
         annotatedImageArray.push("-1");
 
-      } else if(annotatedImage.length > 0 && currentIndex === -1) {
+      } else if(imageNumberInContext > 0 && currentIndex === -1) { 
         Object.keys(imageContext).forEach(key => {
           const data = imageContext[key];
           const splitOne = key.split("/");
           const splitTwo = splitOne[splitOne.length - 1].split(".");
 
-          if(splitTwo[0] !== "0") { // "0"为painting的标识
+          if(splitTwo[0] !== "0") { // "0"为painting的标识 => 后面要改掉
             annotatedImageArray.push(splitTwo[0]); // string
             originSegMaskArray.push(data["maskArray"]);
           }
@@ -401,7 +448,7 @@ export const ReferenceView = ({
         let minW = w;
         let minH = h;
         // 要稍微大一点，不然语义信息有限
-        if(annotatedImage.length === 0) {
+        if(imageNumberInContext === 0) {
           minW = Math.min(500, w);
           minH = Math.min(500, h);
         }
@@ -441,7 +488,7 @@ export const ReferenceView = ({
       // 开始导入动画
       setShowLoadingModal(true);
 
-      console.log("test-print-backendData", maskArray, positionInOrigin, annotatedImageArray)
+      console.log("test-print-backendData", maskArray, positionInOrigin, annotatedImageArray, segMaskIndex)
 
       /*
         maskArray: 记录了mask的位置 => 这两个参数应该都是数组才对 => 对应多张reference
@@ -463,6 +510,7 @@ export const ReferenceView = ({
             : (imagePageIndex + 1) * imageInOnePage
           ],
           annotatedImageArray: annotatedImageArray,
+          lastMaskID: segMaskIndex,
         }),
       })
       .then(response => response.json())
@@ -474,30 +522,91 @@ export const ReferenceView = ({
         for(let i = 0; i < trackedSegs.length; i++) {
           filteredImages[imagePageIndex][i]["trackedSegs"] = trackedSegs[i];
           filteredImages[imagePageIndex][i]["highlightSegs"] = highlightSegs[i];
-        }
 
-        setFilteredImages([...filteredImages]);
-        setShowLoadingModal(false);
+          // 其实最好是把这段逻辑放在tracking逻辑的外面 => 架构不行，会重复渲染
+          const keys = Object.keys(trackedSegs[i]);
+          filteredImages[imagePageIndex][i]["countedColors"] = {};
+          filteredImages[imagePageIndex][i]["hasColors"] = {};
+          for(let k = 0; k < keys.length; k++) {
+            const trackedSeg = trackedSegs[i][keys[k]];
+            filteredImages[imagePageIndex][i]["hasColors"][keys[k]] = [];
 
-        // 将paintingboard中的内容切回古画
-        if(image) {
-          if((image.src).indexOf(PaintingPath) === -1) {
-            const keys = Object.keys(imageContext);
-            for(let k = 0; k < keys.length; k++) {
-              if(keys[k].indexOf(PaintingPath) !== -1) {
-                const paintingImage = imageContext[keys[k]]["image"]["img"];
-                const paintingMaskArray = imageContext[keys[k]]["maskArray"];
-                setImage(paintingImage);
-                setSegMaskArray(paintingMaskArray);
-                setEditingMode("painting");
-                setSegMaskIndex(findMaxValueInArray(paintingMaskArray));
-                break
+            if(trackedSeg !== undefined && trackedSeg !== "") {
+              // 为每个seg统计颜色
+              const img = new window.Image();
+              img.src = `data:image/png;base64,${trackedSeg}`;
+
+              img.onload = () => { // 包装出一个函数
+                const canvas = document.createElement('canvas');
+                const pixelSize = 3; // 每个超像素的大小
+                const scaledWidth = Math.ceil(img.width / pixelSize);
+                const scaledHeight = Math.ceil(img.height / pixelSize);
+
+                canvas.width = scaledWidth;
+                canvas.height = scaledHeight;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                if(!!ctx) {
+                  ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+                  const imageData = ctx.getImageData(0, 0, scaledWidth, scaledHeight);
+
+                  // statistic
+                  const pixels = imageData.data;
+                  const colorFrequency = {};
+                  const labs = [];
+                  let total = 0;
+                  for (let i = 0; i < pixels.length; i += 4) {
+                      const r = pixels[i];
+                      const g = pixels[i + 1];
+                      const b = pixels[i + 2];
+                      const a = pixels[i + 3];
+                      if (a === 0) { // 直接用alpha判断吧
+                          continue;
+                      }
+                      ++total;
+                      const color = d3.rgb(r, g, b);
+                      labs.push(d3.lab(color));
+                  }
+
+                  // eps越大簇的规模越大 => 第一次聚类
+                  const dbscanner = jDBSCAN().eps(30).minPts(5).data(labs);  // 30 - 10
+                  dbscanner();
+                  const cluster_centers = dbscanner.getClusters();
+
+                  cluster_centers.forEach(({ l, a, b, parts }) => {
+                      const key = d3.rgb(d3.lab(l, a, b)).toString();
+                      colorFrequency[key] = Array.from(new Set(parts)).length / total;
+                  });
+
+                  filteredImages[imagePageIndex][i]["countedColors"][keys[k]] = colorFrequency;
+                  // console.log("test-print-colorFrequency", i, k, colorFrequency);
+                }
               }
+            } else {
+              filteredImages[imagePageIndex][i]["countedColors"][keys[k]] = {};
             }
           }
         }
 
-        setIsTracking(true); // 切换reference view中的展现形式
+        setExpandedImage(-1);
+        setFilteredImages([...filteredImages]);
+        setShowLoadingModal(false);
+
+        // 将paintingboard中的内容切回古画 => 一样无法继续分割
+        if(image) {
+          if((image.src).indexOf(PAINTINGPATH) === -1) {
+            const keys = Object.keys(imageContext);
+            for(let k = 0; k < keys.length; k++) {
+                if(keys[k].indexOf(PAINTINGPATH) !== -1) {
+                    handleResetPaintingImage(keys[k]);
+                    setEditingMode("painting");
+                    break
+                }
+            }
+          }
+        }
+
+        setDots(initPositions); // TODO: 目前还是基于SIFT特征点匹配的结果，需要换一个更站的住脚的说法 => 后面让布伟试试
+        setIsTracking(true);
       })
       .catch(error => {
         console.error("Error fetching data:", error);
@@ -507,6 +616,24 @@ export const ReferenceView = ({
   }
 
   // console.log("test-print-expandedImage", expandedImage)
+  // console.log("test-print-currentIndex", currentIndex)
+
+  const segmentedImages = [];
+  const keys = Object.keys(imageContext);
+  keys.forEach((path) => {
+    if(path.indexOf(PAINTINGPATH) === -1) segmentedImages.push(path);
+  })
+
+  const getImageAnnotatedIndex = (image, images) => {
+    for(let i = 0; i < images.length; i++) {
+        if(images[i].indexOf(image) !== -1) {
+            return i; 
+        }
+    }
+    return -1;
+  }
+
+  // console.log("test-print-segmentedImages", segmentedImages)
 
   return <div className="SView-container">
     <div className="Reference-view-content">
@@ -575,7 +702,10 @@ export const ReferenceView = ({
               }}
             />
           </div>
-          <div className="Reference-image-track">
+          <div 
+            className={`Reference-image-confirm ${stickers.length > 0 && objectName !== "" && currentIndex === -1 ? 'active' : ''}`} 
+            style={{marginRight: "0px"}}
+          >
             <div
               className="Icon-button"
               style={{
@@ -589,7 +719,7 @@ export const ReferenceView = ({
               alt="Tracking segments in the natural images"
             />
           </div>
-          <div className={`Reference-image-confirm ${expandedImage === -1 ? '' : 'active'}`}
+          <div className={`Reference-image-confirm ${(expandedImage !== -1 && currentIndex === -1) ? 'active' : ''}`}
             style={{
               marginRight: "0px"
             }}
@@ -600,7 +730,6 @@ export const ReferenceView = ({
               onClick={() => {
                 if(objectName !== "") {
                   handleImageResegment(expandedImage, objectName);
-                  setCurrentIndex(0); // initial the seg index
                 }
               }}
             />
@@ -611,6 +740,11 @@ export const ReferenceView = ({
               style={iconStyle(ConfirmIcon)}
               onClick={() => {
                 // confirm logic
+                if(expandedImage !== -1) {
+                  const imageSrc = filteredImages[imagePageIndex][expandedImage % imageInOnePage]["contentUrl"];
+                  console.log("test-print-imageSrc", imageSrc)
+                  setReferenceImage(imageSrc);
+                }
               }}
             />
           </div>
@@ -619,14 +753,30 @@ export const ReferenceView = ({
 
       <div className="Reference-image-list" ref={blockRef}>
         {
-          chosenList.length === 0 ? <ImageViewer images={currentPageImages}/> :
+          chosenList.length === 0 ? 
+            <ImageViewer 
+              images={currentPageImages}
+              pageIndex={imagePageIndex}
+              expandedImage={expandedImage}
+              setExpandedImage={setExpandedImage}
+              segmentedImages={segmentedImages}
+              getImageAnnotatedIndex={getImageAnnotatedIndex}
+            /> :
           <div className="SDefault-container">
             <div className="Reference-image-firstrow">
             {
               sortedImages.length ? <>
               <div className="Reference-projection-container">
                 <div className="Reference-projection">
-                  <Scatter handleFilter={handleFilter} dots={dots} />
+                  <Scatter 
+                    handleFilter={handleFilter} 
+                    dots={dots.slice(
+                      imagePageIndex * imageInOnePage, 
+                      imagePageIndex === filteredImages.length - 1 
+                      ? imagePageIndex * imageInOnePage + filteredImages[filteredImages.length - 1].length
+                      : (imagePageIndex + 1) * imageInOnePage)}
+                    currentImages={filteredImages[imagePageIndex]}
+                  />
                 </div>
               </div>
               <div
@@ -645,9 +795,10 @@ export const ReferenceView = ({
                 ref={verticalScroller}
                 onWheel={handleSegmentVerticalScroll}
               >
-                {
-                  sortedImages.length ? sortedImages.map((item, r) => (
-                    <div
+                { // 
+                  sortedImages.length ? sortedImages.map((item, r) => {
+                    const annotatedIndex = getImageAnnotatedIndex(item.thumbnailUrl, segmentedImages);
+                    return <div
                       className={`Reference-image-appendrow ${sortedImages[r].marked === -1 || (isFilter && sortedImages[r].marked === 0) ? 'miss' : ''}`}
                       key={`Reference-image-${r}`}
                       style={{
@@ -668,11 +819,30 @@ export const ReferenceView = ({
                                 }}
                                 alt=""
                               />
+
+                              { // same as ImageViewer.js
+                                annotatedIndex !== -1 && <div className="Annotated-index">
+                                    <span 
+                                        className="STitle-text-contrast" 
+                                        style={{ 
+                                            marginLeft: "0px", 
+                                            fontSize: "16px", 
+                                            cursor: "default"
+                                        }}>
+                                            R{annotatedIndex + 1}
+                                        </span>
+                                </div>
+                              }
                             </div>
 
                             <div className="R-segmentation-mask">
                               <button onClick={() => {
-                                setExpandedImage(expandedImage === item["index"] ? -1 : item["index"])
+                                if(expandedImage === item["index"]) {
+                                  setExpandedImage(-1);
+                                  // 要管理哪些状态？
+                                } else {
+                                  setExpandedImage(item["index"]);
+                                }
                               }}>
                                 <div
                                   style={{
@@ -687,7 +857,7 @@ export const ReferenceView = ({
                               </button>
                             </div>
                           </div>
-                          <div className="Reference-segmentation-list segmentList">
+                          <div className="Reference-segmentation-list segmentList" style={{overflowX: "hidden"}}>
                             {
                               chosenList.map((el, i) => {
                                 const indexInAllImage = item["index"];
@@ -716,7 +886,7 @@ export const ReferenceView = ({
                         </>
                       }
                     </div>
-                  )) : <></>
+                  }) : <></>
                 }
               </div>
 
@@ -728,7 +898,11 @@ export const ReferenceView = ({
                     left: `${blockSize[0] * 0.25 + 1.5}px`,
                   }}
                 >
-                  <SegmentViewer imageIndex={expandedImage} />
+                  <SegmentViewer 
+                    imageIndex={expandedImage} 
+                    handleSelectedImage={handleSelectedImage}
+                    objectName={objectName}
+                  />
                 </div>
               }
             </div>
@@ -739,8 +913,162 @@ export const ReferenceView = ({
   </div>
 }
 
-// <button onClick={() => {
-//   setIsEditing(2); // 2?
-//   setActiveSticker(el);
-//   handleMaskEdit(blobMap[item.contentUrl], el)
-// }}>
+
+// @app.post("/part-tracking")
+// async def part_tracking(request: Request):
+//     print("part-tracking ···")
+//     data = await request.json()
+    
+//     pred_mask_array = data["maskArray"]
+//     position_in_origin_array = data["positionInOrigin"]
+//     object_name = data["objectName"]
+//     # image_index = data["imageIndex"]
+//     image_index = [1, 5] # test setting
+//     annotated_image_array = data["annotatedImageArray"] # 用annotated_image_array[0] == "-1"区分
+
+//     for o in range(len(pred_mask_array)):
+//         pred_mask = np.array(pred_mask_array[o], dtype=np.uint8)
+//         position_in_origin = position_in_origin_array[o]
+        
+//         # basic params
+//         p_h, p_w = pred_mask.shape
+//         [sx, sy, ex, ey] = position_in_origin
+//         resize_shape = (p_w, p_h)
+        
+//         # load painting image and crop it
+//         if annotated_image_array[0] == "-1":
+//             painting_path = "./paintings/0.png"
+//         else:
+//             painting_path = "./natural-images/" + object_name + "-nobg/" + annotated_image_array[o] + ".jpg"
+
+//         print("reffence images path: ", painting_path)
+            
+//         painting_image = cv2.imread(painting_path)
+//         cropped_painting = (cv2.cvtColor(painting_image, cv2.COLOR_BGR2RGB))[sy:ey+1, sx:ex+1]
+        
+//         # load natural images without background
+//         image_index = list(range(image_index[0], image_index[1]+1))
+//         natural_images = [cv2.cvtColor(
+//             cv2.imread("./natural-images/"+object_name+"-nobg/"+str(i)+".jpg"), 
+//             cv2.COLOR_BGR2RGB
+//         ) for i in image_index]
+
+//         # start tracking
+//         pred_list = []
+//         torch.cuda.empty_cache()
+//         gc.collect()
+//         segtracker = SegTracker(segtracker_args, sam_args, aot_args)
+//         segtracker.restart_tracker()
+        
+//         # 这里的逻辑还要改一下: TODO: 2) add more than one references
+//         # hasDone: 1) deactivate short-term memory;
+//         with torch.cuda.amp.autocast():
+//             # add reference
+//             segtracker.add_reference(cropped_painting, pred_mask) # added into lstt memories
+//             # track in natural images
+//             for image in natural_images:
+//                 # resize to the shape of pred_mask
+//                 image = cv2.resize(image, resize_shape)
+//                 pred_mask_natural = segtracker.track(image, update_memory=False) # update_memory: 是否更新长短期记忆模块
+//                 torch.cuda.empty_cache()
+//                 gc.collect()
+//                 pred_list.append(pred_mask_natural)
+    
+//         # output segs
+//         image_segs = []
+//         total_masks = np.unique(pred_mask)
+//         init_segs = {}
+    
+//         seg_coordinates = []
+//         init_coordinates = {}
+//         highlight_color = [255, 246, 220]
+    
+//         for id in total_masks:
+//             if id == 0:
+//                 continue
+//             init_segs[str(id)] = ""
+//             init_coordinates[str(id)] = {
+//                 "coordinates": [],
+//                 "highlight": ""
+//             }
+        
+//         for i in range(len(pred_list)):
+//             mask_ids = np.unique(pred_list[i])
+//             h, w, _ = natural_images[i].shape
+//             image_segs.append(copy.deepcopy(init_segs))
+//             seg_coordinates.append(copy.deepcopy(init_coordinates))
+    
+//             for k in mask_ids:
+//                 if k == 0:
+//                     continue
+                
+//                 # filter single mask
+//                 clean_mask = copy.deepcopy(pred_list[i])
+//                 for m in range(p_h):
+//                     for n in range(p_w):
+//                         if clean_mask[m][n] != k:
+//                             clean_mask[m][n] = 0
+    
+//                 # clean the interpolated values created by the resize ops
+//                 clean_mask = cv2.resize(clean_mask, (w, h))
+//                 for m in range(h):
+//                     for n in range(w):
+//                         if clean_mask[m][n] == k:
+//                             clean_mask[m][n] = 1
+//                         else:
+//                             clean_mask[m][n] = 0
+    
+//                 alpha_layer = copy.deepcopy(clean_mask) * 255
+                
+//                 # seg original image
+//                 seg = natural_images[i] * clean_mask[:, :, np.newaxis]
+//                 r_layer, g_layer, b_layer = cv2.split(seg)
+//                 seg = cv2.merge((b_layer, g_layer, r_layer, alpha_layer))
+    
+//                 # compute the minimum enclosing rectangle 
+//                 [sx, ex, sy, ey] = minimum_rectangle(clean_mask)
+    
+//                 if sx == -1: # 为什么之前没有这个bug
+//                     image_segs[i][str(k)] = ""
+//                     seg_coordinates[i][str(k)]["coordinates"] = []
+//                     seg_coordinates[i][str(k)]["highlight"] = ""
+//                 else:
+//                     seg_highlight = cv2.merge((
+//                         copy.deepcopy(clean_mask) * highlight_color[2], # B
+//                         copy.deepcopy(clean_mask) * highlight_color[1], # G 
+//                         copy.deepcopy(clean_mask) * highlight_color[0], # R
+//                         copy.deepcopy(clean_mask) * 180, # opacity
+//                     ))
+                    
+//                     seg = seg[sy:ey+1, sx:ex+1]
+//                     seg_highlight = seg_highlight[sy:ey+1, sx:ex+1]
+                    
+//                     # transform to base64
+//                     _, encoded_image = cv2.imencode(".png", seg)
+//                     base64_image = base64.b64encode(encoded_image).decode('utf-8')
+//                     image_segs[i][str(k)] = base64_image
+        
+//                     _, encoded_highlight = cv2.imencode(".png", seg_highlight)
+//                     base64_highlight = base64.b64encode(encoded_highlight).decode('utf-8')
+//                     seg_coordinates[i][str(k)]["coordinates"] = [sx, ex, sy, ey]
+//                     seg_coordinates[i][str(k)]["highlight"] = base64_highlight
+            
+//             test_res = draw_mask(natural_images[i], cv2.resize(pred_list[i], (w, h)))
+//             test_res = cv2.cvtColor(test_res, cv2.COLOR_RGB2BGR)
+//             cv2.imwrite("./paintings/track-res-nobg-res"+str(i+1)+".png", test_res)
+
+//         # test
+//         init_res = draw_mask(cropped_painting, pred_mask, id_countour=False)
+//         out_res = cv2.cvtColor(init_res, cv2.COLOR_RGB2BGR)
+//         cv2.imwrite("./paintings/seg-mask.png", init_res)     
+
+//     # # test-output
+//     # for i in range(len(pred_list)):
+//     #     test_res = draw_mask(cv2.resize(natural_images[i], resize_shape), pred_list[i])
+//     #     test_res = cv2.cvtColor(test_res, cv2.COLOR_RGB2BGR)
+//     #     cv2.imwrite("./paintings/track-res-nobg"+str(i+1)+".png", test_res)
+    
+//     return {
+//         "tracked_segs": image_segs,
+//         "tracked_coordinates": seg_coordinates,
+//     }

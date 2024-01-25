@@ -99,7 +99,12 @@ export const MatrixPalette = ({
             changeGenMatrix(JSON.parse(JSON.stringify(genMatrix)));
         
         } else if (actionType === 1) {
-            let body = {option: 'q', target_color: targetColor, selected_coord: hoverPosition, matrix_num: index}
+            let body = {
+                option: 'q', 
+                target_color: targetColor, 
+                selected_coord: hoverPosition, 
+                matrix_num: index
+            }
             fetch("http://localhost:8000/gen_matrix", {
                 method: "POST",
                 headers: {
@@ -156,7 +161,12 @@ export const MatrixPalette = ({
             .catch(error => console.error("Error fetching data:", error));
 
         } else if (actionType === 2) {
-            let body = { option: 'm', target_color: targetColor, selected_coord: hoverPosition, matrix_num: index }
+            let body = { 
+                option: 'm', 
+                target_color: targetColor, 
+                selected_coord: hoverPosition, 
+                matrix_num: index 
+            }
             fetch("http://localhost:8000/gen_matrix", {
                 method: "POST",
                 headers: {

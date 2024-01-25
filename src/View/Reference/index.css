@@ -175,10 +175,8 @@
 .Reference-projection-container {
     width: calc(25% - 4.5px);
     height: 100%;
-    border-radius: 8px;
-    padding: 3px;
-    border: 3px dashed transparent;
-    background: linear-gradient(#b09872, #b09872) padding-box, repeating-linear-gradient(-45deg, #fff6dc 0, #fff6dc 6px, #b09872 6px, #b09872 12px);
+    border-radius: 4px;
+    background: #fff6dc;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -197,10 +195,12 @@
 }
 
 .Reference-projection {
-    width: calc(100% - 4px);
-    height: calc(100% - 4px);
-    border-radius: 6px;
-    background: #fff6dc;
+    width: calc(100% - 8px);
+    height: calc(100% - 8px);
+    padding: 4px;
+    border: 3px dashed transparent;
+    background: linear-gradient(#fff6dc, #fff6dc) padding-box, repeating-linear-gradient(-45deg, #5a4e3b 0, #5a4e3b 6px, #fff6dc 6px, #fff6dc 12px);
+    border-radius: 4px;
 }
 
 .Reference-image {
@@ -211,6 +211,7 @@
     font-size: 0;
     text-align: center;
     cursor: pointer;
+    position: relative;
 }
 
 .Reference-image:after {
@@ -342,16 +343,18 @@
     height: 18px;
     position: absolute;
     z-index: 1;
-    bottom: 6.6px;
+    bottom: 6px;
     overflow-x: auto;
     overflow-y: hidden;
 }
 
 .Segmentation-color-item {
-    height: 17.00px;
-    width: 17.00px;
+    height: 17.40px;
+    width: 17.40px;
+    margin-bottom: 0.6px;
     margin-right: 3.0px;
     border-radius: 2px;
+    box-sizing: border-box;
     display: inline-block;
     cursor: pointer;
 }
@@ -364,4 +367,18 @@
     /* border-radius: 4px; */
     position: absolute;
     z-index: 100;
+}
+
+.Annotated-index {
+    width: 28px;
+    height: 28px;
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    z-index: 10;
+    background: #fff6dc;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

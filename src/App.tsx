@@ -15,8 +15,9 @@ import {
     modelData,
 } from "./View/helpers/modelAPI";
 import AppContext from "./View/hooks/createContext";
-import { PAINTINGMASKTENSORDATAPATH } from './View/sharedConstants';
-import { findMaxValueInArray, findTargetInFilteredImages } from './View/utils';
+import { PAINTINGMASKTENSORDATAPATH, PAINTINGPATH } from './View/sharedConstants';
+import { checkImageIsLoaded, findMaxValueInArray, findTargetInFilteredImages } from './View/utils';
+import LoadingModal from './View/Segmentation/components/LoadingModal';
 
 // Onnxruntime
 ort.env.debug = false;
@@ -36,18 +37,15 @@ ort.env.wasm.wasmPaths = {
 // ort.env.webgl.pack = true;
 
 function App() {
-
     const {
         click: [, setClick],
         clicks: [clicks, setClicks],
-        clicksHistory: [, setClicksHistory],
         image: [image, setImage],
         prevImage: [, setPrevImage],
         svg: [, setSVG],
         svgs: [, setSVGs],
         allsvg: [, setAllsvg],
         isErased: [, setIsErased],
-        userNegClickBool: [, setUserNegClickBool],
         isModelLoaded: [isModelLoaded, setIsModelLoaded],
         isLoading: [, setIsLoading],
         segmentTypes: [, setSegmentTypes],
@@ -59,15 +57,15 @@ function App() {
         eraserText: [, setEraserText],
         predMask: [predMask, setPredMask],
         predMasks: [predMasks, setPredMasks],
-        predMasksHistory: [predMasksHistory, setPredMasksHistory],
-        // isToolBarUpload: [, setIsToolBarUpload],
+        predMasksHistory: [predMasksHistory],
         blobMap: [blobMap,],
         imageContext: [imageContext,],
         segMaskArray: [segMaskArray, setSegMaskArray],
         filteredImages: [filteredImages],
-        editingMode: [, setEditingMode],
-        annotatedImage: [annotatedImage, setAnnotatedImage],
-        segMaskIndex: [, setSegMaskIndex]
+        editingMode: [editingMode, setEditingMode],
+        segMaskIndex: [, setSegMaskIndex],
+        currentIndex: [, setCurrentIndex],
+        stickerForTrack: [stickerForTrack],
     } = useContext(AppContext)!;
     const [model, setModel] = useState<InferenceSession | null>(null);
     const [tensor, setTensor] = useState<Tensor | null>(null);
@@ -86,12 +84,15 @@ function App() {
         | BigUint64Array
         | null
     >(null);
-    const [modelScale, setModelScale] = useState<modelScaleProps | null>(null); // 作用未知
-    const [colors, setColors] = useState([{}]);
-    const imgSrc = "/demoData/paintings/0.png";
-    const [annotationSelectedImg, setAnnotationSelectedImg] = useState(-1);
+    const [modelScale, setModelScale] = useState<modelScaleProps | null>(null); // SAM params
+
+    // 变量管理还是很混乱 => 只能重构的时候再做了
+    const [colors, setColors] = useState([]);
+    const imgSrc = PAINTINGPATH;
+    const [referenceImage, setReferenceImage] = useState("");
 
     // console.log("test-print-modelScale", modelScale)
+    // console.log("test-print-referenceImage", referenceImage)
 
     useEffect(() => {
         const initModel = async () => {
@@ -218,11 +219,12 @@ function App() {
         runOnnx();
     }, [clicks, hasClicked]);
 
-    // 载入图片
-    const handleSelectedImage = async (
+    // 载入图片 => 改成同步了
+    const handleSelectedImage = (
         data: File | URL,
         isPainting: boolean,
         objectName: string = "",
+        isAddContext: boolean = true,
     ) => {
 
         if (data instanceof File) {
@@ -233,18 +235,19 @@ function App() {
             console.log("GOT STRING " + data);
         }
 
-        try {
-            handleResetState();
-            setShowLoadingModal(true);
+        handleResetState();
+        setShowLoadingModal(true);
 
-            // console.log("test-print-data", data instanceof File, data) // true
-            const imgData: File = data instanceof File ? data : await getFile(data);
-            const img = new window.Image();
+        // 为啥一直是False
+        // console.log("test-print-setShowLoadingModal", JSON.parse(JSON.stringify(showLoadingModal))) 
 
-            const lastImage = image?.src;
+        // console.log("test-print-data", data instanceof File, data) // true
+        const imgData: File | null = data instanceof File ? data : getFile(data); // 这里用异步的话容易出问题
+        const img = new window.Image();
+        const lastImage = image?.src;
 
-            // console.log("test-print-instanceof", data instanceof File, data)  // true
- 
+        // console.log("test-print-instanceof", data instanceof File, data)  // true
+        if(imgData !== null) {
             img.src = data instanceof File ? data.name : URL.createObjectURL(imgData);
             const srcUrl = img.src;
             // console.log("test-print-srcUrl", srcUrl);
@@ -285,7 +288,7 @@ function App() {
                 // console.log("test-print-createdMaskImage", createdMaskImage.length, createdMaskImage[0].length, createdMaskImage[0][0])
                 
                 // 如果segMaskArray不为[]，需要做状态保存
-                if(segMaskArray.length > 0 && lastImage !== undefined) {
+                if(segMaskArray.length > 0 && lastImage !== undefined && isAddContext) {
                     const lastImageContext = imageContext[lastImage];
                     lastImageContext["maskArray"] = JSON.parse(JSON.stringify(segMaskArray));
                 } 
@@ -301,7 +304,7 @@ function App() {
                 objectName === "" ? "" : `/studyData/mask-and-tensor-jsons/${objectName}/`)
             if(loadPathRoot !== "") {
                 loadSegModelResults(loadPathRoot, name, addedImageContext);
-                await loadllModelResults(loadPathRoot, name, addedImageContext);
+                loadllModelResults(loadPathRoot, name, addedImageContext);
             } else {
                 console.log("mask/tensor path is undefined.")
             }
@@ -309,9 +312,7 @@ function App() {
             addedImageContext["image"]["prevImage"] = img;
             addedImageContext["image"]["isErased"] = false;
             addedImageContext["stickers"] = [];
-            imageContext[srcUrl ?? "undefined"] = addedImageContext;
-        } catch (error) {
-            console.log(error);
+            if(isAddContext) imageContext[srcUrl ?? "undefined"] = addedImageContext;
         }
     };
 
@@ -330,7 +331,6 @@ function App() {
 
                 setTensor(tensor);
                 // setIsLoading(false);
-                setShowLoadingModal(false);
 
                 // 作用未知
                 setIsErasing(false);
@@ -350,20 +350,28 @@ function App() {
             });
     };
 
-    // 加载mask数据
-    const loadllModelResults = async (root: string, fileName: string, addedImageContext: any) => {
-        const response = await fetch(root + 'mask-' + fileName + '.json') // 指定文件路径  
-        const data = await response.json();
+    // 加载mask数据 => 改成同步，因为只有加载完毕后才能分割
+    const loadllModelResults = (root: string, fileName: string, addedImageContext: any) => {
+        // const response = await fetch(root + 'mask-' + fileName + '.json') // 指定文件路径  
 
-        setAllsvg(data);
-        setIsModelLoaded((prev) => {
-            return { ...prev, allModel: true };
-        });
-        
-        addedImageContext["json"] = {
-            "allsvg": data,
-            "isModelLoaded": { ...isModelLoaded, allModel: true },
-        };
+        fetch(root + 'mask-' + fileName + '.json')
+            .then(response => response.json())
+            .then(data => {
+                setAllsvg(data);
+                setIsModelLoaded((prev) => {
+                    return { ...prev, allModel: true };
+                });
+                
+                addedImageContext["json"] = {
+                    "allsvg": data,
+                    "isModelLoaded": { ...isModelLoaded, allModel: true },
+                };
+
+                setShowLoadingModal(false);
+            })
+            .catch(error => {
+                console.error(error);
+            });
     };
 
     const handleResetState = () => {
@@ -379,7 +387,6 @@ function App() {
         setPrevImage(null);
         setPredMask(null);
         setIsErased(false);
-        setShowLoadingModal(false);
         setIsModelLoaded({ boxModel: false, allModel: false });
         setSegmentTypes("Click");
         setIsLoading(false);
@@ -387,57 +394,86 @@ function App() {
         setPredMasks(null);
     };
 
-    // 这里需要改掉
-    const handleMaskEdit = (blobUrl: string, stickerId: number) => {
-        const context = imageContext[blobUrl]["stickers"][stickerId];
-        const image = imageContext[blobUrl]["image"];
-        handleResetState();
-        setModelScale(image["modelScale"]);
-        setTensor(imageContext[blobUrl]["tensor"]["tensor"]);
-        setImage(image["img"]);
-        setPrevImage(image["img"]);
-        setIsErased(false);
-        setIsLoading(false);
-        setShowLoadingModal(false);
-        setAllsvg(imageContext[blobUrl]["json"]["allsvg"]);
-        setSVG(context["svg"]);
-        setSVGs(context["svgs"]);
-        setClick(context["click"]);
-        setClicks(context["clicks"]);
-        setClicksHistory(null);
-        setMaskImg(context["maskImg"]);
-        setUserNegClickBool(context["userNegClickBool"]);
-        setIsHovering(context["isHovering"]);
-        setPredMask(context["predMask"]);
-        setPredMasks(context["predMasks"]);
-        setPredMasksHistory(context["predMasksHistory"]);
-        setHasClicked(true);
-    };
+    const handleResetPaintingImage = (imagePath: string) => {
+        const paintingImage = imageContext[imagePath]["image"]["img"];
+        const paintingMaskArray = imageContext[imagePath]["maskArray"];
+        const paintingTensor = imageContext[imagePath]["tensor"]["tensor"];
+        const paintingAllSvg = imageContext[imagePath]["json"]["allsvg"];
+        const paintingModelScale = imageContext[imagePath]["image"]["modelScale"];
+
+        setImage(paintingImage);
+        setPrevImage(paintingImage);
+        setModelScale(paintingModelScale);
+        setSegMaskArray(paintingMaskArray);
+        setTensor(paintingTensor);
+        setAllsvg(paintingAllSvg);
+        setIsModelLoaded((prev) => {
+            return { ...prev, allModel: true };
+        });
+
+        setSegMaskIndex(findMaxValueInArray(paintingMaskArray));
+    }
 
     const handleImageResegment = (imageIndex: number, objectName: string) => {
-        console.log("test-print-expandedImage", imageIndex, objectName) // 0 pheasant
-
+        const [isLoaded, loadedPath]= checkImageIsLoaded(imageContext, imageIndex);
+        // console.log("test-print-handleImageResegment", imageIndex, objectName, isLoaded, loadedPath) // 0 pheasant
         
-        if(imageIndex !== -1) {
-            // 读取选中图片的mask and tensor.json, 修改当前显示在paintingboard中的内容
-            const imagePath = findTargetInFilteredImages(imageIndex, filteredImages);
-            const imageFile = new File([imagePath], imagePath);
-            handleSelectedImage(imageFile, false, objectName);
+        if(imageIndex !== -1 ) {
+            if(isLoaded) {
+                if(image) {
+                    handleResetState();
+                    const splitOne = (image.src).split("/");
+                    const splitTwo = splitOne[splitOne.length - 1].split(".");
+                    if(parseInt(splitTwo[0]) === imageIndex + 1) {
+                        // 切换回古画
+                        const keys = Object.keys(imageContext);
+                        for(let k = 0; k < keys.length; k++) {
+                            if(keys[k].indexOf(PAINTINGPATH) !== -1) {
+                                handleResetPaintingImage(keys[k]);
+                                setEditingMode("painting");
+                                break
+                            }
+                        }
+                    } else {
+                        // 不载入，直接切换显示相应的自然图片
+                        handleResetPaintingImage(loadedPath as string);
+                        setEditingMode("natural-image");
 
-            // state reset
-            handleResetState();
+                        let startIndex = -1; // 从新分割的Seg开始
+                        for(let i = 0; i < stickerForTrack.length; i++) {
+                            if(stickerForTrack[i].length === 0) {
+                                startIndex = i;
+                                break
+                            }
+                        }
+                        // console.log("test-print-startIndex", stickerForTrack, startIndex)
+                        setCurrentIndex(startIndex);
+                    }
+                }
+            } else {
+                if(editingMode === "sticker") {
+                    // 切换回古画
+                    const keys = Object.keys(imageContext);
+                    for(let k = 0; k < keys.length; k++) {
+                        if(keys[k].indexOf(PAINTINGPATH) !== -1) {
+                            handleResetPaintingImage(keys[k]);
+                            setEditingMode("painting");
+                            break
+                        }
+                    }
+                } else {
+                    console.log("handleImageResegment-load-imageIndex", imageIndex)
+                    // 读取选中图片的mask and tensor.json, 修改当前显示在paintingboard中的内容
+                    const imagePath = findTargetInFilteredImages(imageIndex, filteredImages);
+                    const imageFile = new File([imagePath], imagePath);
+                    handleSelectedImage(imageFile, false, objectName);
 
-            // 告诉segmentation view关于状态的更新
-            setEditingMode("natural-image");
-            annotatedImage.push(imagePath);
-            setAnnotatedImage(JSON.parse(JSON.stringify(annotatedImage)));
-            setSegMaskIndex(0);
-
-            // 还需要再看下是否需要
-            // setAllsvg(imageContext[blobUrl]["json"]["allsvg"]);
-            // setSVG(context["svg"]);
-            // setSVGs(context["svgs"]);
-            // setClicksHistory(null);
+                    // 告诉segmentation view关于状态的更新
+                    setEditingMode("natural-image");
+                    setSegMaskIndex(0);
+                    setCurrentIndex(0);
+                }
+            }
         }
     }
     
@@ -447,35 +483,32 @@ function App() {
                 <span className="App-header-title" > CAnnotator </span>
             </div>
             <div className="App-content" >
+                <LoadingModal />
                 <div className="App-content-top" >
                     <div className="Segmentation-container" >
                         <SegmentationView
                             scale={modelScale}
-                            setModelScale={setModelScale}
-                            handleResetState={handleResetState}
                             hasClicked={hasClicked}
                             setHasClicked={setHasClicked}
-                            setTensor={setTensor}
                             setColors={setColors}
                             image={image}
                             colors={colors}
-                            clicks2model={clicks2model}
+                            handleImageResegment={handleImageResegment}
                         />
                     </div>
                     < div className="Reference-container" >
                         <ReferenceView 
                             colors={colors} 
-                            // handleMaskEdit={handleMaskEdit} 
-                            // handleSelectedImage={handleSelectedImage}
                             handleImageResegment={handleImageResegment}
-                            selectedImg={annotationSelectedImg}
-                            setSelectedImg={setAnnotationSelectedImg}
+                            setReferenceImage={setReferenceImage}
+                            handleResetPaintingImage={handleResetPaintingImage}
+                            handleSelectedImage={handleSelectedImage}
                         />
                     </div>
                 </div>
                 < div className="App-content-bottom" >
                     <AnnotationView 
-                        imageSrc={annotationSelectedImg === -1 ? "/demoData/references/6.jpg" : "/demoData/references/" + (6) + ".jpg"}
+                        imageSrc={referenceImage}
                     />
                 </div>
             </div>

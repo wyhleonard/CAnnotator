@@ -181,14 +181,22 @@ interface contextProps {
     segMaskIndex: any, 
     setSegMaskIndex: any
   ]
-  annotatedImage: [
-    annotatedImage: any, 
-    setAnnotatedImage: any
-  ],
   currentIndex: [
     currentIndex: any, 
     setCurrentIndex: any,
-  ],
+  ]
+  imagePageIndex: [
+    imagePageIndex: any,
+    setImagePageIndex: any
+  ]
+  displayedColors: [
+    displayedColors: any, 
+    setDisplayedColors: any
+  ]
+  resegmentedSticker: [
+    resegmentedSticker: any,
+    setResegmentedSticker: any
+  ]
 }
 
 const AppContext = createContext<contextProps | null>(null);

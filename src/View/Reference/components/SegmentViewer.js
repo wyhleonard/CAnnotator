@@ -6,14 +6,19 @@ import AppContext from "../../hooks/createContext";
 import { adaptWH } from "../../utils";
 import { Image, Layer, Stage } from "react-konva";
 import ReSegmentSVG from "../../../Icons/resegment.svg";
+import { imageInOnePage } from "../../sharedConstants";
 
 export const SegmentViewer = ({
     imageIndex = -1,
-    imageInOnePage = 50,
+    handleSelectedImage,
+    objectName
 }) => {
     const {
         filteredImages: [filteredImages],
         chosenStickers: [chosenStickers],
+        editingMode: [, setEditingMode],
+        resegmentedSticker: [, setResegmentedSticker],
+        currentIndex: [, setCurrentIndex],
     } = useContext(AppContext);
 
     const chosenList = Array.from(chosenStickers);
@@ -147,28 +152,43 @@ export const SegmentViewer = ({
         if(hoveredSticker === -1 || imageIndex === -1) return null
 
         const highlightInfo = filteredImages[Math.floor(imageIndex / imageInOnePage)][imageIndex % imageInOnePage]["highlightSegs"];
+        
+        // 如果还没追踪就不显示highlightImage
+        if(JSON.stringify(highlightInfo) === "{}") return null
+
         const stickerHighlight = highlightInfo[hoveredSticker + 1];
         const stickerHighlightImage = stickerHighlight["highlight"];
         const stickerHighlightCoord = stickerHighlight["coordinates"]; // [sx, ex, sy, ey]
         const displayScale = (currentWH[0] * currentScale) / originSize[0];
 
-        // 前后端图片大小本身不同
-        // console.log("test-print-stickerHighlightCoord", hoveredSticker, stickerHighlightCoord)
-        // console.log("test-print-originSize", originSize, currentWH[0], currentScale, displayScale)
+        if(stickerHighlightImage && stickerHighlightCoord) {
+            return <img 
+                src={`data:image/png;base64,${stickerHighlightImage}`} 
+                alt=""
+                style={{
+                    width: `${(stickerHighlightCoord[1] - stickerHighlightCoord[0]) * displayScale}px`,
+                    height: `${(stickerHighlightCoord[3] - stickerHighlightCoord[2]) * displayScale}px`,
+                    position: "absolute",
+                    zIndex: "100",
+                    left: `${stickerHighlightCoord[0] * displayScale}px`,
+                    top: `${stickerHighlightCoord[2] * displayScale}px`,
+                }}
+            />
+        } else {
+            return null
+        }
+    }, [hoveredSticker, imageIndex, filteredImages, currentScale, originSize, currentWH])
 
-        return <img 
-            src={`data:image/png;base64,${stickerHighlightImage}`} 
-            alt=""
-            style={{
-                width: `${(stickerHighlightCoord[1] - stickerHighlightCoord[0]) * displayScale}px`,
-                height: `${(stickerHighlightCoord[3] - stickerHighlightCoord[2]) * displayScale}px`,
-                position: "absolute",
-                zIndex: "100",
-                left: `${stickerHighlightCoord[0] * displayScale}px`,
-                top: `${stickerHighlightCoord[2] * displayScale}px`,
-            }}
-        />
-    }, [hoveredSticker, imageIndex, filteredImages, imageInOnePage, currentScale, originSize, currentWH])
+    const handleStickerReset = (imageIndex, stickerIndex) => {
+        const imagePath = filteredImages[Math.floor(imageIndex / imageInOnePage)][imageIndex % imageInOnePage].thumbnailUrl;        
+        const imageFile = new File([imagePath], imagePath);
+        handleSelectedImage(imageFile, false, objectName, false); // 不是古画也不需要被添加到imgContext中
+        // console.log("test-print-handleStickerReset", imagePath, stickerIndex);
+
+        setEditingMode("sticker");
+        setResegmentedSticker([imageIndex, stickerIndex]);
+        setCurrentIndex(stickerIndex);
+    }
 
     return <div className="SDefault-container">
         <div className="Detail-view-image-container" ref={canvasRef}>
@@ -207,7 +227,7 @@ export const SegmentViewer = ({
             </div>
         </div>
 
-        <div className="Detail-view-segment-container segmentList">
+        <div className="Detail-view-segment-container segmentList" style={{overflowX: "hidden"}}>
         {
             imageIndex !== -1 && chosenList.map((el, i) => {
                 const trackedSegs = filteredImages[Math.floor(imageIndex / imageInOnePage)][imageIndex % imageInOnePage]["trackedSegs"];
@@ -233,7 +253,7 @@ export const SegmentViewer = ({
                     </div>
 
                     <div className="R-segmentation-mask">
-                        <button>
+                        <button onClick={() => handleStickerReset(imageIndex, el)}>
                             <div
                                 style={{
                                     background: `url(${ReSegmentSVG}) no-repeat`,

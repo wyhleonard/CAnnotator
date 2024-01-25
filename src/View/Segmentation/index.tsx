@@ -1,6 +1,6 @@
 import "../sharedCss.css"
 import "./index.css"
-import { iconLevel1 } from "../sharedConstants";
+import { highlightColor, iconLevel1, imageInOnePage } from "../sharedConstants";
 import { MetaInformation } from "./components/MetaInformation";
 import { ContentDescription } from "./components/ContentDescription";
 import { PaintingBoard } from "./components/PaintingBoard";
@@ -8,35 +8,30 @@ import { SegmentationList } from "./components/SegmentationList";
 import { AnnotationList } from "./components/AnnotationList";
 import { SegmentTools } from "./components/SegmentTools.js";
 import Konva from "konva";
-import React, {
+import {
     useContext,
     useEffect,
     useRef,
     useState,
 } from "react";
-import ReactDOM from 'react-dom';
 import * as _ from "underscore";
 import {
     modelInputProps,
 } from "../helpers/Interface";
 import AppContext from "../hooks/createContext";
-import { Image, Layer, Path, Stage } from "react-konva";
-import { nclicks } from "../helpers/hardcode";
 // @ts-ignore
 import * as d3 from "d3";
 import jDBSCAN from "../helpers/jDBScan";
+import { countColorinSticker } from "../utils";
 
 export const SegmentationView = ({
     scale,
-    setModelScale,
-    handleResetState,
     hasClicked,
     setHasClicked,
-    setTensor,
     setColors,
     image,
-    clicks2model,
-    colors
+    colors,
+    handleImageResegment
 }: any) => {
     // component states
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -49,99 +44,125 @@ export const SegmentationView = ({
         isErased: [, setIsErased],
         maskImg: [maskImg, setMaskImg],
         userNegClickBool: [userNegClickBool, setUserNegClickBool],
-        // activeSticker: [activeSticker],
         isLoading: [isLoading, setIsLoading],
         hasNegClicked: [, setHasNegClicked],
         stickerTabBool: [stickerTabBool, setStickerTabBool],
         svgs: [svgs, setSVGs],
         isHovering: [isHovering, setIsHovering],
         editingMode: [editingMode],
-        showLoadingModal: [, setShowLoadingModal],
         predMask: [predMask, setPredMask],
         predMasks: [predMasks, setPredMasks],
         predMasksHistory: [predMasksHistory, setPredMasksHistory],
-        filteredImages: [filteredImages],
-        image: [, setImage],
-        prevImage: [, setPrevImage],
-        allsvg: [, setAllsvg],
-        segUrl: [segUrl, setSegUrl],
-        blobMap: [blobMap],
+        segUrl: [segUrl, setSegUrl],  // 这里为什么要全局
         imageContext: [imageContext],
         segMaskArray: [segMaskArray],
         segMaskIndex: [segMaskIndex, setSegMaskIndex],
         stickerForTrack: [stickerForTrack, setStickerForTrack],
-        currentIndex: [currentIndex, setCurrentIndex]
+        currentIndex: [currentIndex, setCurrentIndex],
+        imagePageIndex: [imagePageIndex],
+        filteredImages: [filteredImages, setFilteredImages],
+        isTracking: [isTracking],
+        chosenColors: [chosenColors, setChosenColors],
+        displayedColors: [displayedColors, setDisplayedColors],
+        resegmentedSticker: [resegmentedSticker]
     } = useContext(AppContext)!;
 
     const konvaRef = useRef<Konva.Stage>(null);
-    const [callCount, setCallCount] = useState(0);
     const [currentScale, setCurrentScale] = useState(1);
     
     if (image && segUrl === "") {
         setSegUrl(image.src);
     }
 
-    // console.log("test-print-userNegClickBool", userNegClickBool)
-    // console.log("test-print-stickerTabBool", stickerTabBool)
+    // move the first clustering logic from tracking. => failed
+    // useEffect(() => {
+    //     if(imagePageIndex !== -1) {
+    //         const currentImages = filteredImages[imagePageIndex];
+    //         for(let i = 0; i < currentImages.length; i++) {
+    //             const trackedSegs = currentImages[i]["trackedSegs"];
+    //             if(trackedSegs && JSON.stringify(trackedSegs) !== "{}") {
+    //                 const keys = Object.keys(trackedSegs);
+    //                 filteredImages[imagePageIndex][i]["countedColors"] = {};
+    //                 filteredImages[imagePageIndex][i]["hasColors"] = {};
 
-    // 更新color bins
+    //                 for(let k = 0; k < keys.length; k++) {
+    //                     const trackedSeg = trackedSegs[keys[k]];
+    //                     filteredImages[imagePageIndex][i]["hasColors"][keys[k]] = [];
+            
+    //                     if(trackedSeg !== undefined && trackedSeg !== "") {
+    //                         // 为每个seg统计颜色
+    //                         const img = new window.Image();
+    //                         img.src = `data:image/png;base64,${trackedSeg}`;
+    //                         img.onload = () => {
+    //                             const colorFrequency = countColorinSticker(img.width, img.height, img);
+    //                             filteredImages[imagePageIndex][i]["countedColors"][keys[k]] = colorFrequency;
+    //                         }
+    //                     } else {
+    //                         filteredImages[imagePageIndex][i]["countedColors"][keys[k]] = {};
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         // setFilteredImages([...filteredImages]); // BUGs: 会一直更新 => 搬迁到第二次聚类的逻辑中也会问题（无法访问到更新后的数据）
+    //     }
+    // }, [filteredImages, imagePageIndex, setFilteredImages])
+
+
+    // 更新color bins => 在最后一层还是不要再做归一化了，直接体现数量的大小
     useEffect(() => {
-        // @ts-ignore
-        const newColors = [];
-        const len = stickers.length;
-        for (let i = 0; i < len; ++i) {
-            newColors[i] = {};
-            // @ts-ignore
-            const labs = [], colorMap: string[] = [], keyMap: number[] = [];
+        if((editingMode !== "natural-image") && imagePageIndex !== -1 && isTracking === true) {
+            console.log("test-print-update-color")
 
-            // console.log("test-print-imageContext", imageContext)
-            Object.keys(imageContext).forEach((key: any) => {
-                if (key === segUrl) {
-                    return;
-                }
-                console.log("test-print-imageContext-key", key)
-                const item = imageContext[key]["stickers"][i];
-                item.hasColors = new Set();
-                if (!item.colors) {
-                    return;
-                }
-                Object.keys(item.colors).forEach(c => {
-                    labs.push(d3.lab(c));
-                    keyMap.push(key);
-                    colorMap.push(c);
-                });
-            });
-            if (labs.length !== 0) {
-                // @ts-ignore
-                const dbscanner = jDBSCAN().eps(15).minPts(1).data(labs);
-                const point_assignment_result = dbscanner();
-                const cluster_centers = dbscanner.getClusters();
-                cluster_centers.forEach(({ l, a, b, dimension, parts }: any) => {
-                    const newColor = d3.rgb(d3.lab(l, a, b)).toString();
-                    // @ts-ignore
-                    newColors[i][newColor] = 0;
-                    parts.forEach((p: any) => {
-                        const k = keyMap[p], c = colorMap[p], item = imageContext[k]["stickers"][i];
-                        item.hasColors.add(newColor);
-                        // @ts-ignore
-                        newColors[i][newColor] += item.colors[c];
-                    });
-                });
-                point_assignment_result.forEach((val: any, p: any) => {
-                    if (val === 0) {
-                        const k = keyMap[p], c = colorMap[p], item = imageContext[k]["stickers"][i];
-                        item.hasColors.add(c);
-                        // @ts-ignore
-                        !newColors[i][c] && (newColors[i][c] = 0);
-                        // @ts-ignore
-                        newColors[i][c] += item.colors[c];
+            const currentImages = filteredImages[imagePageIndex];
+            const newColors: any = [];
+            const stickerNum = stickers.length;
+            for(let i = 0; i < stickerNum; i++) {
+                newColors[i] = {};
+                const labs: any = [], keyMap: any = [];
+
+                for(let k = 0; k < currentImages.length; k++) {
+                    if(currentImages[k]["countedColors"] !== undefined) { // 测试的时候没有计算全部的结果
+                        // console.log("test-print-countedColors", currentImages[k]);
+                        const countedColors = currentImages[k]["countedColors"][i + 1];
+                        // 先得把 filteredImages[imagePageIndex][k]["hasColors"] 置为空 => 但不影响结果
+
+                        if(countedColors && JSON.stringify(countedColors) !== "{}") {
+                            Object.keys(countedColors).forEach((c) => {
+                                labs.push(d3.lab(c));
+                                keyMap.push([k, i, c]); // 将labs和原先的位置关联起来
+                            });
+                        }
                     }
-                });
+                }
+
+                if(labs.length > 0) { // 第二次聚类
+                    // @ts-ignore
+                    const dbscanner = jDBSCAN().eps(60).minPts(0).data(labs);  // 允许minPts=0，因为不一定有簇  
+                    dbscanner();
+                    const cluster_centers = dbscanner.getClusters(); // 并不是所有的点都会被归为某一个类
+
+                    // console.log("test-print-cluster_centers", cluster_centers)
+                    cluster_centers.forEach(({ l, a, b, dimension, parts }: any) => {
+                        const newColor = d3.rgb(d3.lab(l, a, b)).toString();
+                        // @ts-ignore
+                        newColors[i][newColor] = 0;
+                        parts.forEach((p: any) => {
+                            const [k, i, c] = keyMap[p];
+                            const colorBins = filteredImages[imagePageIndex][k]["hasColors"][i + 1];
+                            if(colorBins.indexOf(newColor) === -1) filteredImages[imagePageIndex][k]["hasColors"][i + 1].push(newColor)
+                            newColors[i][newColor] += filteredImages[imagePageIndex][k]["countedColors"][i + 1][c];
+                        });
+
+                        // newColors[i][newColor] /= dimension;
+                        newColors[i][newColor] = Math.sqrt(newColors[i][newColor]);
+                    });
+                }
             }
+
+            // console.log("test-print-newColors", newColors)
+            setColors(newColors);
         }
-        // console.log(newColors);
-        setColors(newColors);
-    }, [stickers]);                       
+    }, [imagePageIndex, isTracking, filteredImages, stickers, setColors, editingMode])                
 
     const superDefer = (cb: Function) => {
         setTimeout(
@@ -171,11 +192,12 @@ export const SegmentationView = ({
             let newCanvas = null;
             try {
                 const canvas = ref!.toCanvas().getContext("2d", { willReadFrequently: true });
-                // console.log(canvas);
+                // console.log("ref:", ref)
+                // console.log(canvas); // height 不对 => 非常神奇的bug: 关掉浏览器试试 => 建议：不缩放自然图片
 
                 let w = ref.width();
                 let h = ref.height();
-                const pix: { x: number[]; y: number[] } = { x: [], y: [] };
+                const pix: {x: number[], y: number[]} = { x: [], y: [] };
                 const imageData = canvas.getImageData(0, 0, w, h);
                 let x;
                 let y;
@@ -210,11 +232,11 @@ export const SegmentationView = ({
                 // 裁剪了最小外包矩形
                 w = 1 + pix.x[n] - pix.x[0];
                 h = 1 + pix.y[n] - pix.y[0];
+                // console.log("test-print-bugfix", pix.x[0], pix.y[0], w, h) // undefined
                 const cut = canvas.getImageData(pix.x[0], pix.y[0], w, h);
 
                 // console.log("test-print-cutParams", w, h) // 77 61
 
-                // 不理解下面三行
                 canvas.width = w;
                 canvas.height = h;
                 canvas.putImageData(cut, 0, 0);
@@ -226,11 +248,17 @@ export const SegmentationView = ({
 
                 setSegMaskIndex(maskIndex);
 
+                return {
+                    newSticker: newCanvas,
+                    rectPosition: [pix.x[0], pix.x[n], pix.y[0], pix.y[n]]
+                };
             } catch (error) {
                 console.log(error);
-                return;
+                return {
+                    newSticker: newCanvas,
+                    rectPosition: []
+                };
             }
-            return newCanvas;
         };
 
         const konvaClone = konvaRef.current.clone();
@@ -247,6 +275,7 @@ export const SegmentationView = ({
         const pathNodes = svgLayer.find("Path");
         const imageNode = svgLayer.find("Image")[0];
         const newStickers: HTMLCanvasElement[] = [];
+        const newStickersPosition: number[][] = [];
         // console.log("test-print-pathNodes", pathNodes)
         // console.log("test-print-imageNode", imageNode)
         
@@ -274,8 +303,11 @@ export const SegmentationView = ({
         for (const pathNode of pathNodes) {
             svgLayer.add(imageNode);
             svgLayer.add(pathNode);
-            const newSticker = cropImageFromCanvasTS(konvaClone);
-            if (newSticker) newStickers.push(newSticker);
+            const {newSticker, rectPosition} = cropImageFromCanvasTS(konvaClone); // 有时候会剪不出来
+            if (newSticker) {
+                newStickers.push(newSticker);
+                newStickersPosition.push(rectPosition);
+            }
             imageNode.remove();
             pathNode.remove();
         }
@@ -283,272 +315,92 @@ export const SegmentationView = ({
         // console.log("test-print-isEditing", isEditing) // 0
 
         if (editingMode === "natural-image" && currentIndex >= 0) {
-            stickerForTrack[currentIndex] = [...stickerForTrack[currentIndex], ...newStickers];
-            setStickerForTrack(stickerForTrack); // canvas对象不能用JSON.parse(JSON.stringify(...))深度拷贝
-            
-            if(currentIndex + 1 < stickerForTrack.length) {
-                setCurrentIndex(currentIndex + 1);
-            } else {
-                setCurrentIndex(-1);
-                // 将segMaskArray存起来
-                addedImageContext["maskArray"] = JSON.parse(JSON.stringify(segMaskArray));
-            }
+            if(stickerForTrack.length > 0 ) {
+                // 再次往里加入的话会丢失索引 => 给一些UI上的tag，要求用户按顺序重新添加吧
+                stickerForTrack[currentIndex] = [...stickerForTrack[currentIndex], ...newStickers];
+                setStickerForTrack(stickerForTrack); // canvas对象不能用JSON.parse(JSON.stringify(...))深度拷贝
 
-        } else {
+                if(currentIndex + 1 < stickerForTrack.length) {
+                    setCurrentIndex(currentIndex + 1);
+                } else {
+                    setCurrentIndex(-1);
+                    // 将segMaskArray存起来
+                    addedImageContext["maskArray"] = JSON.parse(JSON.stringify(segMaskArray));
+                }
+            }
+        } else if (editingMode === "painting") {
+            // 更新segmented stickers
             setStickers([...(stickers || []), ...(newStickers || [])]);
-            // 更新古画stickers的同时初始化自然图片的stickerForTrack
+
+            // 初始化自然图片的stickerForTrack
             const initialStickerArray = Array.from({length: newStickers.length}, () => []);
             setStickerForTrack([...stickerForTrack, ...initialStickerArray]);
+
+            // 为每个sticker初始化color-filter的交互状态记录
+            const initialSelectedColors = Array.from({length: newStickers.length}, () => []);
+            setChosenColors([...chosenColors, ...initialSelectedColors])
+
+            const initialDisplayedColors = Array.from({length: newStickers.length}, () => []);
+            setDisplayedColors([...displayedColors, ...initialDisplayedColors])
+
+            // save stickers
             handleSaveInteraction(addedImageContext["stickers"], -1);
-            // handleSegment();
+        } else if (editingMode === "sticker") {
+            // save stickers to filterImages
+            const imageIndex = resegmentedSticker[0] % imageInOnePage;
+            // console.log("test-print-cropStickers", newStickers, filteredImages[imagePageIndex][imageIndex]);
+            const sticker = newStickers[0];
+            const stickerCanvas = sticker.getContext("2d", { willReadFrequently: true });
+            const highlightCoordinate = newStickersPosition[0];
+            const w = highlightCoordinate[1] - highlightCoordinate[0] + 1;
+            const h = highlightCoordinate[3] - highlightCoordinate[2] + 1;
+
+            // update countedColors -- copy from reference view
+            const colorFrequency = countColorinSticker(w, h, newStickers[0]);
+
+            // console.log("test-print-colorFrequency", colorFrequency, filteredImages[imagePageIndex][imageIndex]["countedColors"][(resegmentedSticker[1] + 1).toString()])
+            filteredImages[imagePageIndex][imageIndex]["countedColors"][(resegmentedSticker[1] + 1).toString()] = colorFrequency;
+
+            // update trackedSegs
+            const base64Image = (newStickers[0].toDataURL("image/png")).split(",");
+            filteredImages[imagePageIndex][imageIndex]["trackedSegs"][(resegmentedSticker[1] + 1).toString()] = base64Image[base64Image.length - 1];
+
+            // update highlightSegs
+            const imageData = stickerCanvas?.getImageData(0, 0, w, h);
+            if(imageData && stickerCanvas) {
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const index = (y * w + x) * 4;
+                        if (imageData.data[index + 3] > 0) {
+                            imageData.data[index] = highlightColor[0];
+                            imageData.data[index + 1] = highlightColor[1];
+                            imageData.data[index + 2] = highlightColor[2];
+                            imageData.data[index + 3] = highlightColor[3];
+                        }
+                    }
+                }
+                stickerCanvas.putImageData(imageData, 0, 0);
+                const base64Image = (sticker.toDataURL("image/png")).split(",");
+
+                filteredImages[imagePageIndex][imageIndex]["highlightSegs"][(resegmentedSticker[1] + 1).toString()] = {
+                    coordinates: highlightCoordinate,
+                    highlight: base64Image[base64Image.length - 1]
+                }
+            }
+
+            setFilteredImages(JSON.parse(JSON.stringify(filteredImages)));
+            setCurrentIndex(-1);
+            
+            // 直接设置分割完成后自动切回古画
+            handleImageResegment(resegmentedSticker[0], "")
         }
 
         handleResetInteraction();
         setIsLoading(false);
-        imageContext[srcUrl ?? "undefined"] = addedImageContext;
-        // console.log(imageContext);
+        if(editingMode !== "sticker") imageContext[srcUrl ?? "undefined"] = addedImageContext;
     };
 
     // console.log("test-print-setStickerForTrack", stickerForTrack);
-
-    // 逆天 ~ 这块需要改掉
-    const handleSegment = () => {
-        filteredImages.forEach((item: any, ini: number) => {
-            // what's this ? => hardcode 8个case
-            const cclicks = nclicks[callCount % 8];
-
-            const key = blobMap[item.contentUrl];
-            const newClicks = cclicks[ini];
-            const index = stickers.length;
-
-            imageContext[key]["stickers"][index] = { ...(imageContext[key]["stickers"][index] || {}), "clicks": newClicks, "predMask": null };
-
-            if (newClicks !== null) {
-                clicks2model(
-                    imageContext[key]["stickers"][index],
-                    newClicks,
-                    imageContext[key]["tensor"]["tensor"],
-                    imageContext[key]["image"]["modelScale"],
-                    imageContext[key]["stickers"][index]["predMask"]
-                ).then((svgStr: any) => {
-                    model2stickers(key ?? "undefined", svgStr).then(imgdata => {
-                        // check这个函数
-                        getColorsCounts(imageContext[key]["stickers"][index], imgdata, 20);
-                    });
-                })
-            } else {
-                imageContext[key]["stickers"][index]["sticker"] = null;
-            }
-        });
-        setCallCount(prev => prev + 1);
-    };
-
-    const MyKonva = (props: any) => {
-        const { blobUrl, base, mykonvaRef, svgStr } = props;
-
-        const MAX_CANVAS_AREA = 1677721;
-        const w = base["image"]["modelScale"]!.width;
-        const h = base["image"]["modelScale"]!.height;
-        const area = w * h;
-        const canvasScale =
-            area > MAX_CANVAS_AREA ? Math.sqrt(MAX_CANVAS_AREA / (w * h)) : 1;
-        const canvasDimensions = {
-            width: Math.floor(w * canvasScale),
-            height: Math.floor(h * canvasScale),
-        };
-
-        const imageClone = new window.Image();
-        imageClone.src = blobUrl;
-        imageClone.width = w;
-        imageClone.height = h;
-
-        return (<Stage
-            className="konva"
-            width={canvasDimensions.width}
-            height={canvasDimensions.height}
-            ref={mykonvaRef}
-        >
-            <Layer name="svgMask">
-                <Image
-                    x={0}
-                    y={0}
-                    image={imageClone}
-                    width={canvasDimensions.width}
-                    height={canvasDimensions.height}
-                    opacity={0}
-                    preventDefault={false}
-                />
-                {
-                    svgStr && (
-                        <Path
-                            data={svgStr.join(" ")}
-                            fill="black"
-                            scaleX={canvasScale / base["image"]["modelScale"].uploadScale}
-                            scaleY={canvasScale / base["image"]["modelScale"].uploadScale}
-                            lineCap="round"
-                            lineJoin="round"
-                            opacity={0}
-                            preventDefault={false}
-                        />
-                    )
-                }
-            </Layer>
-            <Layer name="animateAllSvg">
-            </Layer>
-            <Layer name="annotations">
-            </Layer>
-        </Stage>);
-    }
-
-    const mykonvaRef = useRef<Konva.Stage>(null);
-
-    const model2stickers = async (srcUrl: string, svgStr: any) => {
-        const w = imageContext[srcUrl]["image"]["modelScale"]!.width;
-        const h = imageContext[srcUrl]["image"]["modelScale"]!.height;
-
-        const image = new window.Image();
-        image.src = srcUrl;
-        image.width = w;
-        image.height = h;
-
-        // 等待图片加载完成  
-        await new Promise((resolve, reject) => {
-            image.onload = resolve;
-            image.onerror = reject;
-        });
-        const dynamicComponent = React.createElement(MyKonva, {
-            blobUrl: srcUrl, base: imageContext[srcUrl], index: stickers.length, mykonvaRef, svgStr
-        });
-        const container = document.createElement("div");
-        ReactDOM.render(dynamicComponent, container);
-
-        if (mykonvaRef.current === null) return;
-
-        const cropImageFromCanvasTS = (ref: any) => {
-            let newCanvas = null;
-            try {
-                const canvas = ref!.toCanvas().getContext("2d", { willReadFrequently: true });
-                // console.log(canvas);
-
-                let w = ref.width();
-                let h = ref.height();
-                const pix: { x: number[]; y: number[] } = { x: [], y: [] };
-                const imageData = canvas.getImageData(0, 0, w, h);
-                let x;
-                let y;
-                let index;
-
-                for (y = 0; y < h; y++) {
-                    for (x = 0; x < w; x++) {
-                        index = (y * w + x) * 4;
-                        if (imageData.data[index + 3] > 0) {
-                            pix.x.push(x);
-                            pix.y.push(y);
-                        }
-                    }
-                }
-                pix.x.sort(function (a: number, b: number) {
-                    return a - b;
-                });
-                pix.y.sort(function (a: number, b: number) {
-                    return a - b;
-                });
-                const n = pix.x.length - 1;
-
-                w = 1 + pix.x[n] - pix.x[0];
-                h = 1 + pix.y[n] - pix.y[0];
-                const cut = canvas.getImageData(pix.x[0], pix.y[0], w, h);
-                // console.log(cut);
-
-                canvas.width = w;
-                canvas.height = h;
-                canvas.putImageData(cut, 0, 0);
-                newCanvas = document.createElement("canvas");
-                newCanvas.width = w;
-                newCanvas.height = h;
-                newCanvas.getContext("2d", { willReadFrequently: true })!.putImageData(cut, 0, 0);
-            } catch (error) {
-                console.log(error);
-                return;
-            }
-            return newCanvas;
-        };
-
-        const konvaClone = mykonvaRef.current.clone();
-        const svgLayer = konvaClone.findOne(".svgMask");
-        const pathNodes = svgLayer.find("Path");
-        const imageNode = svgLayer.find("Image")[0];
-        const newStickers: HTMLCanvasElement[] = [];
-        const addedImageContext = imageContext[srcUrl];
-        konvaClone.findOne(".annotations").hide();
-        konvaClone.findOne(".animateAllSvg").hide();
-        svgLayer.globalCompositeOperation("destination-atop");
-        imageNode.opacity(-1);
-        imageNode.remove();
-        for (const pathNode of pathNodes) {
-            pathNode.opacity(-1).remove();
-        }
-        for (const pathNode of pathNodes) {
-            svgLayer.add(imageNode);
-            svgLayer.add(pathNode);
-            const newSticker = cropImageFromCanvasTS(konvaClone);
-            if (newSticker) newStickers.push(newSticker);
-            imageNode.remove();
-            pathNode.remove();
-        }
-        const index = stickers.length;
-        addedImageContext["stickers"][index]["sticker"] = newStickers[0];
-        imageContext[srcUrl] = addedImageContext;
-        // @ts-ignore
-        ReactDOM.unmountComponentAtNode(container);
-        return newStickers[0].toDataURL();
-    };
-
-    // 
-    const getColorsCounts = (base: any, imageURL: any, threshold: number) => {
-        const img = new window.Image();
-        img.onload = function () {
-            const canvas = document.createElement('canvas');
-            const pixelSize = 5; // 每个超像素的大小
-            const scaledWidth = Math.ceil(img.width / pixelSize);
-            const scaledHeight = Math.ceil(img.height / pixelSize);  // 不是这么算的
-
-            canvas.width = scaledWidth;
-            canvas.height = scaledHeight;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            ctx?.drawImage(img, 0, 0, scaledWidth, scaledHeight);
-            const imageData = ctx?.getImageData(0, 0, scaledWidth, scaledHeight);
-
-            // @ts-ignore    
-            const pixels = imageData.data;
-            const colorFrequency = {};
-            const labs = [];
-            let total = 0;
-            for (let i = 0; i < pixels.length; i += 4) {
-                const r = pixels[i];
-                const g = pixels[i + 1];
-                const b = pixels[i + 2];
-                if (r === 0 && g === 0 && b === 0) {
-                    continue;
-                }
-                ++total;
-                const color = d3.rgb(r, g, b);
-                labs.push(d3.lab(color));
-            }
-            
-            // 这里也有问题
-            const dbscanner = jDBSCAN().eps(50).minPts(20).data(labs);
-            const cluster_centers = dbscanner.getClusters();
-            cluster_centers.forEach(({ l, a, b, dimension, parts }: any) => {
-                const key = d3.rgb(d3.lab(l, a, b)).toString();
-                // @ts-ignore
-                colorFrequency[key] = Array.from(new Set(parts)).length / total;
-            });
-            // @ts-ignore
-            base["colors"] = colorFrequency;
-        };
-        img.src = imageURL;
-    }
 
     const handleMouseDown = (e: any) => {
         // console.log("test-print-stickerTabBool", stickerTabBool)
@@ -679,52 +531,6 @@ export const SegmentationView = ({
             "predMasksHistory": predMasksHistory,
             "isLoading": isLoading,
         };
-    };
-
-    const redoMask = (i: number) => {
-        if (image?.src !== segUrl) {
-            return;
-        }
-        const context = imageContext[image?.src ?? "undefined"]["stickers"][i];
-        setSVG(context["svg"]);
-        setSVGs(context["svgs"]);
-        setClick(context["click"]);
-        setClicks(context["clicks"]);
-        setClicksHistory(context["clicksHistory"]);
-        setMaskImg(context["maskImg"]);
-        setUserNegClickBool(context["userNegClickBool"]);
-        setIsHovering(context["isHovering"]);
-        setPredMask(context["predMask"]);
-        setPredMasks(context["predMasks"]);
-        setPredMasksHistory(context["predMasksHistory"]);
-        setIsLoading(context["isLoading"]);
-        setHasClicked(true);
-    };
-
-    const handleMaskEdit = (blobUrl: string, stickerId: number) => {
-        const context = imageContext[blobUrl]["stickers"][stickerId];
-        const image = imageContext[blobUrl]["image"];
-        handleResetState();
-        setModelScale(image["modelScale"]);
-        setTensor(imageContext[blobUrl]["tensor"]["tensor"]);
-        setImage(image["img"]);
-        setPrevImage(image["img"]);
-        setIsErased(false);
-        setIsLoading(false);
-        setShowLoadingModal(false);
-        setAllsvg(imageContext[blobUrl]["json"]["allsvg"]);
-        setSVG(context["svg"]);
-        setSVGs(context["svgs"]);
-        setClick(context["click"]);
-        setClicks(context["clicks"]);
-        setClicksHistory(null);
-        setMaskImg(context["maskImg"]);
-        setUserNegClickBool(context["userNegClickBool"]);
-        setIsHovering(context["isHovering"]);
-        setPredMask(context["predMask"]);
-        setPredMasks(context["predMasks"]);
-        setPredMasksHistory(context["predMasksHistory"]);
-        setHasClicked(true);
     };
 
     return <div className="SView-container">
