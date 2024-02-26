@@ -52,6 +52,24 @@
     box-sizing: border-box;
 }
 
+.Hover-single-display {
+    width: 100%;
+    background: #fff6dc;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    border: 3px solid #fff6dc;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow-x: scroll;
+}
+
+.Hover-single-display > * {
+    flex-shrink: 0;
+}
+
 .Hover-single-option:hover {
     border: 3px solid #5a4e3b;
 }

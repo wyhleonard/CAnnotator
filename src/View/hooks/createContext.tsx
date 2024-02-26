@@ -197,6 +197,18 @@ interface contextProps {
     resegmentedSticker: any,
     setResegmentedSticker: any
   ]
+  annotatedLabels: [
+    annotatedLabels: any,
+    setAnnotatedLabels: any
+  ]
+  checkedColor: [
+    checkedColor: any, 
+    setCheckedColor: any
+  ]
+  painting: [
+    painting: any, 
+    setPainting: any
+  ],
 }
 
 const AppContext = createContext<contextProps | null>(null);

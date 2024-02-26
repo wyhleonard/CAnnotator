@@ -3,11 +3,20 @@ import "../../sharedCss.css";
 import "./MatrixVisualization.css";
 import * as d3 from "d3";
 import { adaptTooltipPosition } from "../../utils";
+import { basePigments } from "../../sharedConstants";
 
 const pigmentNum = 13;
 const singleOptionHeight = 30;
 const optionMargin = 6;
-const hoverPanelSize = [190, singleOptionHeight * 3 + optionMargin * 3];
+const hoverPanelSize = [190, singleOptionHeight * 6 + optionMargin * 6];
+const itemSize = 16;
+
+/*
+    TODO:
+    1) 悬浮提示
+    2）和MixingMethod的关联 => 
+    3）可视化显示的优化
+*/
 
 // 右下角散点图
 export const MatrixVisualization = ({
@@ -20,6 +29,7 @@ export const MatrixVisualization = ({
     clickPosition,
     setPlotIndex,
     hoveredScatter,
+    paletteInfo
 }) => {
     const svgRef = useRef(null);
     const [svgSize, setSvgSize] = useState([0, 0]);
@@ -117,7 +127,8 @@ export const MatrixVisualization = ({
                     d3.select(event.target)
                         .attr("stroke", "#5a4e3b")
                         .attr("stroke-width", 3)
-
+                    
+                    // console.log("test-print-hoverPosition", d)
                     setHoverPosition(d);
                 })
                 .on("mouseout", (event) => {
@@ -137,7 +148,6 @@ export const MatrixVisualization = ({
         }
     })
 
-    // console.log("test-floatDirection", index, floatDirection)
     const { hoverPanelLeft, hoverPanelTop } = adaptTooltipPosition(hoverPosition, rectSize, pigmentNum, hoverPanelSize, floatDirection);
 
     const handleBlockClick = () => {
@@ -152,7 +162,7 @@ export const MatrixVisualization = ({
     }
 
 
-
+    // TODO: 添加更多的悬浮信息提示 => Completed
     return <div className="SDefault-container" style={{ overflow: "visible" }} ref={svgRef}>
         <div className="Matrix-firstrow-container" style={{ height: `${rectSize[1]}px` }}>
             <div className="Matrix-index-container" style={{ width: `${rectSize[0]}px` }}
@@ -198,9 +208,9 @@ export const MatrixVisualization = ({
                     width: `calc(100% - ${rectSize[0] + marginInMatrix}px)`,
                 }}
             >
-                <svg id={`pigment-mixed-${index}`} className="SDefault-container" />
+                <svg id={`pigment-mixed-${index}`} className="SDefault-container" /> 
                 {
-                    clickPosition[0] !== -1 &&
+                    clickPosition && clickPosition[0] !== -1 &&
                     <div
                         className="Highlight-pigment-block"
                         style={{
@@ -235,6 +245,95 @@ export const MatrixVisualization = ({
                             top: `${hoverPanelTop}px`,
                         }}
                     >
+                        {/* 显示每个格子的混合方法 */}
+                        <div
+                            className="Hover-single-display"
+                            style={{
+                                marginTop: `${optionMargin}px`,
+                                height: `${singleOptionHeight}px`,
+                            }}
+                        >
+                            <span className="STitle-text-contrast" style={{ marginLeft: "5px" }}>
+                                {"C-ps:"}
+                            </span>
+                            {
+                                paletteInfo['col'][hoverPosition[0]].map((pigments, idx) => {
+                                    const colorItems = [];
+
+                                    if(idx !== 0) {
+                                        colorItems.push(<span
+                                            className="STitle-text-contrast"
+                                            style={{ marginLeft: "2px" }}
+                                        >
+                                            +
+                                        </span>)
+                                    }
+                                    
+                                    colorItems.push(<div
+                                        style={{
+                                            width: `${itemSize}px`,
+                                            height: `${itemSize}px`,
+                                            background: `${basePigments[pigments[0]][0]}`,
+                                            borderRadius: "4px",
+                                            marginLeft: "2px"
+                                        }}
+                                    />)
+
+                                    colorItems.push(<span
+                                        className="STitle-text-contrast"
+                                        style={{ marginLeft: "2px" }}
+                                    >
+                                        {`(${pigments[1].toFixed(2)})`}
+                                    </span>)
+
+                                    return colorItems
+                                })
+                            }
+                        </div>
+                        <div
+                            className="Hover-single-display"
+                            style={{
+                                marginTop: `${optionMargin}px`,
+                                height: `${singleOptionHeight}px`,
+                            }}
+                        >
+                            <span className="STitle-text-contrast" style={{ marginLeft: "5px" }}>
+                                {`R-ps:`}
+                            </span>
+                            {
+                                paletteInfo['row'][hoverPosition[1]].map((pigments, idx) => {
+                                    const colorItems = [];
+
+                                    if(idx !== 0) {
+                                        colorItems.push(<span
+                                            className="STitle-text-contrast"
+                                            style={{ marginLeft: "2px" }}
+                                        >
+                                            +
+                                        </span>)
+                                    }
+                                    
+                                    colorItems.push(<div
+                                        style={{
+                                            width: `${itemSize}px`,
+                                            height: `${itemSize}px`,
+                                            background: `${basePigments[pigments[0]][0]}`,
+                                            borderRadius: "4px",
+                                            marginLeft: "2px"
+                                        }}
+                                    />)
+
+                                    colorItems.push(<span
+                                        className="STitle-text-contrast"
+                                        style={{ marginLeft: "2px" }}
+                                    >
+                                        {`(${pigments[1].toFixed(2)})`}
+                                    </span>)
+
+                                    return colorItems
+                                })
+                            }
+                        </div>
                         <div
                             className="Hover-single-option"
                             style={{
@@ -262,8 +361,8 @@ export const MatrixVisualization = ({
                             }}
                         >
                             <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
-                                {`See More Quantities (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][0].toFixed(2)})`}
-                                {/* {`See More Quantities (${28.66})`} */}
+                                {/* {`See More Quantities (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][0].toFixed(2)})`} */}
+                                {"See More Quantities -->>"}
                             </span>
                         </div>
                         <div
@@ -278,8 +377,20 @@ export const MatrixVisualization = ({
                             }}
                         >
                             <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
-                                {`See More Mixtures (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][1].toFixed(2)})`}
-                                {/* {`See More Mixtures (${51.17})`} */}
+                                {/* {`See More Mixtures (${matrixDist[index]["next"][hoverPosition[0] + 1][hoverPosition[1] + 1][1].toFixed(2)})`} */}
+                                {"See More Mixtures -->>"}
+                            </span>
+                        </div>
+                        <div
+                            className="Hover-single-option"
+                            style={{
+                                marginTop: `${optionMargin}px`,
+                                height: `${singleOptionHeight}px`,
+                            }}
+                            onClick={() => handleBlockClick()}
+                        >
+                            <span className="STitle-text-contrast" style={{ marginLeft: "0px" }}>
+                                {"<< Close >>"}
                             </span>
                         </div>
                     </div>

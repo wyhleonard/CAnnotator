@@ -25,8 +25,8 @@
 }
 
 .Annotation-item-colorlist {
-    margin: 6px;
-    width: calc(100% - 12px);
+    margin: 6px 6px 6px 4.54px;
+    width: calc(100% - 10.54px);
     height: calc(100% - 12px);
     overflow-y: scroll;
 }

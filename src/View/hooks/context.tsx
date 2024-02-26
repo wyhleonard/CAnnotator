@@ -84,6 +84,15 @@ const AppContextProvider = (props: {
   // 当前被重新分割的image-sticker
   const [resegmentedSticker, setResegmentedSticker] = useState([-1, -1]);
 
+  // 当前已被标注的颜色
+  const [annotatedLabels, setAnnotatedLabels] = useState([]);
+
+  // annotation tooltips的位置
+  const [checkedColor, setCheckedColor] = useState([-1, -1, -1, -1]);
+
+  // paintingIndex: 0, 1, 2, 3
+  const [painting, setPainting] = useState('');
+
   return (
     <AppContext.Provider
       value={{
@@ -137,6 +146,9 @@ const AppContextProvider = (props: {
         imagePageIndex: [imagePageIndex, setImagePageIndex],
         displayedColors: [displayedColors, setDisplayedColors],
         resegmentedSticker: [resegmentedSticker, setResegmentedSticker],
+        annotatedLabels: [annotatedLabels, setAnnotatedLabels],
+        checkedColor: [checkedColor, setCheckedColor],
+        painting: [painting, setPainting],
       }}
     >
       {props.children}

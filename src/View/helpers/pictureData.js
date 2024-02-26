@@ -6,6 +6,8 @@ let localPictureData = [
 
 ];
 
+// 这里不一定是60
+
 for (let i = 1; i <= 60; ++i) {
     localPictureData.push({
         "thumbnailUrl": '/demoData/references/' + i + '.jpg',

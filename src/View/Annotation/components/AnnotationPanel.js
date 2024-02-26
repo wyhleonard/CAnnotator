@@ -1,131 +1,111 @@
-import { useState, useMemo, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import AppContext from "../../hooks/createContext";
 import "../../sharedCss.css";
 import "./AnnotationPanel.css";
 import ExtractorIcon from "../../../Icons/extractor.svg";
 import ConfirmIcon from "../../../Icons/confirm.svg";
+import PaletteIcon from "../../../Icons/palette.svg";
 import AddPigmentIcon from "../../../Icons/positive.svg";
 import PigmentSlider from "./PigmentSlider";
 import "./MixingMethod.css";
 import DeletePigmentIcon from "../../../Icons/negative.svg";
 
-const originPigment = [['#de3e35', 0.01], ['#962c35', 0.01], ['#b04d36', 0.01], ['#f1e159', 0.01], ['#ffa53c', 0.01], ['#ef9043', 0.01], ['#5d7d37', 0.01], ['#227dc1', 0.01], ['#2154ac', 0.01], ['#1a3b9f', 0.01], ['#201f29', 0.01], ['#2f3438', 0.01], ['#ebe6da', 0.01]];
-
-const demoSliderLength = 121.27; // 126.33
 const demoSilderBlockWidth = 12;
 const iconSize = 16;
-const rectSize = 22;
-
-const demoAnnotations = [
-    {
-        "mixed": "#eae5d7",
-        "pigments": [[12, 2.00]]
-    },
-    {
-        "mixed": "#dabb74",
-        "pigments": [[5, 3.75], [12, 2.25]]
-    }
-]
+const rectSize = 24;
 
 export const AnnotationPanel = ({
     targetColor,
-    pigmentConfirmed,
     setEnableSelect,
-    matchedPalette, // matrixData
-    matchedPaletteDist,
-    mixedPigmentList,
-    mixedStepState,
-    changeMixedPigmentList,
-    changeTargetColor
+    changeTargetColor,
+    basePigments,
+    matchedColor,
+    setMatchedColor,
+    currentDistance,
+    setCurrentDistance,
+    displayPigmentList, 
+    setDisplayPigmentList,
+    recommendMixingMethod,
+    clearState
 }) => {
     const {
         stickers: [stickers],
         activeSticker: [activeSticker, setActiveSticker],
+        annotatedLabels: [annotatedLabels, setAnnotatedLabels]
     } = useContext(AppContext);
 
-    // 这里的颜色可能要改成16进制存储
-    const [matchedColor, setMatchedColor] = useState("#ffffff");
-    const [currentDistance, setCurrentDistance] = useState(0);
     const [currentAnnotations, setCurrentAnnotations] = useState([]);
+    const [isAddNewColor, setIsAddNewColor] = useState(false); // 是否打开添加颜色的面板
 
-    useEffect(() => {
-        if(targetColor === "#ffffff") {
-            setMatchedColor("#ffffff");
-            setCurrentDistance(0);
-            setCurrentAnnotations([]);
-        }
-    }, [targetColor])
+    // console.log("test-print-displayPigmentList", displayPigmentList)
+    // console.log("test-print-currentAnnotations", currentAnnotations)
 
-    useEffect(() => {
-        if(matchedPaletteDist) {
-            const distMatrix = matchedPaletteDist['focus'];
-            let minDist = 100000;
-            let minDistIndex = [1, 1];
-            for(let i = 1; i < distMatrix.length; i++) {
-                for(let j = 1; j < distMatrix[i].length; j++) {
-                    const dist = distMatrix[i][j];
-                    if(dist < minDist) {
-                        minDist = dist;
-                        minDistIndex = [i, j];
-                    }
-                }
+    // items in the pigment list
+    const apigmentItems = displayPigmentList.map((_, index) => {
+        return <PigmentSlider
+            key={`pigment-slider-item-${index}`}
+            pigmentList={displayPigmentList}
+            currentIndex={index}
+            targetColor={targetColor}
+            changeMatchedColor={setMatchedColor}
+            changeMatchedDist={setCurrentDistance}
+            sliderBlockWidth={demoSilderBlockWidth}
+            iconSize={iconSize}
+            changeMixedPigmentList={setDisplayPigmentList}
+            basePigments={basePigments}
+        />
+    })
+
+    const basePigmentItems = basePigments.map((pigment, idx) => {
+        let isContain = false;
+        for(let i = 0; i < displayPigmentList.length; i++) {
+            if(displayPigmentList[i][0] === idx) {
+                isContain = true;
+                break
             }
-            console.log("matched_color_dist", minDist, minDistIndex)
-            setMatchedColor(matchedPalette['mixed'][minDistIndex[0] - 1][minDistIndex[1] - 1][0])
-            setCurrentDistance(minDist.toFixed(2))
         }
-    }, [matchedPalette, matchedPaletteDist])
+        if(isContain) return null // 不显示以被添加的颜料
 
-    // items in the pigment list => 要抽象成组件，不然不好写滑动交互
-    const apigmentItems = useMemo(() => {
-        console.log("pigmentConfirmed:", mixedPigmentList);
+        return <div 
+            className="A-base-pigment-item"
+            key={`base-pigment-${idx}`}
+            style={{
+                background: pigment[0],
+                marginRight: idx === basePigments.length - 1 ? "0px" : "4px"
+            }}
+            onClick={() => {
+                displayPigmentList.push([idx, 1]);
+                setDisplayPigmentList(JSON.parse(JSON.stringify(displayPigmentList)));
+                setIsAddNewColor(false);
 
-        if(mixedStepState.length > 0) {
-            setMatchedColor(mixedStepState[mixedStepState.length - 1][2][0]);
-            setCurrentDistance(mixedStepState[mixedStepState.length - 1][3].toFixed(2));
-        }
+                let body = {
+                    pigmentList: displayPigmentList,
+                    targetColor: targetColor
+                }
+                fetch("http://localhost:8000/gen_mixed_result", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("backend - gen_mixed_result: ", data)
+                    setMatchedColor(data['mixed_color']);
+                    setCurrentDistance(data['mixed_dist']);
+                })
+                .catch(error => console.error("Error fetching data:", error));
+            }}
+        />
+    })
 
-        // console.log("aaaaaaaaaaaaaaaaaaaa", targetColor)
-
-        if(targetColor === "#ffffff") { // 缓兵之计
-            return []
-        } else {
-            return mixedPigmentList.map((_, index) => {
-                return <PigmentSlider
-                    key={`pigment-slider-item-${index}`}
-                    pigmentList={mixedPigmentList}
-                    currentIndex={index}
-                    targetColor={targetColor}
-                    changeMatchedColor={setMatchedColor}
-                    changeMatchedDist={setCurrentDistance}
-                    sliderLength={demoSliderLength}
-                    sliderBlockWidth={demoSilderBlockWidth}
-                    iconSize={iconSize}
-                    changeMixedPigmentList={changeMixedPigmentList}
-                />
-            })
-        }
-
-    }, [pigmentConfirmed, targetColor]);
-
-    // TODO: Add pigment button 添加pigment // currentAnnotations
-    for(let i = 0; i < currentAnnotations.length; i++) {
-        demoAnnotations.push(currentAnnotations[i])
-    }
-
-    // 先清空
-    const annotationItems = [].map((data, index) => {
-        // console.log("test-print-currentAnnotations", currentAnnotations, data) // currentAnnotation里有数值
-
-        // bug 没法提交两次
-
-        // copy from MixingMethod.js
+    const annotationItems = currentAnnotations.map((data, index) => {
         const itemList = [];
         const pigments = data['pigments'];
         const mixedPigment = data['mixed'];
 
         // color labels
-        // console.log("test-annotation-mixedPigment", mixedPigment)
         itemList.push(<div
             key={`annotation-mixed-${index}`} 
             className="Pigment-item-container"
@@ -157,7 +137,7 @@ export const AnnotationPanel = ({
                 style={{
                     width: `${rectSize}px`,
                     height: `${rectSize}px`,
-                    background: `${originPigment[pigments[i][0]][0]}`
+                    background: `${basePigments[pigments[i][0]][0]}`
                 }}
             />)
 
@@ -190,21 +170,29 @@ export const AnnotationPanel = ({
 
         itemList.push(
         <div className="A-pigment-delete" key={`annotation-delete-${index}`} >
-            <div className="Icon-button" 
-            style={{
-                background: `url(${DeletePigmentIcon}) no-repeat`,
-                backgroundSize: 'contain',
-                width: `${iconSize}px`,
-                height: `${iconSize}px`,
-                cursor: 'pointer',
-            }} />
+            <div 
+                className="Icon-button" 
+                style={{
+                    background: `url(${DeletePigmentIcon}) no-repeat`,
+                    backgroundSize: 'contain',
+                    width: `${iconSize}px`,
+                    height: `${iconSize}px`,
+                    cursor: 'pointer',
+                }}
+                onClick={() => {
+                    if(currentAnnotations.length > 0) {
+                        currentAnnotations.splice(index, 1);
+                        setCurrentAnnotations(JSON.parse(JSON.stringify(currentAnnotations)));
+                    }
+                }}
+            />
         </div>)
 
         return <div
             key={`annotation-item-${index}`}
             className="A-text-container"
             style={{
-                marginBottom: "3px",
+                marginBottom: "4px",
             }}
         >
             <div className="A-index-container">
@@ -252,7 +240,7 @@ export const AnnotationPanel = ({
                                 height: `${iconSize}px`,
                                 cursor: 'pointer',
                             }}
-                            onClick={() => {setEnableSelect(true)}} 
+                            onClick={() => setEnableSelect(true)} 
                         />
                     </div>
                 </div>
@@ -279,13 +267,16 @@ export const AnnotationPanel = ({
                                 height: `${iconSize}px`,
                                 cursor: 'pointer',
                             }}
-
                             onClick={() => {
-                                currentAnnotations.push({
-                                    "pigments": mixedPigmentList,
-                                    "mixed": matchedColor
-                                });
-                                setCurrentAnnotations(JSON.parse(JSON.stringify(currentAnnotations)));
+                                if(displayPigmentList.length > 0) {
+                                    currentAnnotations.push({
+                                        "pigments": JSON.parse(JSON.stringify(displayPigmentList)),
+                                        "mixed": matchedColor
+                                    });
+                                    setCurrentAnnotations(JSON.parse(JSON.stringify(currentAnnotations)));
+                                    changeTargetColor("#ffffff");
+                                    clearState();
+                                }
                             }}
                         />
                     </div>
@@ -305,11 +296,24 @@ export const AnnotationPanel = ({
                                 Mixed Pigments:
                             </span>
                         </div>
+                        <div className="A-button-container" style={{marginLeft: "10px", marginTop: "8px"}}>
+                            <div
+                                className="Icon-button"
+                                style={{
+                                    background: `url(${PaletteIcon}) no-repeat`,
+                                    backgroundSize: 'contain',
+                                    width: `${20}px`,
+                                    height: `${20}px`,
+                                    cursor: 'pointer',
+                                }}
+                                onClick={recommendMixingMethod}
+                            />
+                        </div>
                     </div>
                     <div className="A-pigment-list">
                         {apigmentItems}
-                        <div className="A-pigment-add">
-                            <div
+                        <div className="A-pigment-add" onClick={() => setIsAddNewColor(!isAddNewColor)}>
+                            <div  
                                 className="Icon-button"
                                 style={{
                                     background: `url(${AddPigmentIcon}) no-repeat`,
@@ -321,6 +325,14 @@ export const AnnotationPanel = ({
                             />
                         </div>
                     </div>
+                    {
+                        (isAddNewColor && basePigments.length > 0) && 
+                        <div className="A-new-pigment-add" style={{bottom: `${displayPigmentList.length === 0 ? 6 : -26}px`}}>
+                            <div className="A-new-pigment-add-container">
+                                {basePigmentItems}
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -330,12 +342,18 @@ export const AnnotationPanel = ({
                     <span className="STitle-text-contrast" style={{ fontSize: "16px" }}>
                         Current Color Annotations:
                     </span>
-                    <div className="A-button-container" onClick={() => {
-                        changeTargetColor("#ffffff");
-                        setCurrentAnnotations([]);
-
-                        // 还要把它转移出去
-                    }}>
+                    <div 
+                        className="A-button-container" 
+                        onClick={() => {
+                            annotatedLabels.push({
+                                "stickerIndex": activeSticker,
+                                "annotations": [...currentAnnotations]
+                            })
+                            setAnnotatedLabels([...annotatedLabels]);
+                            setCurrentAnnotations([]);
+                            setActiveSticker(-1);
+                        }}
+                    >
                         <div
                             className="Icon-button"
                             style={{

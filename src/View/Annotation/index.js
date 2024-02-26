@@ -4,9 +4,11 @@ import { MixingMethod } from "./components/MixingMethod";
 import { SpacePlot } from "./components/SpacePlot";
 import LeftIcon from "../../Icons/triangle.svg";
 import "./index.css";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useContext, useCallback } from "react";
 import { AnnotationPanel } from "./components/AnnotationPanel";
 import { adaptWH } from "../utils";
+import AppContext from "../hooks/createContext";
+import { basePigments } from "../sharedConstants";
 
 const iconSize = 15;
 const dropdownContent = ["a * b", "L * a", "L * b"];
@@ -14,6 +16,10 @@ const dropdownContent = ["a * b", "L * a", "L * b"];
 export const AnnotationView = ({
     imageSrc
 }) => {
+    const {
+        activeSticker: [activeSticker],
+        showLoadingModal: [, setShowLoadingModal],
+    } = useContext(AppContext);
 
     const [isDropdown, setIsDropdown] = useState(false);
     const [selectedSpace, setSelectSpace] = useState(0);
@@ -21,12 +27,11 @@ export const AnnotationView = ({
     const [matrices, setMatrices] = useState([])
     const [matrixDistances, setMatrixDistances] = useState([])
     const [matrixLabs, setMatrixLabs] = useState([])
-    const [paletteInfo, setPaletteInfo] = useState([])
-
+    const [paletteInfo, setPaletteInfo] = useState([]) // 这个是什么
     const [pigmentConfirmed, setPigmentConfirmed] = useState(false)
 
     // new state - wyh
-    const [mixedPigmentList, setMixedPigmentList] = useState([]); // 后端可以传
+    const [mixedPigmentList, setMixedPigmentList] = useState([]);
     const [mixedStepState, setMixedStepState] = useState([]);
     const [genMatrix, setGenMatrix] = useState([]);
 
@@ -36,10 +41,68 @@ export const AnnotationView = ({
 
     // hover in scatterplot
     const [hoveredScatter, setHoveredScatter] = useState([-1, -1])
+    const [clickPosition, setClickPosition] = useState([]);
+
+    const [matchedColor, setMatchedColor] = useState("#ffffff");
+    const [currentDistance, setCurrentDistance] = useState(0);
+    const [displayPigmentList, setDisplayPigmentList] = useState([]); // 用于annotationpannel中的显示
+
+    useEffect(() => {
+        if(pigmentConfirmed && mixedPigmentList.length > 0) {
+            // 合并mixed pigments
+            const pigmentList = [];
+            for(let k = 0; k < mixedPigmentList.length; k++) {
+                let isContained = false;
+                for(let i = 0; i < pigmentList.length; i++) {
+                    if(pigmentList[i][0] === mixedPigmentList[k][0]) {
+                        pigmentList[i][1] += mixedPigmentList[k][1]
+                        isContained = true;
+                        break
+                    }
+                }
+                if(!isContained) pigmentList.push(mixedPigmentList[k])
+            }            
+            
+            // 还是会有问题，但目前还不影响实验
+            // console.log("test-print-pigmentList", mixedPigmentList, pigmentList);
+
+            setMatchedColor(mixedStepState[mixedStepState.length - 1][2][0]);
+            setCurrentDistance(mixedStepState[mixedStepState.length - 1][3]);
+            setDisplayPigmentList([...mixedPigmentList]);
+            setPigmentConfirmed(false);
+        }
+    }, [
+        pigmentConfirmed, 
+        mixedPigmentList, 
+        setMatchedColor, 
+        setCurrentDistance, 
+        setDisplayPigmentList,
+        mixedStepState
+    ])
+
+    const clearState = () => {
+        setMatrices([]);
+        setMatrixDistances([]);
+        setMatrixLabs([]);
+        setPaletteInfo([]);
+        setTargetColorCoordinate([]);
+        setSelectSpace(0);
+        setMixedPigmentList([]);
+        setMixedStepState([]);
+        setGenMatrix([]);
+        setHoveredScatter([-1, -1]);
+        setClickPosition([]);
+        setMatchedColor("#ffffff");
+        setCurrentDistance(0);
+        setPlotIndex(0);
+        setDisplayPigmentList([]);
+    }
 
     // initialize matrix
-    useEffect(() => {
+    const recommendMixingMethod = useCallback(() => {
         if (targetColor !== "#ffffff") {
+            clearState();
+            setShowLoadingModal(true);
             let body = { 
                 option: 'i', 
                 target_color: targetColor, 
@@ -55,34 +118,73 @@ export const AnnotationView = ({
             })
                 .then(response => response.json())
                 .then(data => {
-                    setMatrices([data.colors])
-                    setMatrixDistances([data.colors_with_dist])
-                    setMatrixLabs([data.lab_colors.lab_space])
-                    setTargetColorCoordinate(data.lab_colors.target_color.position)
-                    setPaletteInfo([data.palette])
+                    console.log("palette backend data: ", data)
+
+                    const matrixData = data.colors;
+                    setMatrices(matrixData);
+                    const matrixDistances = data.colors_with_dist;
+                    setMatrixDistances(matrixDistances);
+
+                    const labSpaces = [];
+                    const originLabSpaces = data.lab_colors;
+                    originLabSpaces.forEach((d) => labSpaces.push(d.lab_space))
+                    setMatrixLabs(labSpaces);
+
+                    setTargetColorCoordinate(originLabSpaces[0].target_color.position);
+                    setPaletteInfo(data.palette);
+                    
+                    const recommendClickPosition = data.selected_points;
+                    setClickPosition(recommendClickPosition);
+                    const recommendGenMatrix = [...data.options, 's'];
+                    setGenMatrix(recommendGenMatrix);
+
+                    const recommendMixedStepState = [];
+                    for(let i = 0; i < recommendGenMatrix.length; i++) {
+                        const col = recommendClickPosition[i][0];
+                        const row = recommendClickPosition[i][1];
+                        const stepState = [
+                            matrixData[i]['col'][col],
+                            matrixData[i]['row'][row],
+                            matrixData[i]['mixed'][col][row],
+                            matrixDistances[i]['focus'][col + 1][row + 1]
+                        ]
+
+                        if(i === 0) {
+                            recommendMixedStepState.push(stepState)
+                        } else {
+                            const lastActionType = recommendGenMatrix[i - 1];
+                            const actionNum = recommendMixedStepState.length;
+                            if(lastActionType === 'q') {
+                                recommendMixedStepState[actionNum - 1] = stepState;
+                            } else if (lastActionType === 'm') {
+                                recommendMixedStepState.push(stepState);
+                            }
+                        }
+                    }
+                    setMixedStepState(recommendMixedStepState);
+                    setMixedPigmentList(data.mixedPigments);
+                    setDisplayPigmentList(data.mixedPigments);
+                    const lastCP = recommendClickPosition[recommendClickPosition.length - 1];
+
+                    setMatchedColor(matrixData[matrixData.length - 1]['mixed'][lastCP[0]][lastCP[1]][0]);
+                    setCurrentDistance(matrixDistances[matrixDistances.length - 1]['focus'][lastCP[0] + 1][lastCP[1] + 1]);
+                    setShowLoadingModal(false);
                 })
-                .catch(error => console.error("Error fetching data:", error));
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    setShowLoadingModal(false);
+                });
         } else {
-            setMatrices([]);
-            setMatrixDistances([]);
-            setMatrixLabs([]);
-            setPaletteInfo([]);
-            setTargetColorCoordinate([]);
-            setSelectSpace(0);
-            setMixedPigmentList([]);
-            setMixedStepState([]);
-            setGenMatrix([]);
-            setHoveredScatter([-1, -1]);
+            clearState();
         }
-    }, [targetColor])
+    }, [targetColor, setShowLoadingModal])
 
     // 取色
     const canvasRef = useRef(null);
     const [enableSelect, setEnableSelect] = useState(false);
+
     const handleCanvasClick = (e) => {
-        if (enableSelect) {
-
-
+        if (enableSelect && activeSticker !== -1) {
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
@@ -95,7 +197,6 @@ export const AnnotationView = ({
             const hexB = pixel[2].toString(16).padStart(2, '0');
             const hexColor = `#${hexR}${hexG}${hexB}`;
             setTargetColor(hexColor);
-            console.log(hexColor)
             setEnableSelect(false);
 
             // initial
@@ -263,14 +364,17 @@ export const AnnotationView = ({
         <div className="Annotation-panel-container">
             <AnnotationPanel
                 targetColor={targetColor}
-                pigmentConfirmed={pigmentConfirmed}
                 setEnableSelect={setEnableSelect}
-                matchedPalette={matrices.length > 0 ? matrices[0] : null}
-                matchedPaletteDist={matrixDistances.length > 0 ? matrixDistances[0] : null}
-                mixedPigmentList={mixedPigmentList}
-                mixedStepState={mixedStepState}
-                changeMixedPigmentList={setMixedPigmentList}
                 changeTargetColor={setTargetColor}
+                basePigments={basePigments}
+                matchedColor={matchedColor}
+                setMatchedColor={setMatchedColor}
+                currentDistance={currentDistance}
+                setCurrentDistance={setCurrentDistance}
+                displayPigmentList={displayPigmentList}
+                setDisplayPigmentList={setDisplayPigmentList}
+                recommendMixingMethod={recommendMixingMethod}
+                clearState={clearState}
             />
         </div>
         <div className="Annotation-mixing-container">
@@ -299,6 +403,8 @@ export const AnnotationView = ({
                     changeMixedPigmentList={setMixedPigmentList}
                     paletteInfo={paletteInfo}
                     changePaletteInfo={setPaletteInfo}
+                    clickPosition={clickPosition}
+                    setClickPosition={setClickPosition}
                 />
             </div>
         </div>

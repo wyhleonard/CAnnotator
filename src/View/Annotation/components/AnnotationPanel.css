@@ -82,6 +82,7 @@
     width: 100%;
     height: calc(100% - 92px);
     display: flex;
+    position: relative;
 }
 
 .A-last-text-container {
@@ -106,6 +107,42 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+}
+
+.A-new-pigment-add {
+    width: calc(100% - 141.1px - 8px);
+    height: 28px;
+    position: absolute;
+    background: #fff6dc;
+    border-radius: 4px;
+    right: 8px;
+    /* bottom: -28px; */
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.A-new-pigment-add-container {
+    width: calc(100% - 8px);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow-x: scroll;
+}
+
+.A-base-pigment-item {
+    flex: 0 0 auto;
+    width: 19.8px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.A-base-pigment-item:hover {
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 }
 
 .A-anntated-colors {
@@ -128,6 +165,8 @@
     height: 100%;
     display: flex;
     align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
 .A-pigment-delete {

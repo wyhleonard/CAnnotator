@@ -4,10 +4,10 @@ import SearchIcon from "../../Icons/search.svg";
 import LeftIcon from "../../Icons/triangle.svg";
 import ConfirmIcon from "../../Icons/confirm.svg";
 import TrackIcon from "../../Icons/track.svg";
-import { PAINTINGPATH, iconLevel1, imageInOnePage } from "../sharedConstants";
+import { iconLevel1, imageInOnePage } from "../sharedConstants";
 import { useContext, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import { initPositions } from "../helpers/hardcode";
+import { initPositions, scatterPositions } from "../helpers/hardcode";
 import AppContext from "../hooks/createContext";
 import Scatter from "./Scatter";
 import ExpandSVG from "../../Icons/expand.svg";
@@ -29,14 +29,23 @@ const iconStyle = (iconPath) => {
 }
 
 // 支持的自然图片数据集
-const imageDatasetName = ["pheasant", "goshawk", "pigment", "preprocess", "eggle"].sort();
+const imageDatasetName = ["pheasant", "goshawk", "waxwing", "white-eye", "oriole", "shrike"].sort();
+const imageDataNum = {
+  "pheasant": 60,
+  "waxwing": 64,
+  "white-eye": 55,
+  "oriole": 103,
+  "shrike": 100,
+}
 
 export const ReferenceView = ({
-  colors, 
+  colors,
+  paintingSrc,
   handleImageResegment,
   setReferenceImage,
   handleResetPaintingImage,
   handleSelectedImage,
+  referenceImage,
 }) => {
   const {
     chosenColors: [chosenColors, setChosenColors],
@@ -53,6 +62,7 @@ export const ReferenceView = ({
     image: [image],
     editingMode: [, setEditingMode],
     imagePageIndex: [imagePageIndex, setImagePageIndex],
+    painting: [painting],
   } = useContext(AppContext);
 
   // console.log("test-print-colors", colors);
@@ -81,7 +91,8 @@ export const ReferenceView = ({
   const blockRef = useRef(null);  // 每个block的大小，用于控制滑块的距离
   const [blockSize, setBlockSize] = useState([0, 0]);
   const inputRef = useRef(null);
-  const [dots, setDots] = useState(initPositions); // 目前这里是hardcode
+  // const [dots, setDots] = useState(initPositions); // 目前这里是hardcode
+  const [dots, setDots] = useState([]);
   const [isFilter, setIsFilter] = useState(false);
 
   // 是否将自然图片展开查看
@@ -110,6 +121,14 @@ export const ReferenceView = ({
   //   }
   // })
   // console.log("test-print-displayedNum", displayedNum)
+
+  // update the scatter plot data
+  useEffect(() => {
+    const value = inputRef.current.value;
+    if(imageDatasetName.indexOf(value) !== -1 && imagePageIndex !== -1) {
+      setDots(scatterPositions[value][imagePageIndex]);
+    }
+  }, [imagePageIndex])
 
   // chosenStickers: {0, 1, 3}
   // chosenList: 当前显示在reference list中的Segments的index: [0, 1, 3]
@@ -368,7 +387,7 @@ export const ReferenceView = ({
   const onSearch = () => {
     const value = inputRef.current.value;
     if(imageDatasetName.indexOf(value) !== -1) {
-      const staticImageData = fetchStaticImageData(value);
+      const staticImageData = fetchStaticImageData(value, imageDataNum[value]);
       const imageDataInPages = [];
       staticImageData.forEach((img, idx) => {
         img["index"] = idx // 全局的索引
@@ -387,6 +406,7 @@ export const ReferenceView = ({
       setFilteredImages(imageDataInPages);
       setImagePageIndex(0);
       setCurrentPageImages(imageDataInPages[0]);
+      setDots(scatterPositions[value][0]);
     }
   }
 
@@ -488,7 +508,7 @@ export const ReferenceView = ({
       // 开始导入动画
       setShowLoadingModal(true);
 
-      console.log("test-print-backendData", maskArray, positionInOrigin, annotatedImageArray, segMaskIndex)
+      console.log("test-print-backendData", maskArray, positionInOrigin, annotatedImageArray, segMaskIndex, objectName)
 
       /*
         maskArray: 记录了mask的位置 => 这两个参数应该都是数组才对 => 对应多张reference
@@ -511,6 +531,7 @@ export const ReferenceView = ({
           ],
           annotatedImageArray: annotatedImageArray,
           lastMaskID: segMaskIndex,
+          paintingIndex: painting,
         }),
       })
       .then(response => response.json())
@@ -527,6 +548,7 @@ export const ReferenceView = ({
           const keys = Object.keys(trackedSegs[i]);
           filteredImages[imagePageIndex][i]["countedColors"] = {};
           filteredImages[imagePageIndex][i]["hasColors"] = {};
+
           for(let k = 0; k < keys.length; k++) {
             const trackedSeg = trackedSegs[i][keys[k]];
             filteredImages[imagePageIndex][i]["hasColors"][keys[k]] = [];
@@ -538,7 +560,8 @@ export const ReferenceView = ({
 
               img.onload = () => { // 包装出一个函数
                 const canvas = document.createElement('canvas');
-                const pixelSize = 3; // 每个超像素的大小
+                // const pixelSize = 3; // 每个超像素的大小
+                const pixelSize = img.width < 100 ? 1 : Math.floor(img.width / 100); // 简单做了个自适应
                 const scaledWidth = Math.ceil(img.width / pixelSize);
                 const scaledHeight = Math.ceil(img.height / pixelSize);
 
@@ -568,7 +591,7 @@ export const ReferenceView = ({
                   }
 
                   // eps越大簇的规模越大 => 第一次聚类
-                  const dbscanner = jDBSCAN().eps(30).minPts(5).data(labs);  // 30 - 10
+                  const dbscanner = jDBSCAN().eps(20).minPts(2).data(labs);  // (30 - 5)
                   dbscanner();
                   const cluster_centers = dbscanner.getClusters();
 
@@ -593,10 +616,10 @@ export const ReferenceView = ({
 
         // 将paintingboard中的内容切回古画 => 一样无法继续分割
         if(image) {
-          if((image.src).indexOf(PAINTINGPATH) === -1) {
+          if((image.src).indexOf(paintingSrc) === -1) {
             const keys = Object.keys(imageContext);
             for(let k = 0; k < keys.length; k++) {
-                if(keys[k].indexOf(PAINTINGPATH) !== -1) {
+                if(keys[k].indexOf(paintingSrc) !== -1) {
                     handleResetPaintingImage(keys[k]);
                     setEditingMode("painting");
                     break
@@ -605,7 +628,7 @@ export const ReferenceView = ({
           }
         }
 
-        setDots(initPositions); // TODO: 目前还是基于SIFT特征点匹配的结果，需要换一个更站的住脚的说法 => 后面让布伟试试
+        // setDots(initPositions);
         setIsTracking(true);
       })
       .catch(error => {
@@ -615,13 +638,13 @@ export const ReferenceView = ({
     }
   }
 
-  // console.log("test-print-expandedImage", expandedImage)
+  // console.log("test-print-filteredImages", filteredImages)
   // console.log("test-print-currentIndex", currentIndex)
 
   const segmentedImages = [];
   const keys = Object.keys(imageContext);
   keys.forEach((path) => {
-    if(path.indexOf(PAINTINGPATH) === -1) segmentedImages.push(path);
+    if(path.indexOf(paintingSrc) === -1) segmentedImages.push(path);
   })
 
   const getImageAnnotatedIndex = (image, images) => {
@@ -742,8 +765,13 @@ export const ReferenceView = ({
                 // confirm logic
                 if(expandedImage !== -1) {
                   const imageSrc = filteredImages[imagePageIndex][expandedImage % imageInOnePage]["contentUrl"];
-                  console.log("test-print-imageSrc", imageSrc)
-                  setReferenceImage(imageSrc);
+                  console.log("test-print-imageSrc", imageSrc, referenceImage)
+                  if(referenceImage !== imageSrc) {
+                    setReferenceImage(imageSrc);
+                  } else {
+                    console.log("test-enter")
+                    setReferenceImage("");
+                  }
                 }
               }}
             />
@@ -770,11 +798,12 @@ export const ReferenceView = ({
                 <div className="Reference-projection">
                   <Scatter 
                     handleFilter={handleFilter} 
-                    dots={dots.slice(
-                      imagePageIndex * imageInOnePage, 
-                      imagePageIndex === filteredImages.length - 1 
-                      ? imagePageIndex * imageInOnePage + filteredImages[filteredImages.length - 1].length
-                      : (imagePageIndex + 1) * imageInOnePage)}
+                    // dots={dots.slice(
+                    //   imagePageIndex * imageInOnePage, 
+                    //   imagePageIndex === filteredImages.length - 1 
+                    //   ? imagePageIndex * imageInOnePage + filteredImages[filteredImages.length - 1].length
+                    //   : (imagePageIndex + 1) * imageInOnePage)}
+                    dots={dots}
                     currentImages={filteredImages[imagePageIndex]}
                   />
                 </div>
@@ -912,163 +941,3 @@ export const ReferenceView = ({
     </div>
   </div>
 }
-
-
-// @app.post("/part-tracking")
-// async def part_tracking(request: Request):
-//     print("part-tracking ···")
-//     data = await request.json()
-    
-//     pred_mask_array = data["maskArray"]
-//     position_in_origin_array = data["positionInOrigin"]
-//     object_name = data["objectName"]
-//     # image_index = data["imageIndex"]
-//     image_index = [1, 5] # test setting
-//     annotated_image_array = data["annotatedImageArray"] # 用annotated_image_array[0] == "-1"区分
-
-//     for o in range(len(pred_mask_array)):
-//         pred_mask = np.array(pred_mask_array[o], dtype=np.uint8)
-//         position_in_origin = position_in_origin_array[o]
-        
-//         # basic params
-//         p_h, p_w = pred_mask.shape
-//         [sx, sy, ex, ey] = position_in_origin
-//         resize_shape = (p_w, p_h)
-        
-//         # load painting image and crop it
-//         if annotated_image_array[0] == "-1":
-//             painting_path = "./paintings/0.png"
-//         else:
-//             painting_path = "./natural-images/" + object_name + "-nobg/" + annotated_image_array[o] + ".jpg"
-
-//         print("reffence images path: ", painting_path)
-            
-//         painting_image = cv2.imread(painting_path)
-//         cropped_painting = (cv2.cvtColor(painting_image, cv2.COLOR_BGR2RGB))[sy:ey+1, sx:ex+1]
-        
-//         # load natural images without background
-//         image_index = list(range(image_index[0], image_index[1]+1))
-//         natural_images = [cv2.cvtColor(
-//             cv2.imread("./natural-images/"+object_name+"-nobg/"+str(i)+".jpg"), 
-//             cv2.COLOR_BGR2RGB
-//         ) for i in image_index]
-
-//         # start tracking
-//         pred_list = []
-//         torch.cuda.empty_cache()
-//         gc.collect()
-//         segtracker = SegTracker(segtracker_args, sam_args, aot_args)
-//         segtracker.restart_tracker()
-        
-//         # 这里的逻辑还要改一下: TODO: 2) add more than one references
-//         # hasDone: 1) deactivate short-term memory;
-//         with torch.cuda.amp.autocast():
-//             # add reference
-//             segtracker.add_reference(cropped_painting, pred_mask) # added into lstt memories
-//             # track in natural images
-//             for image in natural_images:
-//                 # resize to the shape of pred_mask
-//                 image = cv2.resize(image, resize_shape)
-//                 pred_mask_natural = segtracker.track(image, update_memory=False) # update_memory: 是否更新长短期记忆模块
-//                 torch.cuda.empty_cache()
-//                 gc.collect()
-//                 pred_list.append(pred_mask_natural)
-    
-//         # output segs
-//         image_segs = []
-//         total_masks = np.unique(pred_mask)
-//         init_segs = {}
-    
-//         seg_coordinates = []
-//         init_coordinates = {}
-//         highlight_color = [255, 246, 220]
-    
-//         for id in total_masks:
-//             if id == 0:
-//                 continue
-//             init_segs[str(id)] = ""
-//             init_coordinates[str(id)] = {
-//                 "coordinates": [],
-//                 "highlight": ""
-//             }
-        
-//         for i in range(len(pred_list)):
-//             mask_ids = np.unique(pred_list[i])
-//             h, w, _ = natural_images[i].shape
-//             image_segs.append(copy.deepcopy(init_segs))
-//             seg_coordinates.append(copy.deepcopy(init_coordinates))
-    
-//             for k in mask_ids:
-//                 if k == 0:
-//                     continue
-                
-//                 # filter single mask
-//                 clean_mask = copy.deepcopy(pred_list[i])
-//                 for m in range(p_h):
-//                     for n in range(p_w):
-//                         if clean_mask[m][n] != k:
-//                             clean_mask[m][n] = 0
-    
-//                 # clean the interpolated values created by the resize ops
-//                 clean_mask = cv2.resize(clean_mask, (w, h))
-//                 for m in range(h):
-//                     for n in range(w):
-//                         if clean_mask[m][n] == k:
-//                             clean_mask[m][n] = 1
-//                         else:
-//                             clean_mask[m][n] = 0
-    
-//                 alpha_layer = copy.deepcopy(clean_mask) * 255
-                
-//                 # seg original image
-//                 seg = natural_images[i] * clean_mask[:, :, np.newaxis]
-//                 r_layer, g_layer, b_layer = cv2.split(seg)
-//                 seg = cv2.merge((b_layer, g_layer, r_layer, alpha_layer))
-    
-//                 # compute the minimum enclosing rectangle 
-//                 [sx, ex, sy, ey] = minimum_rectangle(clean_mask)
-    
-//                 if sx == -1: # 为什么之前没有这个bug
-//                     image_segs[i][str(k)] = ""
-//                     seg_coordinates[i][str(k)]["coordinates"] = []
-//                     seg_coordinates[i][str(k)]["highlight"] = ""
-//                 else:
-//                     seg_highlight = cv2.merge((
-//                         copy.deepcopy(clean_mask) * highlight_color[2], # B
-//                         copy.deepcopy(clean_mask) * highlight_color[1], # G 
-//                         copy.deepcopy(clean_mask) * highlight_color[0], # R
-//                         copy.deepcopy(clean_mask) * 180, # opacity
-//                     ))
-                    
-//                     seg = seg[sy:ey+1, sx:ex+1]
-//                     seg_highlight = seg_highlight[sy:ey+1, sx:ex+1]
-                    
-//                     # transform to base64
-//                     _, encoded_image = cv2.imencode(".png", seg)
-//                     base64_image = base64.b64encode(encoded_image).decode('utf-8')
-//                     image_segs[i][str(k)] = base64_image
-        
-//                     _, encoded_highlight = cv2.imencode(".png", seg_highlight)
-//                     base64_highlight = base64.b64encode(encoded_highlight).decode('utf-8')
-//                     seg_coordinates[i][str(k)]["coordinates"] = [sx, ex, sy, ey]
-//                     seg_coordinates[i][str(k)]["highlight"] = base64_highlight
-            
-//             test_res = draw_mask(natural_images[i], cv2.resize(pred_list[i], (w, h)))
-//             test_res = cv2.cvtColor(test_res, cv2.COLOR_RGB2BGR)
-//             cv2.imwrite("./paintings/track-res-nobg-res"+str(i+1)+".png", test_res)
-
-//         # test
-//         init_res = draw_mask(cropped_painting, pred_mask, id_countour=False)
-//         out_res = cv2.cvtColor(init_res, cv2.COLOR_RGB2BGR)
-//         cv2.imwrite("./paintings/seg-mask.png", init_res)     
-
-//     # # test-output
-//     # for i in range(len(pred_list)):
-//     #     test_res = draw_mask(cv2.resize(natural_images[i], resize_shape), pred_list[i])
-//     #     test_res = cv2.cvtColor(test_res, cv2.COLOR_RGB2BGR)
-//     #     cv2.imwrite("./paintings/track-res-nobg"+str(i+1)+".png", test_res)
-    
-//     return {
-//         "tracked_segs": image_segs,
-//         "tracked_coordinates": seg_coordinates,
-//     }

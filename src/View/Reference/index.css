@@ -36,6 +36,7 @@
     position: absolute;
     top: 32px;
     left: 4px;
+    z-index: 50;
     border-radius: 0px 0px 4px 4px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
     overflow-y: auto;

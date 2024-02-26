@@ -30,12 +30,12 @@ export const SegmentationList = ({
         imagePageIndex: [imagePageIndex],
         filteredImages: [filteredImages, setFilteredImages],
         resegmentedSticker: [resegmentedSticker],
+        annotatedLabels: [annotatedLabels]
     } = useContext(AppContext);
 
     const hasCountColors = colors.length > 0 && JSON.stringify(colors[0]) !== "{}";
     const isDisplayHistogram = hasCountColors && (editingMode === "painting" || editingMode === "sticker")
     // console.log("test-print-colors", colors, hasCountColors, editingMode, isDisplayHistogram)
-    // console.log("test-print-filteredImages", filteredImages);
 
     const handleStickerClick = (i) => {
         if (editingMode === "painting") {
@@ -54,7 +54,7 @@ export const SegmentationList = ({
 
     const handleStickerAnnotate = (e, index) => {
         if(e.button === 2) {
-            if(activeSticker !== index) {
+            if(activeSticker !== index) { // 选择哪个sticker被显示在下面的annotation-panel中
                 setActiveSticker(index);
             } else {
                 setActiveSticker(-1);
@@ -62,7 +62,12 @@ export const SegmentationList = ({
         }
     }
 
+    const annotatedStickers = [];
+    annotatedLabels.forEach((anno) => annotatedStickers.push(anno.stickerIndex));
+
     const segItems = stickers.map((sticker, i) => {
+        if(annotatedStickers.indexOf(i) !== -1) return null
+
         const displayedSegs = [];
         if(isDisplayHistogram) {
             // console.log("test-print-colors", i, colors[i])

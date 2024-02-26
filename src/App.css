@@ -23,6 +23,7 @@
 .App-content {
   width: 100%;
   height: 95%;
+  position: relative;
 }
 
 .App-content-top {
@@ -51,6 +52,23 @@
 
 .ant-spin-dot-item {
   background-color: #5a4e3b !important;
+}
+
+.Annotation-tooltip-container {
+  width: 78px;
+  /* height: 100px; */
+  border-radius: 6px;
+  position: absolute;
+  z-Index: 50;
+  background: #fff6dc;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+}
+
+.Ttip-Pigment-item-container {
+  width: 100%;
+  height: 16px;
+  display: flex;
+  align-items: center;
 }
 
 /*

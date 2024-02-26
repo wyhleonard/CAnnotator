@@ -1,23 +1,22 @@
-import { useContext, useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
-import AppContext from "../hooks/createContext";
+// import AppContext from "../hooks/createContext";
 
 const WIDTH = 113.44;
 const HEIGHT = 110.56;
 
 function Scatter(props) {
-    const {
-        chosenColors: [chosenColors, ],
-    } = useContext(AppContext);
+    // const {
+    //     chosenColors: [chosenColors, ],
+    // } = useContext(AppContext);
     const { 
         handleFilter, 
         dots,
         currentImages,
      } = props;
 
-    // TODO check 这里的逻辑
-
-    // console.log("test-print-dots and currentImages", dots, currentImages)
+    // TODO check 这里的逻辑 => 有个bug
+    console.log("test-print-dots and currentImages", dots, currentImages)
 
     const chartWidth = WIDTH;
     const chartHeight = HEIGHT;
@@ -93,9 +92,18 @@ function Scatter(props) {
             .attr('cy', d => yScale(d[1]) + margin.top)
             .attr('r', 6)
             .attr('fill', '#b09872')
-            .attr('opacity', (_, i) => currentImages[i].marked === 1 ? 0.8 : (currentImages[i].marked === -1 ? 0 : 0.3))
-            .attr('stroke', (_, i) => currentImages[i].marked === 1 ? '#534835' : 'none')  
-            .attr('stroke-width', (_, i) => currentImages[i].marked === 1 ? 2 : 0);
+            .attr('opacity', (_, i) => {
+                if(currentImages[i]) // BUG: 更新的时候会报一个undefined错误
+                    return currentImages[i].marked === 1 ? 0.8 : (currentImages[i].marked === -1 ? 0 : 0.3)
+            })
+            .attr('stroke', (_, i) => {
+                if(currentImages[i])
+                    return currentImages[i].marked === 1 ? '#534835' : 'none'
+            })  
+            .attr('stroke-width', (_, i) => {
+                if(currentImages[i])
+                    return currentImages[i].marked === 1 ? 2 : 0
+            });
 
         // 绘制矩形  
         svg.append('rect')
@@ -105,7 +113,7 @@ function Scatter(props) {
             .attr('stroke-width', 2)
             .attr('pointer-events', 'none');
 
-    }, [data, chosenColors, isDrawing, currentImages]);
+    }, [data, currentImages, xScale, yScale, chartWidth, chartHeight, margin.left, margin.top]);
 
     useEffect(() => {
         const svg = d3.select(svgRef.current);

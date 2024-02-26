@@ -1,53 +1,51 @@
 import "../../sharedCss.css"
 import "./AnnotationList.css"
 import "./SegmentationList.css"
-
-const demoAnnos = [
-    // {
-    //     image: "/demoData/segmentations/1.png",
-    //     annotations: [
-    //         [133, 8, 4],
-    //         [144, 77, 34],
-    //         [37, 9, 0],
-    //     ]
-    // },
-    // {
-    //     image: "/demoData/segmentations/10.png",
-    //     annotations: [
-    //         [207, 162, 105],
-    //         [134, 98, 66],
-    //     ],
-    // },
-    // {
-    //     image: "/demoData/segmentations/11.png",
-    //     annotations: [
-    //         [211, 168, 134],
-    //         [211, 188, 156],
-    //         [46, 37, 22]
-    //     ],
-    // },
-]
+import AppContext from "../../hooks/createContext";
+import { useContext, useRef } from "react";
 
 const annoSize = 63.8;
-const colorItemSize = 14.8;
+const colorItemSize = 16;
 
 export const AnnotationList = (
 
 ) => {
-    const annoItems = demoAnnos.map((anno, idx) => {
+    const {
+        stickers: [stickers],
+        annotatedLabels: [annotatedLabels],
+        checkedColor: [checkedColor, setCheckedColor] // stickerIndex, annoIndex, click.x, click.y
+    } = useContext(AppContext);
 
-        const colorItems = anno.annotations.map((color, idx) => {
+    // console.log("test-print-annotatedLabels", annotatedLabels)
+
+    const divRef = useRef(null);
+    const refPosition = divRef.current ? divRef.current.getBoundingClientRect() : undefined;
+
+    // console.log("test-print-refPosition", refPosition)
+    // console.log("test-print-checkedColor", checkedColor)
+
+    const annoItems = annotatedLabels.map((anno, idx) => {
+        const colorItems = anno.annotations.map((color, index) => {
             return <div
-                key={`color-item-${idx}`}
+                key={`color-item-${index}`}
                 className="Color-item-container"
                 style={{
-                    marginTop: `${idx === 0 ? 0 : 2}px`,
+                    marginTop: `${index === 0 ? 0 : 2}px`,
                     height: `${colorItemSize}px`,
-                    backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})`
+                    backgroundColor: `${color.mixed}`,
+                    border: `${checkedColor[0] === idx && checkedColor[1] === index ? '2px solid #5a4e3b' : 'none'}`
                 }}
-            >
-
-            </div>
+                onClick={(e) => {
+                    if(checkedColor[0] === idx && checkedColor[1] === index) {
+                        setCheckedColor([-1, -1, -1, -1]);
+                    } else if(refPosition) {
+                        const tag = idx % 2;
+                        const marginGap = tag === 0 ? -4 : 0;
+                        const startX = refPosition.x + (idx % 2 + 1) * refPosition.width / 2 + marginGap - 10; // 先这样吧
+                        setCheckedColor([idx, index, startX, e.clientY]);
+                    }
+                }}
+            />
         })
 
         return <div
@@ -59,7 +57,11 @@ export const AnnotationList = (
             }}
         >
             <div className="Annotation-item-image" style={{width: `${annoSize}px`}}>
-                <img className="Image-container" src={anno.image} alt="" />
+                <img 
+                    className="Image-container" 
+                    src={stickers[anno.stickerIndex].toDataURL()} 
+                    alt=""
+                />
             </div>
             <div className="Annotation-item-colors" style={{width: `calc(100% - ${annoSize}px)`}}>
                 <div className="Annotation-item-colorlist">
@@ -69,7 +71,15 @@ export const AnnotationList = (
         </div>
     })
 
-    return <div className="SDefault-container" style={{display: "flex", flexWrap: "wrap"}}>
+    return <div 
+        className="SDefault-container" 
+        style={{
+            display: "flex", 
+            flexWrap: "wrap",
+            position: "relative"
+        }}
+        ref={divRef}
+    >
         {annoItems}
     </div>
 }

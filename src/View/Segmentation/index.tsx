@@ -14,7 +14,7 @@ import {
     useRef,
     useState,
 } from "react";
-import * as _ from "underscore";
+// import * as _ from "underscore";
 import {
     modelInputProps,
 } from "../helpers/Interface";
@@ -159,7 +159,7 @@ export const SegmentationView = ({
                 }
             }
 
-            // console.log("test-print-newColors", newColors)
+            console.log("test-print-newColors", newColors)
             setColors(newColors);
         }
     }, [imagePageIndex, isTracking, filteredImages, stickers, setColors, editingMode])                

@@ -4,7 +4,7 @@ import { SegmentationView } from './View/Segmentation';
 import { AnnotationView } from './View/Annotation'
 import { InferenceSession, Tensor } from "onnxruntime-web";
 import * as ort from 'onnxruntime-web';
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import getFile from "./View/helpers/getFile";
 import { handleImageScale } from "./View/helpers/ImageHelper";
 import { modelScaleProps } from "./View/helpers/Interface";
@@ -15,9 +15,14 @@ import {
     modelData,
 } from "./View/helpers/modelAPI";
 import AppContext from "./View/hooks/createContext";
-import { PAINTINGMASKTENSORDATAPATH, PAINTINGPATH } from './View/sharedConstants';
+import { PAINTINGFOLDER, PAINTINGMASKTENSORDATAFOLDER, basePigments } from './View/sharedConstants';
 import { checkImageIsLoaded, findMaxValueInArray, findTargetInFilteredImages } from './View/utils';
 import LoadingModal from './View/Segmentation/components/LoadingModal';
+import Box from '@mui/material/Box';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 
 // Onnxruntime
 ort.env.debug = false;
@@ -34,6 +39,7 @@ ort.env.wasm.wasmPaths = {
     'ort-wasm-threaded.wasm': '/ort-wasm-threaded.wasm',
     'ort-wasm-simd-threaded.wasm': '/ort-wasm-simd-threaded.wasm'
 };
+
 // ort.env.webgl.pack = true;
 
 function App() {
@@ -66,6 +72,10 @@ function App() {
         segMaskIndex: [, setSegMaskIndex],
         currentIndex: [, setCurrentIndex],
         stickerForTrack: [stickerForTrack],
+        checkedColor: [checkedColor],
+        annotatedLabels: [annotatedLabels],
+        painting: [painting, setPainting],
+        stickers: [stickers],
     } = useContext(AppContext)!;
     const [model, setModel] = useState<InferenceSession | null>(null);
     const [tensor, setTensor] = useState<Tensor | null>(null);
@@ -88,30 +98,33 @@ function App() {
 
     // 变量管理还是很混乱 => 只能重构的时候再做了
     const [colors, setColors] = useState([]);
-    const imgSrc = PAINTINGPATH;
+    // const PAINTINGPATH = "/studyData/paintings/1/0.png";
+    // const PAINTINGMASKTENSORDATAPATH = "/studyData/mask-and-tensor-jsons/painting/1/"
+    // const imgSrc = PAINTINGPATH; 
     const [referenceImage, setReferenceImage] = useState("");
-
-    // console.log("test-print-modelScale", modelScale)
-    // console.log("test-print-referenceImage", referenceImage)
+    const [paintingSrc, setPaintingSrc] = useState("");
+    const [paintingJSONSrc, setPaintingJSONSrc] = useState("");
 
     useEffect(() => {
-        const initModel = async () => {
-            try {
-                // if (process.env.MODEL_DIR === undefined) return;
-                const MODEL_DIR = "./interactive_module_quantized_592547_2023_03_19_sam6_long_uncertain.onnx";
-                const URL: string = MODEL_DIR;
-                // const URL: string = process.env.MODEL_DIR;
-                const model = await InferenceSession.create(URL);
-                setModel(model);
-            } catch (e) {
-                console.log("MODEL:", e);
-                console.error(e);
-            }
-        };
-        initModel();
-        const url = new File([imgSrc], imgSrc);
-        handleSelectedImage(url, true);
-    }, []);
+        if(paintingSrc !== "") {
+            const initModel = async () => {
+                try {
+                    // if (process.env.MODEL_DIR === undefined) return;
+                    const MODEL_DIR = "./interactive_module_quantized_592547_2023_03_19_sam6_long_uncertain.onnx";
+                    const URL: string = MODEL_DIR;
+                    // const URL: string = process.env.MODEL_DIR;
+                    const model = await InferenceSession.create(URL);
+                    setModel(model);
+                } catch (e) {
+                    console.log("MODEL:", e);
+                    console.error(e);
+                }
+            };
+            initModel();
+            const url = new File([paintingSrc], paintingSrc);
+            handleSelectedImage(url, true);
+        }
+    }, [paintingSrc]);
 
     const runModel = async () => {
         // console.log("Running singleMaskModel");
@@ -171,47 +184,6 @@ function App() {
         }
     };
 
-    const clicks2model = async (base: any, clicks: any, tensor: any, modelScale: any, predMask: any) => {
-        // console.log("Running clicks2stickers");
-        try {
-            if (
-                model === null ||
-                clicks === null ||
-                tensor === null ||
-                modelScale === null
-            )
-                return;
-            const feeds = modelData({
-                clicks,
-                tensor,
-                modelScale,
-                last_pred_mask: predMask,
-            });
-            if (feeds === undefined) return;
-            const results = await model.run(feeds);
-            const output = results[model.outputNames[0]];
-            const pred_mask = results[model.outputNames[1]];
-            base["predMask"] = pred_mask;
-            if (!base["predMasksHistory"]) {
-                base["predMasks"] = [...(base["predMasks"] || []), pred_mask];
-            }
-            const svgStr = traceOnnxMaskToSVG(
-                output.data,
-                output.dims[1],
-                output.dims[0]
-            );
-            base["svg"] = svgStr;
-            base["mask"] = output.data;
-            base["click"] = null;
-            base["isLoading"] = false;
-            base["isModelLoaded"] = { ...isModelLoaded, boxModel: true };
-            return svgStr;
-        } catch (e) {
-            console.log(e);
-        }
-    };
-
-    // 找到你了
     useEffect(() => {
         const runOnnx = async () => {
             runModel();
@@ -300,7 +272,7 @@ function App() {
             const name = match ? match[1] : '-1';
             // console.log("test-print-name", name); // "0"
 
-            const loadPathRoot = isPainting ? PAINTINGMASKTENSORDATAPATH : (
+            const loadPathRoot = isPainting ? paintingJSONSrc : (
                 objectName === "" ? "" : `/studyData/mask-and-tensor-jsons/${objectName}/`)
             if(loadPathRoot !== "") {
                 loadSegModelResults(loadPathRoot, name, addedImageContext);
@@ -428,7 +400,7 @@ function App() {
                         // 切换回古画
                         const keys = Object.keys(imageContext);
                         for(let k = 0; k < keys.length; k++) {
-                            if(keys[k].indexOf(PAINTINGPATH) !== -1) {
+                            if(keys[k].indexOf(paintingSrc) !== -1) {
                                 handleResetPaintingImage(keys[k]);
                                 setEditingMode("painting");
                                 break
@@ -455,7 +427,7 @@ function App() {
                     // 切换回古画
                     const keys = Object.keys(imageContext);
                     for(let k = 0; k < keys.length; k++) {
-                        if(keys[k].indexOf(PAINTINGPATH) !== -1) {
+                        if(keys[k].indexOf(paintingSrc) !== -1) {
                             handleResetPaintingImage(keys[k]);
                             setEditingMode("painting");
                             break
@@ -476,11 +448,108 @@ function App() {
             }
         }
     }
+
+    /*
+        TODO: 
+        1) 上传数据
+        2）下载结果
+
+        Completed in 02/25
+    */
+    const divRef = useRef(null);
+    const headerHeight: number = divRef.current ? (divRef.current as any).clientHeight : 0;
+    const pigmentHeight = 16;
+    const itemMargin = 4;
+    // console.log("test-print-annotatedLabels", annotatedLabels)
+
+    // const [painting, setPainting] = useState('');
+    const handleChange = (event: SelectChangeEvent) => {
+        setPainting(event.target.value as string);
+    };
+
+    useEffect(() => {
+        if(painting !== '') {
+            if(painting !== paintingSrc) {
+                // initial => TODO
+                // console.log("test-print-age", PAINTINGFOLDER + painting + "/0.png");
+                setPaintingSrc(PAINTINGFOLDER + painting + "/0.png");
+                setPaintingJSONSrc(PAINTINGMASKTENSORDATAFOLDER + painting + "/");
+            }
+        }
+    }, [painting, paintingSrc])
     
     return (
         <div className="App" >
-            <div className="App-header" >
+            <div className="App-header" ref={divRef}>
                 <span className="App-header-title" > CAnnotator </span>
+                {/* 为了用户实验设置的 - 选择画作 */}
+                <div style={{width: "188px", height: "88%", marginLeft: "15px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fff"}}>
+                    <Box sx={{ minWidth: 180 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel id="demo-simple-select-label">Painting</InputLabel>
+                            <Select
+                                labelId="demo-simple-select-label"
+                                id="demo-simple-select"
+                                value={painting}
+                                label="Painting"
+                                onChange={handleChange}
+                            >
+                                <MenuItem value={0}>painting-example</MenuItem>
+                                <MenuItem value={1}>painting-case1</MenuItem>
+                                <MenuItem value={2}>painting-case2</MenuItem>
+                                <MenuItem value={3}>painting-case3</MenuItem>
+                                <MenuItem value={4}>painting-case4</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </div>
+                {/* 为了用户实验设置的 - 保存json */}
+                <div 
+                    style={{
+                        width: "60px", 
+                        height: "60%", 
+                        marginLeft: "15px",
+                        borderRadius: "4px",
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        background: "#fff",
+                        cursor: "pointer",
+                    }}
+                    onClick={() => {
+                        // 保存当前的annotations
+                        if(annotatedLabels.length > 0) {
+                            // 保存seg
+                            for(let i = 0; i < annotatedLabels.length; i++) {
+                                const stickerIndex = annotatedLabels[i].stickerIndex;
+                                const anchor = document.createElement('a');
+                                anchor.href = stickers[stickerIndex].toDataURL('image/png');
+                                anchor.download = `p${painting}-s${stickerIndex}.png`;
+                                document.body.appendChild(anchor);
+                                anchor.click();
+                                document.body.removeChild(anchor);
+                            }
+                            // 保存seg对应的color labels
+                            const savedColorLabels: any = {};
+                            for(let i = 0; i < annotatedLabels.length; i++) {
+                                const stickerIndex = annotatedLabels[i].stickerIndex;
+                                savedColorLabels[`p${painting}-s${stickerIndex}`] = annotatedLabels[i].annotations;
+                            }
+
+                            // console.log("test-print-savedColorLabels", savedColorLabels)
+                            const jsonBlob = new Blob([JSON.stringify(savedColorLabels)], { type: 'application/json' });
+                            // console.log("test-print-jsonBlob", URL.createObjectURL(jsonBlob))
+                            const anchor = document.createElement('a');
+                            anchor.href = URL.createObjectURL(jsonBlob);
+                            anchor.download = 'annotations.json';
+                            document.body.appendChild(anchor);
+                            anchor.click();
+                            document.body.removeChild(anchor);
+                        }
+                    }}
+                >
+                    <span>Save</span>
+                </div>
             </div>
             <div className="App-content" >
                 <LoadingModal />
@@ -498,11 +567,13 @@ function App() {
                     </div>
                     < div className="Reference-container" >
                         <ReferenceView 
-                            colors={colors} 
+                            colors={colors}
+                            paintingSrc={paintingSrc}
                             handleImageResegment={handleImageResegment}
                             setReferenceImage={setReferenceImage}
                             handleResetPaintingImage={handleResetPaintingImage}
                             handleSelectedImage={handleSelectedImage}
+                            referenceImage={referenceImage}
                         />
                     </div>
                 </div>
@@ -511,6 +582,47 @@ function App() {
                         imageSrc={referenceImage}
                     />
                 </div>
+
+                {   // 如何更高效地实现全局的悬浮？
+                    checkedColor[0] !== -1 &&
+                    <div 
+                        className="Annotation-tooltip-container"
+                        style={{
+                            height: `${annotatedLabels[checkedColor[0]]['annotations'][checkedColor[1]]['pigments'].length * (pigmentHeight + itemMargin) + itemMargin}px`,
+                            left: `${checkedColor[2]}px`,
+                            top: `${checkedColor[3] - headerHeight}px`,
+                        }}
+                    >
+                        {
+                            annotatedLabels[checkedColor[0]]['annotations'][checkedColor[1]]['pigments'].map((anno: any, idx: number) => {
+                                return <div 
+                                    className='Ttip-Pigment-item-container' 
+                                    key={`tooltip-item-${idx}`} 
+                                    style={{
+                                        marginTop: '4px',
+                                        marginLeft: '4px'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '16px',
+                                        height: '16px',
+                                        background: `${basePigments[anno[0]][0]}`,
+                                        borderRadius: '4px',
+                                    }}/>
+
+                                    <span style={{
+                                        fontWeight: 500, 
+                                        fontSize: '16px', 
+                                        marginLeft: '6px',
+                                        color: '#5a4e3b',
+                                    }}>
+                                        {`(${anno[1].toFixed(2)})`}
+                                    </span>
+                                </div>
+                            })
+                        }
+                    </div>
+                }
             </div>
         </div>
     );
